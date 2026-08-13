@@ -1,0 +1,10 @@
+@import './tokens.css';
+
+* { box-sizing: border-box; }
+html { color-scheme: light; font-family: var(--font-sans); background: var(--color-background); }
+body { margin: 0; min-width: 20rem; min-height: 100vh; }
+button, input, select, textarea { font: inherit; }
+a, button { outline-offset: 4px; }
+:focus-visible { outline: 3px solid var(--color-focus); }
+h1, h2, p { margin-top: 0; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }

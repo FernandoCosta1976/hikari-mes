@@ -1,0 +1,13 @@
+# WF-001 — Interactions
+- Área: atualiza contexto global demo.
+- Hoje/D+1/D+2/D+3: troca recorte temporal.
+- Destino: filtra sem alterar baseline.
+- Lot: seleciona e abre detalhe.
+- Production Order: mostra correlação funcional.
+- Balancing×PyMAC: compara Lots, quantidade consolidada e conciliação, sem APIs/payloads.
+- Plano anterior: mostra adicionado/removido/movido/quantidade alterada.
+- Buffer: abre detalhe contextual, não WMS.
+- Matéria-prima: mostra impacto por Lot.
+- Avaliar preparação: leva a WF-002 com área, Lot, Order e versão.
+- Freshness stale: alerta com timestamp da última informação válida.
+- Reset: restaura cenário inicial.
