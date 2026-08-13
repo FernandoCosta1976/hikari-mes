@@ -136,6 +136,8 @@ Balancing schedules the Lot at the Foundry/line/Work Center level.
 
 Balancing does not select the specific machine/Resource.
 
+The Fundição DC Production Area/context contains five confirmed physical Resources: **DC01, DC02, DC03, DC04 and DC05**. These identifiers are Resource examples within this domain context; they are not Production Areas, automatic Work Centers, schedule lanes, Lots or Balancing lines.
+
 Resource assignment is performed later by the Foundry Supervisor together with the Production Leader.
 
 Therefore:
@@ -145,6 +147,8 @@ Therefore:
 - Rescheduling supports **how the operational sequence should be organized**;
 - Dispatching answers **where and when the Lot is released for execution**;
 - Execution records **what actually happened**.
+
+Whether Balancing may supply simultaneous planned Lots without identifying a Resource remains TBD in [DQ-WF001-001-PARALLEL-SCHEDULE](../domain-questions/DQ-WF001-001-PARALLEL-SCHEDULE.md). The existence of five Resources does not authorize five machine lanes in WF-001.
 
 ---
 

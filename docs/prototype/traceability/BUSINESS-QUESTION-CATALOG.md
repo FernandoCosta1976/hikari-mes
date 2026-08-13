@@ -26,3 +26,9 @@ The HIKARI experience architecture is question-driven.
 ## Rule
 
 UI titles may use concise labels, but the dominant business question must remain explicit in experience specifications and traceability.
+
+## Open domain-question traceability
+
+| Domain Question | Related Business Questions | Status | Constraint |
+|---|---|---|---|
+| [DQ-WF001-001-PARALLEL-SCHEDULE](../domain-questions/DQ-WF001-001-PARALLEL-SCHEDULE.md) | BQ-001, BQ-003, BQ-004, BQ-005 | TBD | Production Schedule does not imply Resource Assignment; DC01–DC05 must not be inferred as WF-001 lanes. |

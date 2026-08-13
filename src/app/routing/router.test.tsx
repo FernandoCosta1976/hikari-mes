@@ -7,7 +7,7 @@ test('renders the authorized production scheduling placeholder', async () => {
   await router.navigate('/demo/fundicao-dc/production-scheduling');
   renderWithFoundation(<RouterProvider router={router} />);
   expect(await screen.findByRole('heading', { name: 'O que precisamos produzir?' })).toBeInTheDocument();
-  expect(screen.getByText('Cenário demonstrativo')).toBeInTheDocument();
+  expect(screen.getAllByText('Cenário demonstrativo').length).toBeGreaterThan(0);
   await waitFor(() => expect(document.querySelector('main')).toBeInTheDocument());
 });
 

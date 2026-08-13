@@ -3,7 +3,7 @@ import { useParams } from 'react-router';
 import { DemoShell } from '../shell/DemoShell';
 import { scenarioDefinitionAdapter } from '../../demo/adapters/scenarioDefinitionAdapter';
 import { selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
-import { ProductionSchedulingPlaceholder } from '../../features/production-scheduling/ProductionSchedulingPlaceholder';
+import { ProductionSchedulingPage } from '../../features/production-scheduling/ProductionSchedulingPage';
 import { RouteMessage } from '../../shared/ui/RouteMessage/RouteMessage';
 
 export function DemoRouteBoundary() {
@@ -24,5 +24,5 @@ export function DemoRouteBoundary() {
     return <DemoShell><RouteMessage title="Experiência não disponível" detail="Esta experiência ainda não foi autorizada para implementação." /></DemoShell>;
   }
 
-  return <DemoShell><ProductionSchedulingPlaceholder /></DemoShell>;
+  return <DemoShell><ProductionSchedulingPage /></DemoShell>;
 }

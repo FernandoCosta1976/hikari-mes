@@ -7,10 +7,11 @@
   --color-neutral-900: #111827;
   --color-brand-deep: #081426;
   --color-brand-primary: #0759c7;
-  --color-brand-accent: #e10086;
+  --color-brand-accent: #bd006f;
+  --color-brand-accent-on-dark: #f23aa3;
   --color-informational: #1769d2;
-  --color-positive: #168451;
-  --color-attention: #c96b00;
+  --color-positive: #0b6b3d;
+  --color-attention: #8a4a00;
   --color-unavailable: #596579;
   --color-background: var(--color-neutral-50);
   --color-surface: var(--color-neutral-0);

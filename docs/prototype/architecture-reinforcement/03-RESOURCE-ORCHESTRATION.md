@@ -33,6 +33,10 @@ Foundry Supervisor and Production Leader.
 
 Balancing provides the short-term baseline at Work Center/line level. HIKARI adapts the baseline to shop-floor reality; it does not replace Balancing.
 
+For Fundição DC, the confirmed physical Resources are **DC01, DC02, DC03, DC04 and DC05**. Balancing does not assign these Resources to Lots in the currently known scenario. Foundry Supervisor and Production Leader later transform the Scheduled Requirement into an Operational Resource Assignment and Dispatched Sequence.
+
+The possible existence and business meaning of parallel planned sequences remains [TBD](../domain-questions/DQ-WF001-001-PARALLEL-SCHEDULE.md). “Schedule Stream” is only a provisional discussion label and is not introduced as a canonical capability or term.
+
 ## 6. Decision sequence
 
 For each Lot/Operation:

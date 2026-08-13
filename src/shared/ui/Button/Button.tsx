@@ -1,6 +1,6 @@
-import type { ButtonHTMLAttributes } from 'react';
+import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import styles from './Button.module.css';
 
-export function Button(props: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button type="button" className={styles.button} {...props} />;
-}
+export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement>>(function Button(props, ref) {
+  return <button ref={ref} type="button" className={styles.button} {...props} />;
+});

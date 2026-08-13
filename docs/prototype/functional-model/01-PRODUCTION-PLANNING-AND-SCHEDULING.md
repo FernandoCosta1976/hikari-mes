@@ -26,6 +26,8 @@ For the prototype, the schedule contains sufficient information to identify:
 
 Balancing already provides start and finish times. HIKARI shall not claim to calculate the original Hour-by-Hour Plan.
 
+The schedule does not imply specific Resource assignment. Fundição DC contains Resources DC01–DC05, but whether Balancing may provide simultaneous planned Lots without distinguishing Resources or another planning context remains [TBD](../domain-questions/DQ-WF001-001-PARALLEL-SCHEDULE.md).
+
 ### PyMAC/MRP
 
 PyMAC provides Production Orders and material-requirement planning context.
@@ -167,6 +169,8 @@ WF-001 shall not become:
 - architecture diagram;
 - MES catalog screen;
 - technical integration monitor.
+
+Until the parallelism question is validated, WF-001 shall not infer `DC01`–`DC05` as timeline lanes. Its current single-lane scenario is demonstrative and does not establish the universal cardinality of the received schedule.
 
 ## 10. Prototype scenarios
 

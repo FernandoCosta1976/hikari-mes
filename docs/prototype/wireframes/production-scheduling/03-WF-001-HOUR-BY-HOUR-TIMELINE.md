@@ -34,6 +34,8 @@ Do not create machine lanes before Resource assignment.
 
 Specific Resources belong to later Dispatching.
 
+Fundição DC has five confirmed Resources (`DC01`–`DC05`), but their existence does not authorize five lanes. Whether the received schedule can contain parallel planning sequences is [TBD](../../domain-questions/DQ-WF001-001-PARALLEL-SCHEDULE.md); the current single lane is a demonstrative scenario, not a final rule for all Balancing schedules.
+
 ## 4. Lot blocks
 
 Lot blocks are ordered according to the Scheduled Sequence received from Balancing.
@@ -92,7 +94,7 @@ It shall not automatically be labeled loss, downtime or inefficiency.
 
 If a demonstrative schedule contains overlap, the visualization must represent it without automatically declaring invalidity.
 
-The domain rule governing overlap is not defined here.
+The domain rule governing overlap is not defined here and is governed as an open question in [DQ-WF001-001-PARALLEL-SCHEDULE](../../domain-questions/DQ-WF001-001-PARALLEL-SCHEDULE.md).
 
 ## 12. Selection
 

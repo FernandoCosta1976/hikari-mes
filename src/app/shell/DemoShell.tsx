@@ -38,7 +38,7 @@ export function DemoShell({ children }: { children: ReactNode }) {
         </aside>
       ) : null}
       <main className={styles.main}>{children}</main>
-      <footer className={styles.footer}>HIKARI MES · Fundação do protótipo navegável</footer>
+      <footer className={styles.footer}>HIKARI MES · Protótipo Navegável Executivo · Cenário demonstrativo</footer>
     </div>
   );
 }

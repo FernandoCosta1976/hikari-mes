@@ -1,4 +1,0 @@
-.heading { max-width: 58rem; }
-.heading h1 { margin: var(--space-2) 0 var(--space-3); font-size: clamp(2rem, 4vw, 3.75rem); line-height: 1.05; letter-spacing: -.035em; }
-.heading p { color: var(--color-text-muted); font-size: 1.05rem; }
-.eyebrow { color: var(--color-brand-primary); font-size: .8rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
