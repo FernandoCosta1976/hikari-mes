@@ -1,6 +1,7 @@
 import { reconcileProductionOrder } from '../../domain/production-scheduling/calculations';
 import type { DemandDestination, Lot, ProductionSchedulingDefinition } from '../../domain/production-scheduling/models';
 import type { Wf001ScenarioId } from '../../demo/scenario-engine/scenarioStore';
+import type { MaterialResourceEligibilityProjection } from '../../domain/material-resource-eligibility/models';
 
 export const destinationLabels: Record<DemandDestination, string> = {
   ASSEMBLY: 'Montagem',
@@ -49,6 +50,13 @@ export function buildProductionSchedulingViewModel(
 
 export function materialFor(definition: ProductionSchedulingDefinition, lot: Lot) {
   return definition.materials.find((material) => material.id === lot.materialId)!;
+}
+
+export function eligibilityForMaterial(
+  projections: readonly MaterialResourceEligibilityProjection[],
+  materialId: string,
+) {
+  return projections.find((projection) => projection.materialId === materialId);
 }
 
 export function formatDate(value: string) {

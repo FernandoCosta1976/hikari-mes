@@ -186,3 +186,11 @@ The Product Owner should verify visually:
 The duplicate temporal representation was removed while preserving the confirmed physical Resource context and the WF-001 boundary. Technical, visual, responsive and accessibility gates passed. Final visual approval remains with the Product Owner.
 
 WF-001 RESOURCE LANDSCAPE COMPACTION PASSED — READY FOR PRODUCT REVIEW
+
+## Final integrated freeze reference — 2026-08-14
+
+The compact physical Resource landscape was the approved predecessor of the contextual **Agora na Fundição** projection. This report remains historical evidence; the final integrated baseline is:
+
+`docs/prototype/assets/wireframes/production-scheduling/WF-001-PRODUCTION-SCHEDULING-INTEGRATED-V1.0-APPROVED.png`
+
+The final approval record preserves Work Center ≠ Resource, Current Resource State ≠ Resource Availability and the absence of Resource Assignment.

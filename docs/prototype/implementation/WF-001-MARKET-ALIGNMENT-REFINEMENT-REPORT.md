@@ -192,3 +192,11 @@ O Product Owner deve observar visualmente:
 Os sete princípios foram implementados dentro da fronteira do WF-001; os gates técnicos e visuais passaram; não houve antecipação de Dispatching, Resource Assignment, WF-002 ou decisão MES TBD. A decisão seguinte é exclusivamente de produto sobre a candidata visual.
 
 WF-001 MARKET REFINEMENT PASSED — READY FOR PRODUCT REVIEW
+
+## Final integrated freeze reference — 2026-08-14
+
+This market-alignment refinement remains historical evidence. Its approved result was subsequently incorporated into the final integrated WF-001 baseline:
+
+`docs/prototype/assets/wireframes/production-scheduling/WF-001-PRODUCTION-SCHEDULING-INTEGRATED-V1.0-APPROVED.png`
+
+Final approval is governed by `docs/prototype/governance/WF-001-APPROVAL-RECORD.md`. No historical candidate or assessment in this report is rewritten or superseded as evidence.

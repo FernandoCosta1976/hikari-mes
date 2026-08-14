@@ -1,7 +1,8 @@
-import { fundicaoDcScenario } from '../scenarios/fundicaoDcScenario';
+import { scenarioDefinitionAdapter } from '../adapters/scenarioDefinitionAdapter';
 import { useScenarioStore } from './scenarioStore';
 
 test('initializes and atomically resets the scenario', () => {
+  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
   useScenarioStore.getState().initializeScenario(fundicaoDcScenario);
   expect(useScenarioStore.getState().definition?.id).toBe('fundicao-dc');
   expect(useScenarioStore.getState().initialized).toBe(true);

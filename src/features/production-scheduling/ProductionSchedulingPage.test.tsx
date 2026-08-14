@@ -1,12 +1,13 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, test } from 'vitest';
-import { fundicaoDcScenario } from '../../demo/scenarios/fundicaoDcScenario';
+import { scenarioDefinitionAdapter } from '../../demo/adapters/scenarioDefinitionAdapter';
 import { useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { renderWithFoundation } from '../../test/renderWithFoundation';
 import { ProductionSchedulingPage } from './ProductionSchedulingPage';
 
 beforeEach(() => {
+  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
   useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false });
   useScenarioStore.getState().initializeScenario(fundicaoDcScenario);
   useScenarioStore.getState().resetScenario();
@@ -32,6 +33,31 @@ test('selects a Lot, opens accessible detail and closes it', async () => {
   await user.keyboard('{Escape}');
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   await waitFor(() => expect(screen.getByRole('button', { name: /Lote 252, Material A, 100 peças/ })).toHaveFocus());
+});
+
+test('changes the read-only Eligible Resources with the selected Material without assigning a Resource', async () => {
+  const user = userEvent.setup();
+  renderWithFoundation(<ProductionSchedulingPage />);
+
+  await user.click(screen.getByRole('button', { name: /Lote 251, Material A, 100 peças/ }));
+  let detail = screen.getByRole('dialog', { name: 'Lote 251' });
+  let eligible = within(detail).getByRole('list', { name: 'Máquinas elegíveis para Material A: DC01, DC03, DC05' });
+  expect(within(eligible).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['DC01', 'DC03', 'DC05']);
+  expect(within(eligible).queryByRole('button')).not.toBeInTheDocument();
+  expect(detail).toHaveTextContent('Recurso atribuídoAinda não atribuído');
+  expect(detail).toHaveTextContent('Elegível não significa disponível ou selecionado.');
+  await user.click(within(detail).getByRole('button', { name: 'Fechar detalhe do Lote' }));
+
+  await user.click(screen.getByRole('button', { name: /Lote 254, Material B, 100 peças/ }));
+  detail = screen.getByRole('dialog', { name: 'Lote 254' });
+  eligible = within(detail).getByRole('list', { name: 'Máquinas elegíveis para Material B: DC02, DC03, DC05' });
+  expect(within(eligible).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['DC02', 'DC03', 'DC05']);
+  expect(detail).not.toHaveTextContent('Máquinas disponíveis');
+  expect(detail).not.toHaveTextContent('Máquina recomendada');
+  expect(detail).not.toHaveTextContent('Ranking');
+
+  const currentState = screen.getByRole('region', { name: 'Agora na Fundição' });
+  expect(currentState).not.toHaveTextContent('Máquinas elegíveis');
 });
 
 test('makes reservation, projected coverage, material attention and selected-Lot scenarios explicit', async () => {

@@ -59,6 +59,10 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
 export const selectScenarioDefinition = (state: ScenarioStore) => state.definition;
 export const selectScenarioInitialized = (state: ScenarioStore) => state.initialized;
 export const selectProductionScheduling = (state: ScenarioStore) => state.productionScheduling;
+const emptyCurrentResourceStates: ScenarioDefinition['currentResourceStates'] = [];
+export const selectCurrentResourceStates = (state: ScenarioStore) => state.definition?.currentResourceStates ?? emptyCurrentResourceStates;
+const emptyMaterialResourceEligibilities: ScenarioDefinition['materialResourceEligibilities'] = [];
+export const selectMaterialResourceEligibilities = (state: ScenarioStore) => state.definition?.materialResourceEligibilities ?? emptyMaterialResourceEligibilities;
 export const selectScheduleControls = (state: ScenarioStore) => ({
   selectedDateOffset: state.selectedDateOffset,
   selectedDestination: state.selectedDestination,

@@ -1,5 +1,7 @@
-import type { ScenarioDefinition } from '../../domain/scenario/ScenarioDefinition';
 import type { Lot } from '../../domain/production-scheduling/models';
+import type { ScenarioDefinition } from '../../domain/scenario/ScenarioDefinition';
+
+type BaseScenarioDefinition = Omit<ScenarioDefinition, 'currentResourceStates' | 'materialResourceEligibilities'>;
 
 const workCenter = { id: 'wc-foundry-dc-casting', name: 'Fundição DC (Vazamento)', areaLabel: 'Fundição DC' } as const;
 const materials = [
@@ -59,4 +61,4 @@ export const fundicaoDcScenario = {
       { source: 'PyMAC', businessDate: '2025-05-15', receivedAt: '2025-05-15T05:51:00-03:00', state: 'CURRENT' },
     ],
   },
-} as const satisfies ScenarioDefinition;
+} as const satisfies BaseScenarioDefinition;

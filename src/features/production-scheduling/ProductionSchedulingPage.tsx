@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApplicationContext } from '../../app/providers/ApplicationContext';
-import { selectProductionScheduling, useScenarioStore, type Wf001ScenarioId } from '../../demo/scenario-engine/scenarioStore';
+import { selectCurrentResourceStates, selectMaterialResourceEligibilities, selectProductionScheduling, useScenarioStore, type Wf001ScenarioId } from '../../demo/scenario-engine/scenarioStore';
 import type { DemandDestination, Lot } from '../../domain/production-scheduling/models';
 import { Badge } from '../../shared/ui/Badge/Badge';
 import { Button } from '../../shared/ui/Button/Button';
@@ -14,11 +14,13 @@ import { ScheduleSummary } from './components/ScheduleSummary';
 import { ScheduleRevisionSummary } from './components/ScheduleRevisionSummary';
 import { QuickAttentionSummary } from './components/QuickAttentionSummary';
 import { FoundryResourceLandscape } from './components/FoundryResourceLandscape';
-import { buildProductionSchedulingViewModel, destinationLabels, formatDate, scenarioLabels } from './productionSchedulingViewModel';
+import { buildProductionSchedulingViewModel, destinationLabels, eligibilityForMaterial, formatDate, scenarioLabels } from './productionSchedulingViewModel';
 import styles from './ProductionSchedulingPage.module.css';
 
 export function ProductionSchedulingPage() {
   const definition = useScenarioStore(selectProductionScheduling);
+  const currentResourceStates = useScenarioStore(selectCurrentResourceStates);
+  const materialResourceEligibilities = useScenarioStore(selectMaterialResourceEligibilities);
   const selectedDateOffset = useScenarioStore((state) => state.selectedDateOffset);
   const selectedDestination = useScenarioStore((state) => state.selectedDestination);
   const activeScheduleVersionId = useScenarioStore((state) => state.activeScheduleVersionId);
@@ -47,6 +49,7 @@ export function ProductionSchedulingPage() {
   const previousSchedule = definition.schedules.find((item) => item.id === 'schedule-2025-05-15-v07')!;
   const previousLots = previousSchedule.lotIds.map((id) => definition.lots.find((lot) => lot.id === id)!).filter(Boolean);
   const selectedMaterial = selectedLot ? definition.materials.find((item) => item.id === selectedLot.materialId)! : null;
+  const selectedEligibility = selectedMaterial ? eligibilityForMaterial(materialResourceEligibilities, selectedMaterial.id) : undefined;
   const selectedOrder = selectedLot ? definition.productionOrders.find((item) => item.id === selectedLot.productionOrderId)! : null;
   const stale = view.freshness.some((item) => item.state === 'STALE');
   const closeLotDetail = () => {
@@ -89,10 +92,10 @@ export function ProductionSchedulingPage() {
 
       <div className={styles.timelineLayout} data-detail-open={selectedLot ? 'true' : 'false'}>
         <HourByHourSchedule lots={view.lots} materials={definition.materials} workCenter={workCenter} selectedLotId={selectedLot?.id ?? null} onSelectLot={setSelectedLot} />
-        {selectedLot && selectedMaterial && selectedOrder ? <LotDetail lot={selectedLot} material={selectedMaterial} order={selectedOrder} workCenter={workCenter} onClose={closeLotDetail} /> : null}
+        {selectedLot && selectedMaterial && selectedOrder && selectedEligibility ? <LotDetail lot={selectedLot} material={selectedMaterial} eligibility={selectedEligibility} order={selectedOrder} workCenter={workCenter} onClose={closeLotDetail} /> : null}
       </div>
 
-      <FoundryResourceLandscape />
+      <FoundryResourceLandscape items={currentResourceStates} />
 
       <ProductionOrderCorrelation items={view.orders} lots={view.scheduledLots} materials={definition.materials} />
       <div className={styles.lowerGrid}><BufferCoverageSummary positions={definition.bufferPositions} materials={definition.materials} /><OperationalAttentionSummary lots={view.scheduledLots} materials={definition.materials} /></div>

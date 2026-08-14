@@ -155,3 +155,15 @@ No dependencies were added. Timeline, detail and summarized coverage use the app
 WF-001 was approved by the Product Owner and frozen on 2026-08-13. The official record is `docs/prototype/governance/WF-001-APPROVAL-RECORD.md`; the approved implementation baseline is `docs/prototype/assets/wireframes/production-scheduling/WF-001-PRODUCTION-SCHEDULING-IMPLEMENTATION-V1.0-APPROVED.png`.
 
 The next authorizable activity is **WF-002 — Production Readiness conceptual design**, under the dominant question “Temos condições de produzir?”. No WF-002 or WF-003 implementation is authorized by this status change.
+
+## Final integrated freeze — 2026-08-14
+
+The Product Owner and Chief Architect approved and froze the integrated WF-001 experience, including contextual read-only Current Resource State and contextual read-only Material × Resource Eligibility in Lot Detail.
+
+- Final integrated approved baseline: `docs/prototype/assets/wireframes/production-scheduling/WF-001-PRODUCTION-SCHEDULING-INTEGRATED-V1.0-APPROVED.png`.
+- SHA-256: `33e3dea1e80c8207fee9350b14671b39cb26d572f7e9eddb6fac26a973b98b6c`.
+- Approval record: `docs/prototype/governance/WF-001-APPROVAL-RECORD.md`.
+- Current Resource State implementation report: `docs/prototype/implementation/WF-001-CURRENT-RESOURCE-STATE-IMPLEMENTATION-REPORT.md`.
+- Eligibility implementation report: `docs/prototype/implementation/WF-001-MATERIAL-RESOURCE-ELIGIBILITY-IMPLEMENTATION-REPORT.md`.
+
+The final baseline preserves Resource Assignment as not implemented and leaves WF-002/WF-003 outside implementation scope.
