@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLiveScenarioTime } from '../../app/clock/applicationClock';
+import { withBase } from '../../app/routing/basePath';
 import { useWorkspaceSidebar } from '../../app/providers/WorkspaceSidebarContext';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { selectMaterialResourceEligibilities, selectOrganizationsByLotId, selectProductionReadiness, selectProductionScheduling, selectScenarioDefinition, useScenarioStore, type ScheduleView, type Wf001ScenarioId } from '../../demo/scenario-engine/scenarioStore';
@@ -128,7 +129,7 @@ export function ProductionSchedulingPage() {
   };
   const openReadiness = (origin: 'LOT_CONTEXT' | 'EXCEPTION_SUMMARY', lotId: string | null) => {
     preserveJourneyContext({ origin, selectedLotId: lotId, timelineScrollLeft: document.querySelector<HTMLElement>('[data-testid="timeline-scroller"]')?.scrollLeft ?? 0, pageScrollY: window.scrollY, sidebarExpanded });
-    const target = `/demo/fundicao-dc/production-readiness${lotId ? `?lotId=${lotId}` : ''}`;
+    const target = withBase(`/demo/fundicao-dc/production-readiness${lotId ? `?lotId=${lotId}` : ''}`);
     window.history.pushState(null, '', target);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };

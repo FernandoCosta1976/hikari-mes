@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLiveScenarioTime } from '../../app/clock/applicationClock';
+import { withBase } from '../../app/routing/basePath';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcOeeSummary, computeFundicaoDcShiftOeeSummaries, type FundicaoDcOeeRow } from '../../demo/adapters/oeeSummaryAdapter';
 import { fundicaoDcProductionEventsFixture } from '../../demo/fixtures/fundicaoDcProductionEvents';
@@ -155,7 +156,7 @@ export function OeePage() {
           <div className={styles.closing}><div><b>Plano</b><i>→</i><b>Execução</b><i>→</i><b>Eventos</b><i>→</i><b>Perdas</b><i>→</i><b>Qualidade</b><i>→</i><strong>Indicador explicável</strong></div></div>
         </div>
       </details>
-      <a className={styles.backLink} href="/demo/fundicao-dc">← Voltar à Visão Executiva</a>
+      <a className={styles.backLink} href={withBase('/demo/fundicao-dc')}>← Voltar à Visão Executiva</a>
     </div>
     {focus ? <FocusDialog focus={focus} rows={rows} currentTime={currentTime} onClose={() => setFocus(null)} /> : null}
   </OperationalWorkspace>;
