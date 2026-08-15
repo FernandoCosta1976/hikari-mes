@@ -1,11 +1,18 @@
 import { RouterProvider } from 'react-router';
-import { screen, waitFor } from '@testing-library/react';
-import { renderWithFoundation } from '../../test/renderWithFoundation';
+import { render, screen, waitFor } from '@testing-library/react';
+import { FoundationProviders } from '../../test/renderWithFoundation';
 import { router } from './router';
+
+test('redirects the root to the Executive Home', async () => {
+  await router.navigate('/');
+  render(<FoundationProviders><RouterProvider router={router} /></FoundationProviders>);
+  expect(await screen.findByRole('heading', { name: 'PROGRAMA HIKARI' })).toBeInTheDocument();
+  expect(router.state.location.pathname).toBe('/demo/fundicao-dc');
+});
 
 test('renders the authorized production scheduling placeholder', async () => {
   await router.navigate('/demo/fundicao-dc/production-scheduling');
-  renderWithFoundation(<RouterProvider router={router} />);
+  render(<FoundationProviders><RouterProvider router={router} /></FoundationProviders>);
   expect(await screen.findByRole('heading', { name: 'O que precisamos produzir?' })).toBeInTheDocument();
   expect(screen.getAllByText('Cenário demonstrativo').length).toBeGreaterThan(0);
   await waitFor(() => expect(document.querySelector('main')).toBeInTheDocument());
@@ -13,6 +20,6 @@ test('renders the authorized production scheduling placeholder', async () => {
 
 test('handles an unknown scenario', async () => {
   await router.navigate('/demo/inexistente/production-scheduling');
-  renderWithFoundation(<RouterProvider router={router} />);
+  render(<FoundationProviders><RouterProvider router={router} /></FoundationProviders>);
   expect(await screen.findByRole('heading', { name: 'Cenário demonstrativo não encontrado' })).toBeInTheDocument();
 });

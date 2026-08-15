@@ -182,3 +182,19 @@ Its future input may include Scheduled Lots, Current Resource State, Resource El
 ## Freeze Rule
 
 Any change to the approved WF-001 functional semantics, hierarchy, interaction, demonstrative baseline data or visual composition requires an explicit Product Owner/Chief Architect decision and a reviewed replacement baseline. Defect corrections that change behavior, semantics or composition must return through the applicable governance gate.
+
+## Controlled Reopening — Scheduled Resource Lanes
+
+**Date:** 2026-08-14
+**Status:** PREVIOUS INTEGRATED BASELINE PRESERVED; NEW CANDIDATE AUTHORIZED
+
+The Product Owner explicitly superseded the earlier compact physical Resource-only boundary for WF-001. The new candidate represents Scheduled Resource as a dimension of the Hour-by-Hour Plan using DC01–DC05 lanes.
+
+The previous approved images and historical decisions remain preserved. The new candidate is not approved or frozen until Product Owner review.
+
+Mandatory boundary:
+
+- Scheduled Resource ≠ Dispatched Resource ≠ Actual Resource;
+- Eligibility ≠ Availability;
+- no Dispatch, Release, Execution, Resource Availability or machine-selection action;
+- Scheduled Resource source remains BUSINESS VALIDATION REQUIRED.

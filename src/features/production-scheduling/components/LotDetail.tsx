@@ -1,47 +1,67 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Lot, Material, ProductionOrder, WorkCenter } from '../../../domain/production-scheduling/models';
+import { createPortal } from 'react-dom';
+import type { BufferPosition, Lot, Material, ProductionOrder, WorkCenter } from '../../../domain/production-scheduling/models';
+import type { FoundryResourceId } from '../../../domain/resource/models';
+import { BUFFER_CRITICAL_CONTRIBUTION_DAYS, BUFFER_CRITICAL_LOT_ID } from './BufferDecisionSupport';
 import type { MaterialResourceEligibilityProjection } from '../../../domain/material-resource-eligibility/models';
+import type { LotReadinessAssessment, ReadinessStatus } from '../../../domain/production-readiness/models';
+import { dominantReadinessCondition } from '../../../domain/production-readiness/presentation';
 import { Badge } from '../../../shared/ui/Badge/Badge';
 import { Button } from '../../../shared/ui/Button/Button';
+import { ResourceConditionGroups } from '../../../shared/operational/ResourceConditionGroups';
 import { destinationLabels, formatTime } from '../productionSchedulingViewModel';
 import styles from '../ProductionSchedulingPage.module.css';
+import type { ProductionReleaseRecord } from '../../../domain/production-release/models';
+import type { ProductionExecutionRecord } from '../../../domain/production-execution/models';
 
-export function LotDetail({ lot, material, eligibility, order, workCenter, onClose }: { lot: Lot; material: Material; eligibility: MaterialResourceEligibilityProjection; order: ProductionOrder; workCenter: WorkCenter; onClose: () => void }) {
+export type ModalSection = 'OVERVIEW' | 'READINESS' | 'RELEASE' | 'EXECUTION' | 'RESOURCES' | 'CONTEXT';
+const statusLabels: Record<ReadinessStatus, string> = { READY: 'Condições atendidas', ATTENTION: 'Atenção', BLOCKED: 'Condição impeditiva', UNKNOWN: 'Informação insuficiente' };
+const statusTones: Record<ReadinessStatus, 'positive' | 'attention' | 'unavailable' | 'neutral'> = { READY: 'positive', ATTENTION: 'attention', BLOCKED: 'unavailable', UNKNOWN: 'neutral' };
+
+export function LotDetail({ lot, material, eligibility, readiness, release, execution, order, workCenter, shiftName, scheduleVersion, receivedAt, bufferPosition, simulatedResourceId, operationalResourceId, initialSection = 'OVERVIEW', onClose, onAnalyzeReadiness, onRelease, onStartExecution, onSectionChange }: { lot: Lot; material: Material; eligibility: MaterialResourceEligibilityProjection; readiness?: LotReadinessAssessment; release?: ProductionReleaseRecord; execution?: ProductionExecutionRecord; order: ProductionOrder; workCenter: WorkCenter; shiftName: string; scheduleVersion: string; receivedAt: string; bufferPosition?: BufferPosition; simulatedResourceId?: FoundryResourceId; operationalResourceId?: FoundryResourceId; initialSection?: ModalSection; onClose: () => void; onAnalyzeReadiness?: () => void; onRelease?: () => void; onStartExecution?: () => void; onSectionChange?: (section: ModalSection) => void }) {
   const closeButton = useRef<HTMLButtonElement>(null);
-  const [handoffReady, setHandoffReady] = useState(false);
+  const dialog = useRef<HTMLDivElement>(null);
+  const [section, setSectionState] = useState<ModalSection>(initialSection);
+  const setSection = (value: ModalSection) => { setSectionState(value); onSectionChange?.(value); };
+  const programmed = readiness?.resources.find((resource) => resource.resourceId === lot.scheduledResourceId);
+  const dominant = readiness ? dominantReadinessCondition(readiness, lot.scheduledResourceId) : undefined;
+
   useEffect(() => { closeButton.current?.focus(); }, [lot.id]);
+  useEffect(() => { onSectionChange?.(section); }, []); // eslint-disable-line react-hooks/exhaustive-deps -- announce the initial section once on mount only
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    const previousOverflow = document.body.style.overflow;
+    const applicationMain = document.querySelector('main');
+    document.body.style.overflow = 'hidden';
+    if (applicationMain instanceof HTMLElement) applicationMain.inert = true;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); onClose(); return; }
+      if (event.key !== 'Tab' || !dialog.current) return;
+      const focusable = [...dialog.current.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], select, [tabindex]:not([tabindex="-1"])')];
+      if (!focusable.length) return;
+      const first = focusable[0]; const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { document.body.style.overflow = previousOverflow; if (applicationMain instanceof HTMLElement) applicationMain.inert = false; window.removeEventListener('keydown', onKey); };
   }, [onClose]);
-  return (
-    <aside className={styles.detail} role="dialog" aria-modal="false" aria-labelledby="lot-detail-title">
-      <header><div><span className={styles.overline}>Detalhe contextual</span><h2 id="lot-detail-title">Lote {lot.lotNumber}</h2></div><Button ref={closeButton} aria-label="Fechar detalhe do Lote" onClick={onClose}>Fechar</Button></header>
-      <Badge tone="informational">Programado</Badge>
-      <dl>
-        <div><dt>Material</dt><dd>{material.name} ({material.code})</dd></div>
-        <div><dt>Quantidade</dt><dd>{lot.quantity} peças</dd></div>
-        <div><dt>Início previsto</dt><dd>{formatTime(lot.scheduledStart)}</dd></div>
-        <div><dt>Término previsto</dt><dd>{formatTime(lot.scheduledFinish)}</dd></div>
-        <div><dt>Centro de Trabalho</dt><dd>{workCenter.name}</dd></div>
-        <div><dt>Destino</dt><dd>{destinationLabels[lot.destination]}</dd></div>
-        <div><dt>Ordem de Produção</dt><dd>OP {order.orderNumber}</dd></div>
-        <div className={styles.eligibilityRow}>
-          <dt>Máquinas elegíveis</dt>
-          <dd>
-            <ul className={styles.eligibleResources} aria-label={`Máquinas elegíveis para ${material.name}: ${eligibility.eligibleResourceIds.join(', ')}`}>
-              {eligibility.eligibleResourceIds.map((resourceId) => <li key={resourceId}>{resourceId}</li>)}
-            </ul>
-            <small>Elegível não significa disponível ou selecionado.</small>
-          </dd>
-        </div>
-        <div><dt>Recurso atribuído</dt><dd>Ainda não atribuído</dd></div>
-        <div><dt>Conciliação</dt><dd>{order.correlatedLotIds.length} Lotes relacionados</dd></div>
-        <div><dt>Cobertura do buffer</dt><dd>2,4 → 3,1 dias (demonstrativo)</dd></div>
-        <div><dt>Matéria-prima</dt><dd>{lot.materialAttention ? 'Requer atenção na preparação' : 'Sem atenção conhecida'}</dd></div>
-      </dl>
-      <div className={styles.detailAction}><Button onClick={() => setHandoffReady(true)}>Avaliar preparação</Button><small>{handoffReady ? 'Contexto preparado para a futura Preparação para Produção. Nenhuma liberação foi realizada.' : 'Prepara a transição futura; não libera nem inicia produção.'}</small></div>
-    </aside>
-  );
+
+  const tabs: readonly [ModalSection, string][] = [['OVERVIEW', 'Visão geral'], ['READINESS', 'Preparação'], ['RELEASE', 'Liberação'], ['EXECUTION', 'Execução'], ['RESOURCES', 'Recursos'], ['CONTEXT', 'Contexto']];
+  return createPortal(<div className={styles.lotModalLayer}>
+    <button className={styles.lotModalBackdrop} aria-label="Fechar contexto ao clicar fora" onClick={onClose} />
+    <div ref={dialog} className={styles.lotModal} role="dialog" aria-modal="true" aria-labelledby="lot-detail-title" aria-describedby="lot-detail-description">
+      <header className={styles.lotModalHeader}><div><span className={styles.overline}>Contexto do Lot</span><div className={styles.lotTitleLine}><h2 id="lot-detail-title">Lote {lot.lotNumber}</h2>{readiness ? <Badge tone={statusTones[readiness.status]}>{statusLabels[readiness.status]}</Badge> : null}</div><p id="lot-detail-description">{material.name} · {lot.quantity} peças<br />{lot.scheduledResourceId} · {formatTime(lot.scheduledStart)}–{formatTime(lot.scheduledFinish)} · {shiftName}<br />{destinationLabels[lot.destination]} · OP {order.orderNumber}</p></div><Button ref={closeButton} aria-label="Fechar contexto do Lote" onClick={onClose}>×</Button></header>
+      {readiness && readiness.status !== 'READY' && dominant ? <section className={styles.dominantReason} data-status={readiness.status} aria-label={readiness.status === 'BLOCKED' ? 'Bloqueio principal' : 'Motivo principal'}><small>{readiness.status === 'BLOCKED' ? 'Bloqueio principal' : 'Motivo principal'}</small><strong>{dominant.label}</strong><span>{dominant.evidence}</span><em>Resultado demonstrativo · regra de agregação não governada</em></section> : null}
+      <nav className={styles.modalTabs} aria-label="Seções do contexto do Lot">{tabs.map(([value, label]) => <Button key={value} aria-pressed={section === value} onClick={() => setSection(value)}>{label}</Button>)}</nav>
+      <div className={styles.modalBody}>
+        {section === 'OVERVIEW' ? <section aria-labelledby="overview-title"><h3 id="overview-title">Visão geral</h3><dl className={styles.overviewGrid}><div><dt>Material</dt><dd>{material.name} ({material.code})</dd></div><div><dt>Quantidade</dt><dd>{lot.quantity} peças</dd></div><div><dt>Destino</dt><dd>{destinationLabels[lot.destination]}</dd></div><div><dt>Ordem de Produção</dt><dd>OP {order.orderNumber}</dd></div><div><dt>Programação</dt><dd>{formatTime(lot.scheduledStart)}–{formatTime(lot.scheduledFinish)}</dd></div><div><dt>Turno</dt><dd>{shiftName}</dd></div><div className={styles.programmedOverview}><dt>Máquina programada</dt><dd>{lot.scheduledResourceId}<small>Programada não significa atribuída ou confirmada.</small></dd></div><div><dt>Preparação</dt><dd>{readiness ? statusLabels[readiness.status] : 'Não avaliada'}<small>Resultado demonstrativo</small></dd></div></dl><div className={styles.essentialSignals}><span>Matéria-prima <b>{programmed?.conditions.find((item) => item.kind === 'MATERIAL')?.status ?? 'UNKNOWN'}</b></span><span>Elegibilidade <b>{programmed?.eligible ? 'OK' : 'NÃO ELEGÍVEL'}</b></span><span>Disponibilidade <b>{programmed?.conditions.find((item) => item.kind === 'AVAILABILITY')?.status ?? 'UNKNOWN'}</b></span><span>Setup <b>{programmed?.conditions.find((item) => item.kind === 'SETUP')?.status ?? 'UNKNOWN'}</b></span></div></section> : null}
+        {section === 'READINESS' ? <section aria-labelledby="readiness-title"><h3 id="readiness-title">Preparação da máquina programada</h3><p className={styles.sectionNote}>Evidências demonstrativas para {lot.scheduledResourceId}; não representam liberação para execução.</p><ul className={styles.modalConditions}>{programmed?.conditions.map((condition) => <li key={condition.kind} data-status={condition.status}><div><strong>{condition.label}</strong><span>{condition.evidence}</span></div><Badge tone={statusTones[condition.status]}>{statusLabels[condition.status]}</Badge></li>)}</ul></section> : null}
+        {section === 'RELEASE' ? <section aria-labelledby="release-title" className={styles.releaseSection}><h3 id="release-title">Liberação</h3><div className={styles.releaseFlow} aria-label="Sequência da decisão"><span>Plano recebido</span><i>→</i><span>Preparação</span><i>→</i><span>Organização</span><i>→</i><strong>Liberação</strong><i>→</i><span>Execução · futuro</span></div><p className={styles.sectionNote}>Decisão operacional demonstrativa. Ready não significa Organized; Organized não significa Released; Released não significa Started.</p><dl className={styles.contextGrid}><div><dt>Status de preparação</dt><dd>{readiness ? statusLabels[readiness.status] : 'Não avaliada'}</dd></div><div><dt>Status de organização</dt><dd>{operationalResourceId ?? lot.scheduledResourceId}<small>{operationalResourceId ? `Programado: ${lot.scheduledResourceId} · ` : ''}{formatTime(lot.scheduledStart)}–{formatTime(lot.scheduledFinish)}</small></dd></div><div><dt>Status de liberação</dt><dd>{release?.status === 'RELEASED' ? 'LIBERADO' : release?.status === 'READY_FOR_RELEASE' ? 'PRONTO PARA LIBERAR' : release?.status === 'BLOCKED_FOR_RELEASE' ? 'NÃO PODE SER LIBERADO' : release?.status === 'RELEASE_ATTENTION' ? 'REQUER REVISÃO' : 'NÃO LIBERADO'}</dd></div><div><dt>Schedule Version</dt><dd>{release?.scheduleVersionId ?? scheduleVersion}</dd></div><div><dt>Horário de liberação</dt><dd>{release?.releasedAt ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', hour12: false }).format(new Date(release.releasedAt)) : '—'}</dd></div><div><dt>Liberado por</dt><dd>{release?.releasedBy ?? '—'}<small>ReleasedBy não representa ExecutedBy.</small></dd></div></dl>{lot.id === BUFFER_CRITICAL_LOT_ID ? <div className={styles.releaseBuffer}><Badge tone="attention">Buffer-critical</Badge><span>Projeção atual: {bufferPosition?.projectedCoverageDays.toLocaleString('pt-BR') ?? '—'} dias</span><span>Meta demonstrativa: {bufferPosition?.targetCoverageDays.toLocaleString('pt-BR') ?? '—'} dias</span><small>Contexto informativo; não determina automaticamente a liberação.</small></div> : null}<div className={styles.releaseDecision} data-release-status={release?.status}><strong>{release?.reason ?? 'Sem avaliação de liberação.'}</strong><small>Regra demonstrativa · BUSINESS VALIDATION REQUIRED</small>{release?.status === 'READY_FOR_RELEASE' ? <Button onClick={onRelease}>Liberar para produção</Button> : null}{release?.status === 'RELEASED' ? <Badge tone="positive">Liberado</Badge> : null}</div></section> : null}
+        {section === 'EXECUTION' ? <section aria-labelledby="execution-title" className={styles.releaseSection}><h3 id="execution-title">Execução</h3><p className={styles.sectionNote}>Início explícito da produção demonstrativa. Released não significa Started; quantidade planejada não significa produzida.</p><dl className={styles.contextGrid}><div><dt>Estado</dt><dd>{execution?.status === 'IN_PROGRESS' ? 'EM PRODUÇÃO' : execution?.status === 'PAUSED' ? 'PAUSADA' : execution?.status === 'COMPLETED' ? 'CONCLUÍDA' : release?.status === 'RELEASED' ? 'LIBERADO PARA PRODUÇÃO' : 'NÃO INICIADA'}</dd></div><div><dt>Resource</dt><dd>{execution?.resourceId ?? operationalResourceId ?? lot.scheduledResourceId}</dd></div><div><dt>Planejado</dt><dd>{lot.quantity} peças</dd></div><div><dt>Produzido</dt><dd>{execution?.producedQuantity ?? 0} peças<small>Não significa bom, disponível ou aceito.</small></dd></div><div><dt>Scheduled Start</dt><dd>{formatTime(lot.scheduledStart)}</dd></div><div><dt>Actual Start</dt><dd>{execution?.actualStart ? formatTime(execution.actualStart) : '—'}</dd></div><div><dt>Production Order</dt><dd>OP {order.orderNumber}</dd></div><div><dt>Responsável</dt><dd>{execution?.executedBy ?? '—'}</dd></div></dl>{release?.status === 'RELEASED' && (!execution || execution.status === 'NOT_STARTED') ? <div className={styles.releaseDecision}><strong>Lot liberado e organizado em {release?.resourceId ?? operationalResourceId ?? lot.scheduledResourceId}.</strong><small>A ação registra Actual Start no Current Time demonstrativo.</small><Button onClick={onStartExecution}>Iniciar produção</Button></div> : null}{execution && execution.status !== 'NOT_STARTED' ? <div className={styles.releaseDecision} data-release-status="RELEASED"><strong>{execution.status === 'IN_PROGRESS' ? 'Produção em andamento' : execution.status === 'PAUSED' ? 'Execução pausada' : 'Execução concluída'}</strong><small>Ações operacionais detalhadas estão na perspectiva Execução.</small><a href="/demo/fundicao-dc/production-execution">Abrir Execução</a></div> : null}</section> : null}
+        {section === 'RESOURCES' ? <section aria-labelledby="resources-modal-title"><h3 id="resources-modal-title">Resumo de Resources por condição</h3>{readiness ? <ResourceConditionGroups resources={readiness.resources} programmedResourceId={lot.scheduledResourceId} /> : null}<p className={styles.sectionNote}>{eligibility.eligibleResourceIds.length} máquinas elegíveis no cadastro demonstrativo. O aprofundamento temporal permanece na perspectiva Preparação.</p></section> : null}
+        {section === 'CONTEXT' ? <section aria-labelledby="context-modal-title"><h3 id="context-modal-title">Contexto complementar</h3><dl className={styles.contextGrid}><div><dt>Centro de Trabalho</dt><dd>{workCenter.name}</dd></div><div><dt>Conciliação</dt><dd>{order.correlatedLotIds.length} Lots relacionados</dd></div><div><dt>Buffer</dt><dd>Atual {bufferPosition?.currentCoverageDays.toLocaleString('pt-BR') ?? '—'} · Meta {bufferPosition?.targetCoverageDays.toLocaleString('pt-BR') ?? '—'} · Baseline {bufferPosition?.projectedCoverageDays.toLocaleString('pt-BR') ?? '—'} · Simulada {bufferPosition?.projectedCoverageDays.toLocaleString('pt-BR') ?? '—'} dias<small>Contribuição: {lot.id === BUFFER_CRITICAL_LOT_ID ? `+${BUFFER_CRITICAL_CONTRIBUTION_DAYS.toLocaleString('pt-BR')} dia · BUFFER-CRITICAL` : 'não calculada para este Lot'}</small></dd></div><div><dt>Plano</dt><dd>Máquina programada {lot.scheduledResourceId}</dd></div><div><dt>Simulação</dt><dd>{simulatedResourceId ? `Máquina simulada ${simulatedResourceId}` : 'Sem movimentação simulada'}</dd></div><div><dt>Schedule Version</dt><dd>{scheduleVersion}</dd></div><div><dt>Fonte do plano</dt><dd>Balancing</dd></div><div><dt>Recebimento</dt><dd>{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', hour12: false }).format(new Date(receivedAt))}</dd></div></dl></section> : null}
+      </div>
+      <div className={styles.modalFooter}><div><strong>{readiness ? statusLabels[readiness.status] : 'Preparação não avaliada'}</strong><small>O modal permite investigar sem atribuir Resource.</small></div><Button onClick={onAnalyzeReadiness}>Analisar preparação</Button></div>
+    </div>
+  </div>, document.body);
 }

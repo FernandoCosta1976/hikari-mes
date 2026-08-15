@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import type { DataFreshness as DataFreshnessModel } from '../../../domain/production-scheduling/models';
-import { Badge } from '../../../shared/ui/Badge/Badge';
 import { Button } from '../../../shared/ui/Button/Button';
-import { formatDate, formatDateTime } from '../productionSchedulingViewModel';
+import { formatDate, formatDateTime, formatTime } from '../productionSchedulingViewModel';
 import styles from '../ProductionSchedulingPage.module.css';
 
 export function DataFreshness({ items }: { items: readonly DataFreshnessModel[] }) {
@@ -11,7 +10,7 @@ export function DataFreshness({ items }: { items: readonly DataFreshnessModel[] 
   return (
     <div className={styles.freshness}>
       <Button aria-expanded={open} aria-controls="freshness-detail" onClick={() => setOpen((value) => !value)}>
-        Atualização dos dados · <Badge tone={stale ? 'attention' : 'positive'}>{stale ? 'Defasados' : 'Atualizados'}</Badge>
+        ● {stale ? 'Defasado' : 'Atualizado'} · {formatTime(items[0].receivedAt)}
       </Button>
       {open ? (
         <section id="freshness-detail" className={styles.popover} aria-label="Detalhes da atualização dos dados">

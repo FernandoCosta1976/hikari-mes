@@ -1,0 +1,78 @@
+.page{padding:1.15rem 1.25rem 1.5rem;color:#101a33;background:#f5f7fb;min-height:calc(100vh - 2.5rem)}
+.hero{display:flex;justify-content:space-between;gap:1rem;align-items:center;margin-bottom:.65rem}
+.hero>div>span{color:#075dcc;font-weight:800;font-size:.72rem;text-transform:uppercase}
+.hero h1{font-size:1.72rem;margin:.2rem 0}
+.hero aside{border-left:3px solid #0569d8;background:#fff;padding:.5rem .9rem}
+.currentTimeTip{font-size:1.35rem;font-weight:800;color:#075dcc}
+.currentTimeTip b{font-size:1.35rem}
+
+.turnoRow{display:grid;grid-template-columns:1fr 13rem;gap:.5rem;margin-bottom:.55rem;align-items:stretch}
+.shiftHeadline{border:1px solid #c8d3e2;border-radius:.65rem;background:#fff;padding:.7rem .8rem .6rem;box-shadow:0 2px 10px rgba(7,93,204,.07);display:flex;flex-direction:column;gap:.5rem}
+.shiftBadge{display:flex;align-items:center;gap:.6rem}
+.shiftBadge span{font-size:.74rem;font-weight:900;letter-spacing:.02em;padding:.18rem .55rem;border-radius:.3rem;background:#eef3fa;color:#52617a}
+.shiftBadge span[data-status=IN_PROGRESS]{background:#e3f6ee;color:#0b6b3d}
+.shiftBadge em{font-style:normal;font-size:.68rem;color:#647089;font-weight:700}
+.mainBar{height:1.1rem;border-radius:.4rem}
+.summaryStrip{display:grid;grid-template-columns:repeat(4,1fr);gap:.45rem}
+.summaryStrip>div{display:flex;flex-direction:column;gap:.1rem;border:1px solid #c8d3e2;border-top:3px solid #17815d;border-radius:.4rem;background:#fff;padding:.4rem .6rem}
+.summaryStrip>div[data-state=attention]{border-top-color:#b56800}
+.summaryStrip span{font-size:.6rem;font-weight:800;color:#647089;text-transform:uppercase}
+.summaryStrip strong{font-size:1.2rem;color:#1c2942}
+.performanceBlock{border-top:1px dashed #d9e0eb;padding-top:.5rem;display:flex;flex-direction:column;gap:.3rem}
+.performanceBlock span{font-size:.6rem;font-weight:800;color:#647089;text-transform:uppercase}
+.performanceBlock small{font-size:.66rem;color:#526078}
+.dayTile{background:#fff;border:1px solid #d9e0eb;border-top:3px solid #647089;border-radius:.65rem;padding:.6rem .75rem;display:flex;flex-direction:column;gap:.3rem;justify-content:center}
+.dayTile span{font-size:.62rem;font-weight:800;color:#647089;text-transform:uppercase}
+.dayTile strong{font-size:1.7rem;color:#1c2942;line-height:1.1}
+.dayTile em{font-style:normal;font-size:.62rem;color:#65718a}
+
+.shiftHistory{background:#fff;border:1px solid #d9e0eb;border-radius:.5rem;padding:.5rem .7rem;margin-bottom:.55rem;display:flex;flex-direction:column;gap:.3rem}
+.shiftHistory>span{font-size:.6rem;font-weight:800;color:#647089;text-transform:uppercase}
+.shiftHistory>div{display:flex;flex-direction:column;gap:.35rem}
+.shiftHistoryRow{display:grid;grid-template-columns:4.5rem 10rem 1fr;align-items:center;gap:.6rem;font-size:.76rem}
+.shiftHistoryRow b{color:#1c2942}
+.shiftHistoryRow em{font-style:normal;color:#65718a;font-size:.68rem}
+.historyBar{max-width:12rem}
+
+.resources{background:#fff;border:1px solid #c9d3e2;border-radius:.55rem;overflow:hidden;margin-bottom:.55rem}
+.resources>header{padding:.5rem .75rem;border-bottom:1px solid #d9e0eb}
+.resources h2{font-size:1rem;margin:0}
+.resources header p{font-size:.72rem;margin:.1rem 0 0;color:#61708a}
+.machines{display:flex;flex-direction:column}
+.machineRow{display:grid;grid-template-columns:2rem 4.5rem 8rem 1fr auto;align-items:center;gap:.6rem;border:0;border-top:1px solid #e7ebf2;border-left:4px solid transparent;background:#fff;padding:.6rem .75rem;text-align:left;color:#17243d;font-size:.85rem;cursor:pointer}
+.machineRow[data-tone=attention]{border-left-color:#b56800;background:#fffaf0}
+.machineRow[data-tone=positive]{border-left-color:#17815d}
+.machineRow[data-tone=neutral]{border-left-color:#9aa5b8}
+.machineIcon{font-size:1.15rem;text-align:center}
+.machineId{font-weight:900;color:#075dcc;font-size:1rem}
+.machineRow[data-tone=neutral] .machineId{color:#5c6a82}
+.machineStatus{display:flex;flex-direction:column;line-height:1.2}
+.machineStatus small{font-size:.62rem;color:#65718a}
+.machineStatus strong{font-size:.82rem;color:#1c2942}
+.machineApq{font-size:.72rem;color:#61708a}
+.machineNote{font-style:normal;font-size:.72rem;font-weight:700;color:#8a5200;background:#fff1d6;padding:.15rem .5rem;border-radius:.3rem;white-space:nowrap}
+
+.disclosure{background:#fff;border:1px solid #c9d3e2;border-radius:.55rem;overflow:hidden}
+.disclosure summary{cursor:pointer;padding:.55rem .75rem;font-weight:800;font-size:.85rem;color:#075dcc;list-style:none;display:flex;align-items:center;gap:.5rem}
+.disclosure summary::-webkit-details-marker{display:none}
+.disclosure summary span{font-size:.6rem;font-weight:700;color:#647089;text-transform:uppercase}
+.disclosure[open] summary{border-bottom:1px solid #d9e0eb}
+.oeeChainWrap{padding:.5rem .75rem}
+
+.empty{margin:0;padding:.6rem .75rem;color:#61708a;font-size:.78rem}
+.modalLayer{position:fixed;inset:0;z-index:50;display:grid;place-items:center}
+.backdrop{position:absolute;inset:0;border:0;background:#0b183a99}
+.modal{position:relative;width:min(38rem,calc(100vw - 2rem));max-height:calc(100vh - 2rem);overflow:auto;background:#fff;border-radius:.65rem;padding:1rem;box-shadow:0 1rem 3rem #07132d55}
+.modal>header{display:flex;justify-content:space-between}
+.modal h2{margin:.15rem 0}
+.modal header small{color:#075dcc;font-weight:800}
+.modal dl{display:grid;grid-template-columns:repeat(2,1fr);gap:.45rem;margin-top:.5rem}
+.modal dl div{background:#f4f7fb;padding:.5rem}
+.modal dt{font-size:.65rem;color:#647089}
+.modal dd{margin:.12rem 0;font-weight:700}
+.modal section{border-top:1px solid #d8e0eb;margin-top:.7rem}
+.modal section p{font-size:.75rem}
+.modal>small{display:block;margin-top:.7rem;color:#667085}
+@media(max-width:1100px){.page{padding:.8rem}.hero h1{font-size:1.45rem}.turnoRow{grid-template-columns:1fr}.summaryStrip{grid-template-columns:repeat(2,1fr)}.shiftHistoryRow{grid-template-columns:4rem 8rem 1fr}.resources{overflow-x:auto}}
+@media(max-width:760px){.hero{align-items:flex-start;flex-direction:column}.hero aside{min-width:0;width:100%}.turnoRow{grid-template-columns:1fr}.summaryStrip{grid-template-columns:1fr}.machineRow{grid-template-columns:1fr}.shiftHistoryRow{grid-template-columns:1fr}.modal dl{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}

@@ -10,6 +10,8 @@ describe('materialResourceEligibilityAdapter', () => {
     ['material-a', ['DC01', 'DC03', 'DC05']],
     ['material-b', ['DC02', 'DC03', 'DC05']],
     ['material-c', ['DC01', 'DC04']],
+    ['material-d', ['DC02', 'DC05']],
+    ['material-e', ['DC04']],
   ])('maps the approved demonstrative Resources for %s', (materialId, expected) => {
     expect(resourcesFor(materialId)).toEqual(expected);
   });

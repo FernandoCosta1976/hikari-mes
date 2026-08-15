@@ -1,0 +1,6 @@
+.bar{position:relative;display:flex;height:.65rem;width:100%;background:#eef1f6;border-radius:.35rem;overflow:hidden}
+.fill{height:100%}
+.fill[data-tone=positive]{background:#17815d}
+.fill[data-tone=attention]{background:#b56800}
+.fill[data-tone=neutral]{background:#9aa5b8}
+.stacked .fill+.fill{border-left:1px solid #fff}

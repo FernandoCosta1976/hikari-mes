@@ -12,6 +12,34 @@ export interface WorkCenter {
   areaLabel: string;
 }
 
+export interface PlannedShiftBreak {
+  id: string;
+  name: 'Café 1' | 'Refeição' | 'Café 2';
+  startTime: string;
+  endTime: string;
+  demonstrative: true;
+}
+
+export interface Shift {
+  id: 'SHIFT_3' | 'SHIFT_1' | 'SHIFT_2';
+  name: 'Turno 3' | 'Turno 1' | 'Turno 2';
+  startTime: string;
+  endTime: string;
+  breaks: readonly PlannedShiftBreak[];
+  demonstrative: true;
+}
+
+export interface ScheduledSetup {
+  id: string;
+  resourceId: FoundryResourceId;
+  previousMaterialId: Material['id'];
+  nextMaterialId: Material['id'];
+  scheduledStart: string;
+  scheduledFinish: string;
+  durationMinutes: number;
+  demonstrative: true;
+}
+
 export interface Lot {
   id: string;
   lotNumber: string;
@@ -22,7 +50,7 @@ export interface Lot {
   workCenterId: WorkCenter['id'];
   destination: DemandDestination;
   productionOrderId: string;
-  resourceId: null;
+  scheduledResourceId: FoundryResourceId;
   materialAttention: boolean;
   state: 'SCHEDULED';
 }
@@ -84,4 +112,6 @@ export interface ProductionSchedulingDefinition {
   scheduleVersions: readonly ScheduleVersion[];
   bufferPositions: readonly BufferPosition[];
   freshness: readonly DataFreshness[];
+  shifts: readonly Shift[];
 }
+import type { FoundryResourceId } from '../resource/models';

@@ -1,7 +1,10 @@
 import { reconcileProductionOrder } from '../../domain/production-scheduling/calculations';
 import type { DemandDestination, Lot, ProductionSchedulingDefinition } from '../../domain/production-scheduling/models';
-import type { Wf001ScenarioId } from '../../demo/scenario-engine/scenarioStore';
+import type { ScheduleView, Wf001ScenarioId } from '../../demo/scenario-engine/scenarioStore';
 import type { MaterialResourceEligibilityProjection } from '../../domain/material-resource-eligibility/models';
+import { shiftWindow } from '../../domain/production-scheduling/shifts';
+import { deriveScheduledSetups } from '../../domain/production-scheduling/setups';
+import { productionSchedulingDemoConfiguration } from '../../demo/configuration/productionSchedulingDemoConfiguration';
 
 export const destinationLabels: Record<DemandDestination, string> = {
   ASSEMBLY: 'Montagem',
@@ -25,21 +28,33 @@ export function buildProductionSchedulingViewModel(
   dateOffset: number,
   destination: DemandDestination | 'ALL',
   scenarioId: Wf001ScenarioId,
+  scheduleView: ScheduleView,
 ) {
   const schedule = definition.schedules.find((item) => item.id === (dateOffset === 0 ? 'schedule-2025-05-15-v08' : `schedule-day-${dateOffset}`))!;
-  const scheduledLots = schedule.lotIds.map((id) => definition.lots.find((lot) => lot.id === id)!).filter(Boolean);
+  const allScheduledLots = schedule.lotIds.map((id) => definition.lots.find((lot) => lot.id === id)!).filter(Boolean);
+  const selectedShift = scheduleView === '24H' ? null : definition.shifts.find((shift) => shift.id === scheduleView)!;
+  const rangeStart = selectedShift ? shiftWindow(schedule.businessDate, selectedShift).start : `${schedule.businessDate}T00:00:00-03:00`;
+  const rangeFinish = selectedShift ? shiftWindow(schedule.businessDate, selectedShift).finish : new Date(Date.parse(rangeStart) + 24 * 60 * 60 * 1000).toISOString();
+  const scheduledLots = allScheduledLots.filter((lot) => Date.parse(lot.scheduledStart) >= Date.parse(rangeStart) && Date.parse(lot.scheduledFinish) <= Date.parse(rangeFinish));
+  const scheduledSetups = deriveScheduledSetups(allScheduledLots, productionSchedulingDemoConfiguration.setupDurationMinutes)
+    .filter((setup) => Date.parse(setup.scheduledStart) >= Date.parse(rangeStart) && Date.parse(setup.scheduledFinish) <= Date.parse(rangeFinish));
   const lots = scheduledLots.filter((lot) => destination === 'ALL' || lot.destination === destination);
   const orders = definition.productionOrders.map((order) => {
-    const adjusted = scenarioId === 'SCN-WF001-05' && order.id === 'po-4500123' ? { ...order, quantity: 340 } : order;
-    return { order: adjusted, reconciliation: reconcileProductionOrder(adjusted, scheduledLots) };
+    const adjusted = scenarioId === 'SCN-WF001-05' && order.id === definition.productionOrders[0]?.id ? { ...order, quantity: order.quantity + 40 } : order;
+    return { order: adjusted, reconciliation: reconcileProductionOrder(adjusted, allScheduledLots) };
   });
   const freshness = definition.freshness.map((item) => scenarioId === 'SCN-WF001-06' && item.source === 'Balancing'
     ? { ...item, businessDate: '2025-05-14', receivedAt: '2025-05-14T18:30:00-03:00', state: 'STALE' as const }
     : item);
   return {
     schedule,
+    rangeStart,
+    rangeFinish,
+    periodLabel: selectedShift?.name ?? 'Dia completo · 24h',
     lots,
     scheduledLots,
+    scheduledSetups,
+    allScheduledLots,
     orders,
     freshness,
     totalQuantity: scheduledLots.reduce((sum, lot) => sum + lot.quantity, 0),

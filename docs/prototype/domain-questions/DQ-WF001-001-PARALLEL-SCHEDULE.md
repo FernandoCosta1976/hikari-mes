@@ -1,7 +1,7 @@
 # DQ-WF001-001 — Fundição DC Parallel Schedule
 
 **ID:** DQ-WF001-001-PARALLEL-SCHEDULE
-**Status:** TBD
+**Status:** PARTIALLY CONFIRMED / BUSINESS VALIDATION REQUIRED
 **Date:** 2026-08-13
 **Scope:** WF-001 boundary, future WF-002 context and Resource Orchestration
 
@@ -19,10 +19,12 @@ Fundição DC is the Production Area/context for the current experience and cont
 - Balancing does not currently determine the specific Resource for each Lot.
 - Foundry Supervisor and Production Leader perform Resource Assignment later, considering governed eligibility and operational constraints.
 - Scheduled Sequence, Dispatched Sequence and Actual Sequence remain distinct.
+- Fundição DC can be represented operationally with parallel production across DC01–DC05 in the demonstrative WF-001 scenario.
+- The demonstrative machine-level schedule does not confirm the format or semantic owner of the information received from Balancing.
 
-## Open Question
+## Reformulated Open Question
 
-O Balancing pode fornecer para a Fundição DC dois ou mais Lots com intervalos planejados simultâneos, sem determinar previamente se serão executados em DC01, DC02, DC03, DC04 ou DC05?
+Qual formato e semântica de paralelismo o Balancing fornece para a Fundição DC, e essa informação inclui ou não o Scheduled Resource DC01–DC05?
 
 ## Why It Matters
 
@@ -46,7 +48,7 @@ Yamaha/Balancing uses another mechanism, to be documented only after validation.
 
 ## Impact on WF-001
 
-WF-001 continues to answer “O que precisamos produzir?” and represents Scheduled Sequence only. No code, fixture, timeline or lane change is authorized while this question remains TBD. The current single-lane demonstrative scenario remains valid as an example of Model A; compatibility with Model B without a future code change is unknown.
+WF-001 continues to answer “O que precisamos produzir?” and now represents a demonstrative five-lane Scheduled Resource plan. The lane decision is approved for prototype comprehension and does not claim that Balancing supplied the machine assignment. The external format/source semantics remain open under this question and DQ-WF001-003.
 
 ## Impact on WF-002
 
@@ -68,7 +70,7 @@ Business/Yamaha must validate whether parallel intervals are possible and, if so
 
 ## Non-Blocking Scope
 
-This question does not block WF-001 approval because its current demonstrative schedule has no overlaps and makes no Resource Assignment. It partially constrains WF-002 and Resource Orchestration design because their detailed handling of concurrent requirements must await the answer.
+This question does not block the demonstrative WF-001 because parallel machine-level Lots are explicitly classified as scenario data. It blocks claims about Balancing format and partially constrains productive WF-002/WF-003 sourcing and orchestration semantics.
 
 ## Related Documents
 

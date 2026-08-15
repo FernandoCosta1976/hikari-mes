@@ -1,44 +1,14 @@
-import { useState, type ReactNode } from 'react';
-import { useApplicationContext } from '../providers/ApplicationContext';
-import { useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
-import { Badge } from '../../shared/ui/Badge/Badge';
-import { Button } from '../../shared/ui/Button/Button';
-import { Stack } from '../../shared/ui/Stack/Stack';
+import { useRef, useState, type ReactNode } from 'react';
 import styles from './DemoShell.module.css';
+import { WorkspaceSidebarContext } from '../providers/WorkspaceSidebarContext';
 
 export function DemoShell({ children }: { children: ReactNode }) {
-  const [contextOpen, setContextOpen] = useState(false);
-  const { productiveArea, resetApplicationContext } = useApplicationContext();
-  const resetScenario = useScenarioStore((state) => state.resetScenario);
-
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const sidebarButton = useRef<HTMLButtonElement>(null);
   return (
-    <div className={styles.shell}>
-      <header className={styles.header}>
-        <a className={styles.brand} href="/demo/fundicao-dc/production-scheduling" aria-label="HIKARI MES — início demonstrativo">
-          <span>HIKARI</span><small>MES</small>
-        </a>
-        <nav aria-label="Navegação principal demonstrativa">
-          <a className={styles.activeNav} href="/demo/fundicao-dc/production-scheduling">Programação</a>
-        </nav>
-        <div className={styles.context}>
-          <Badge tone="informational">Cenário demonstrativo</Badge>
-          <Button onClick={() => setContextOpen((open) => !open)} aria-expanded={contextOpen}>Área: {productiveArea.label}</Button>
-        </div>
-      </header>
-      {contextOpen ? (
-        <aside className={styles.contextPanel} aria-label="Contexto da aplicação">
-          <Stack gap="small">
-            <strong>Área Produtiva</strong>
-            <span>{productiveArea.label}</span>
-            <div className={styles.actions}>
-              <Button onClick={resetApplicationContext}>Redefinir contexto</Button>
-              <Button onClick={resetScenario}>Reiniciar cenário</Button>
-            </div>
-          </Stack>
-        </aside>
-      ) : null}
+    <WorkspaceSidebarContext.Provider value={{ expanded: sidebarExpanded, setExpanded: setSidebarExpanded, toggleButtonRef: sidebarButton }}><div className={styles.shell}>
       <main className={styles.main}>{children}</main>
       <footer className={styles.footer}>HIKARI MES · Protótipo Navegável Executivo · Cenário demonstrativo</footer>
-    </div>
+    </div></WorkspaceSidebarContext.Provider>
   );
 }

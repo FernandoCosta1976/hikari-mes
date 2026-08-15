@@ -9,4 +9,6 @@ export const fundicaoDcMaterialResourceEligibilityFixture: readonly DemoMaterial
   { materialId: 'material-a', eligibleResourceIds: ['DC01', 'DC03', 'DC05'] },
   { materialId: 'material-b', eligibleResourceIds: ['DC02', 'DC03', 'DC05'] },
   { materialId: 'material-c', eligibleResourceIds: ['DC01', 'DC04'] },
+  { materialId: 'material-d', eligibleResourceIds: ['DC02', 'DC05'] },
+  { materialId: 'material-e', eligibleResourceIds: ['DC04'] },
 ];

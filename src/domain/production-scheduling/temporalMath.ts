@@ -22,3 +22,23 @@ export function timelineRange(lots: readonly { scheduledStart: string; scheduled
     finish: new Date(Math.max(...lots.map((lot) => Date.parse(lot.scheduledFinish)))).toISOString(),
   };
 }
+
+/**
+ * Global rule (single source of truth for every scrollable timeline):
+ * Current Time opens at ~10% of the visible temporal viewport from the left
+ * — 10% past, 90% future — so it never sits mid-screen or requires a forced
+ * scroll to be found.
+ */
+export const CURRENT_TIME_VIEWPORT_FRACTION = 0.1;
+
+export function calculateCurrentTimeScrollLeft(markerContentX: number, temporalViewportWidth: number, maxScrollLeft: number): number {
+  return Math.min(maxScrollLeft, Math.max(0, markerContentX - temporalViewportWidth * CURRENT_TIME_VIEWPORT_FRACTION));
+}
+
+/** Scroll offset placing Current Time at the standard viewport fraction, excluding a fixed leading Resource column from the calculation. */
+export function scrollLeftForCurrentTime(element: { scrollWidth: number; clientWidth: number }, currentTimePosition: number, resourceColumnWidth: number): number {
+  const temporalContentWidth = Math.max(0, element.scrollWidth - resourceColumnWidth);
+  const temporalViewportWidth = Math.max(0, element.clientWidth - resourceColumnWidth);
+  const markerContentX = temporalContentWidth * (currentTimePosition / 100);
+  return calculateCurrentTimeScrollLeft(markerContentX, temporalViewportWidth, element.scrollWidth - element.clientWidth);
+}

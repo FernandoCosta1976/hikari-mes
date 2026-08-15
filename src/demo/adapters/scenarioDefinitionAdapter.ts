@@ -4,11 +4,16 @@ import { fundicaoDcMaterialResourceEligibilityFixture } from '../fixtures/fundic
 import { fundicaoDcScenario } from '../scenarios/fundicaoDcScenario';
 import { currentResourceStateAdapter } from './currentResourceStateAdapter';
 import { materialResourceEligibilityAdapter } from './materialResourceEligibilityAdapter';
+import { productionReadinessAdapter } from './productionReadinessAdapter';
+import { fundicaoDcProductionReadinessFixture } from '../fixtures/fundicaoDcProductionReadiness';
+
+const materialResourceEligibilities = materialResourceEligibilityAdapter(fundicaoDcMaterialResourceEligibilityFixture);
 
 const scenarios: readonly ScenarioDefinition[] = [{
   ...fundicaoDcScenario,
   currentResourceStates: currentResourceStateAdapter(fundicaoDcCurrentResourceStateFixture),
-  materialResourceEligibilities: materialResourceEligibilityAdapter(fundicaoDcMaterialResourceEligibilityFixture),
+  materialResourceEligibilities,
+  productionReadiness: productionReadinessAdapter(fundicaoDcProductionReadinessFixture, fundicaoDcScenario.productionScheduling, materialResourceEligibilities),
 }];
 
 export const scenarioDefinitionAdapter = {
