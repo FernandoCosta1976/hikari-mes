@@ -15,4 +15,4 @@ export const router = createBrowserRouter([
     errorElement: <main><RouteMessage title="Não foi possível abrir esta experiência" detail="Verifique o endereço demonstrativo e tente novamente." /></main>,
   },
   { path: '*', element: <main><RouteMessage title="Página não encontrada" detail="Use uma rota válida do modo demonstrativo HIKARI." /></main> },
-]);
+], { basename: import.meta.env.BASE_URL });
