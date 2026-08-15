@@ -31,13 +31,13 @@ describe('demonstrative 24-hour shift plan', () => {
   });
 
   test('reconciles the exact daily and per-shift commitments and governed Lot-size mix', () => {
-    expect(lots).toHaveLength(21);
-    expect(lots.reduce((sum, lot) => sum + lot.quantity, 0)).toBe(1600);
+    expect(lots).toHaveLength(27);
+    expect(lots.reduce((sum, lot) => sum + lot.quantity, 0)).toBe(2000);
     expect(lots.filter((lot) => lot.quantity === 100)).toHaveLength(9);
-    expect(lots.filter((lot) => lot.quantity === 70)).toHaveLength(5);
-    expect(lots.filter((lot) => lot.quantity === 50)).toHaveLength(7);
-    expect(definition.shifts.map((shift) => lots.filter((lot) => shiftForLot(lot, [shift], businessDate)).reduce((sum, lot) => sum + lot.quantity, 0))).toEqual([500, 550, 550]);
-    expect(definition.shifts.map((shift) => lots.filter((lot) => shiftForLot(lot, [shift], businessDate)).length)).toEqual([6, 8, 7]);
+    expect(lots.filter((lot) => lot.quantity === 70)).toHaveLength(10);
+    expect(lots.filter((lot) => lot.quantity === 50)).toHaveLength(8);
+    expect(definition.shifts.map((shift) => lots.filter((lot) => shiftForLot(lot, [shift], businessDate)).reduce((sum, lot) => sum + lot.quantity, 0))).toEqual([570, 830, 600]);
+    expect(definition.shifts.map((shift) => lots.filter((lot) => shiftForLot(lot, [shift], businessDate)).length)).toEqual([7, 12, 8]);
   });
 
   test('keeps Resource eligibility and same-Resource overlap invariants across the full day', () => {

@@ -45,6 +45,9 @@ const lotSpecs: readonly LotSpec[] = [
   [267, 'material-d', 'DC02', '18:00', '20:20'], [268, 'material-c', 'DC04', '18:30', '20:30'],
   [269, 'material-a', 'DC05', '18:40', '20:20'], [270, 'material-c', 'DC01', '18:00', '20:30'],
   [271, 'material-b', 'DC05', '20:50', '22:20'],
+  [280, 'material-a', 'DC01', '05:40', '06:50'], [281, 'material-d', 'DC02', '12:30', '13:40'],
+  [282, 'material-b', 'DC03', '10:00', '11:10'], [283, 'material-c', 'DC04', '14:00', '15:10'],
+  [284, 'material-a', 'DC05', '12:00', '13:10'], [285, 'material-c', 'DC01', '21:00', '21:50'],
 ];
 
 const destinationFor = (lotNumber: number): DemandDestination => lotNumber % 10 === 0 ? 'ENGINEERING' : lotNumber % 5 === 0 || lotNumber % 7 === 0 ? 'SPARE_PARTS' : 'ASSEMBLY';
@@ -55,7 +58,7 @@ const lots: readonly Lot[] = lotSpecs.map(([lotNumber, materialId, scheduledReso
   id: `lot-${lotNumber}`,
   lotNumber: String(lotNumber),
   materialId,
-  quantity: lotNumber <= 254 || (lotNumber >= 257 && lotNumber <= 259) || lotNumber === 265 || lotNumber === 266 ? 100 : lotNumber >= 267 ? 70 : 50,
+  quantity: lotNumber <= 254 || (lotNumber >= 257 && lotNumber <= 259) || lotNumber === 265 || lotNumber === 266 ? 100 : lotNumber === 285 ? 50 : lotNumber >= 267 ? 70 : 50,
   scheduledStart: timestamp(start),
   scheduledFinish: timestamp(finish),
   workCenterId: workCenter.id,

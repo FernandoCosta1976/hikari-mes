@@ -16,7 +16,7 @@ beforeEach(() => {
 test('renders commitment and filters the timeline by Destination', async () => {
   const user = userEvent.setup();
   renderWithFoundation(<ProductionSchedulingPage />);
-  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('1.600 peças');
+  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('2.000 peças');
   expect(screen.getByRole('heading', { name: 'O que precisamos produzir?' })).toBeInTheDocument();
   expect(screen.getByRole('region', { name: 'Contexto da aplicação' })).toHaveTextContent('Fundição DC');
   expect(screen.getByText(/15\/05\/2025 · Dia completo · 24h/)).toBeInTheDocument();
@@ -235,21 +235,21 @@ test('presents quick restrictions, revision summary and progressive drill-down',
   expect(screen.getByRole('heading', { name: 'O que merece atenção antes da preparação?' })).toBeInTheDocument();
   expect(screen.getByText('3 Materiais abaixo da referência atual')).toBeInTheDocument();
   expect(screen.getByText('Versão atualizada · ver alterações')).toBeInTheDocument();
-  expect(screen.getByText(/Lote 251 \+ Lote 252.*= 620 peças/)).not.toBeVisible();
+  expect(screen.getByText(/Lote 251 \+ Lote 252.*= 760 peças/)).not.toBeVisible();
   await user.click(screen.getByText('Consultar correlação'));
-  expect(screen.getByText(/Lote 251 \+ Lote 252.*= 620 peças/)).toBeVisible();
+  expect(screen.getByText(/Lote 251 \+ Lote 252.*= 760 peças/)).toBeVisible();
   const revision = screen.getByText('Alterações do plano').closest('details');
   await user.click(screen.getByText('Alterações do plano'));
-  expect(revision).toHaveTextContent(/Lote 271:\s*incluído\./);
+  expect(revision).toHaveTextContent(/Lote 285:\s*incluído\./);
 });
 
 test('switches between the 24h plan and each shift while updating its commitment', async () => {
   const user = userEvent.setup();
   renderWithFoundation(<ProductionSchedulingPage />);
-  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('21 Lotes');
+  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('27 Lotes');
   await user.click(screen.getByRole('button', { name: 'Turno 2' }));
-  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('550 peças');
-  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('7 Lotes');
+  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('600 peças');
+  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('8 Lotes');
   expect(screen.getByTestId('current-time-marker')).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Turno 1' }));
   expect(screen.queryByTestId('current-time-marker')).not.toBeInTheDocument();

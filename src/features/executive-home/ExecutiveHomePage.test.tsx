@@ -26,9 +26,24 @@ test('shows the live OEE demonstrativo reusing the same projection as the OEE pe
   expect(oeeTile).toHaveTextContent('Performance 79%');
   expect(oeeTile).toHaveTextContent('Qualidade 91%');
   expect(oeeTile).toHaveTextContent('Principal impacto: Performance');
-  expect(screen.getByText(/Conseguiremos sustentar a necessidade da Montagem hoje\?/)).toBeInTheDocument();
+  expect(screen.getByText(/Estamos protegendo a cadeia para atender a necessidade da Montagem hoje\?/)).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Reiniciar demonstração' }));
   expect(screen.getByLabelText('OEE demonstrativo da Fundição DC')).toHaveTextContent('OEE 66%');
+});
+
+test('shows downstream Usinagem health and the ranked action-now list, without a new capability', () => {
+  renderWithFoundation(<ExecutiveHomePage />);
+  const downstream = screen.getByLabelText('Saúde da próxima área: Usinagem');
+  expect(downstream).toHaveTextContent('Usinagem');
+  expect(downstream).toHaveTextContent('Atenção');
+  expect(downstream).toHaveTextContent('Material B');
+  expect(downstream).toHaveTextContent('Lote 266');
+
+  const actionNow = screen.getByLabelText('O que exige ação agora');
+  expect(within(actionNow).getAllByRole('listitem').length).toBeGreaterThan(0);
+  expect(within(actionNow).getAllByRole('listitem').length).toBeLessThanOrEqual(3);
+  expect(actionNow).toHaveTextContent('DC03');
+  expect(actionNow).toHaveTextContent('USINAGEM');
 });
 
 test('reveals capability relationships for each executive question', async () => {

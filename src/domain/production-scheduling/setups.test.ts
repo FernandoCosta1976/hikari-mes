@@ -23,8 +23,8 @@ describe('demonstrative material-change setup', () => {
       expect(setup).not.toHaveProperty('quantity');
       expect(setup).not.toHaveProperty('lotNumber');
     }
-    expect(lots).toHaveLength(21);
-    expect(lots.reduce((sum, lot) => sum + lot.quantity, 0)).toBe(1600);
+    expect(lots).toHaveLength(27);
+    expect(lots.reduce((sum, lot) => sum + lot.quantity, 0)).toBe(2000);
   });
 
   test('places every setup after its previous Lot and before the next Lot without overlap', () => {

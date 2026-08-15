@@ -66,11 +66,11 @@ test('completes the governed WF-001 interaction narrative', async ({ page }) => 
   await materialBDetail.getByRole('button', { name: 'Fechar contexto do Lote' }).click();
 
   await page.locator('#production-order-correlation summary').click();
-  await expect(page.getByText(/Lote 251 \+ Lote 252.*= 620 peças/)).toBeVisible();
+  await expect(page.getByText(/Lote 251 \+ Lote 252.*= 760 peças/)).toBeVisible();
   await page.locator('#buffer-coverage summary').click();
   await expect(page.getByText('Após o plano').first()).toBeVisible();
   await page.locator('#schedule-revision summary').click();
-  await expect(page.getByText(/Lote 271.*incluído/)).toBeVisible();
+  await expect(page.getByText(/Lote 285.*incluído/)).toBeVisible();
   await expect(page.getByRole('heading', { name: 'O que merece atenção antes da preparação?' })).toBeVisible();
 
   await page.getByRole('button', { name: /Atualizado/ }).click();

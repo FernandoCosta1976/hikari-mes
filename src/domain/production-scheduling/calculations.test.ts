@@ -8,12 +8,12 @@ const data = fundicaoDcScenario.productionScheduling;
 
 test('reconciles one Production Order with multiple Lots without conflating identities', () => {
   const result = reconcileProductionOrder(data.productionOrders[0], data.lots);
-  expect(result).toEqual({ status: 'MATCHED', orderQuantity: 620, correlatedLotsQuantity: 620, difference: 0 });
-  expect(data.productionOrders[0].correlatedLotIds).toHaveLength(8);
+  expect(result).toEqual({ status: 'MATCHED', orderQuantity: 760, correlatedLotsQuantity: 760, difference: 0 });
+  expect(data.productionOrders[0].correlatedLotIds).toHaveLength(10);
 });
 
 test('reports divergence without auto-correction', () => {
-  const result = reconcileProductionOrder({ ...data.productionOrders[0], quantity: 660 }, data.lots);
+  const result = reconcileProductionOrder({ ...data.productionOrders[0], quantity: 800 }, data.lots);
   expect(result.status).toBe('DIVERGENT');
   expect(result.difference).toBe(40);
 });

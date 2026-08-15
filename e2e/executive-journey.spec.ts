@@ -49,7 +49,7 @@ test('Home mostra o OEE demonstrativo (mesma projeção da CAP-09), a pergunta d
   const oeeTile = page.getByLabel('OEE demonstrativo da Fundição DC');
   await expect(oeeTile).toContainText('OEE 66%');
   await expect(oeeTile).toContainText('Principal impacto: Performance');
-  await expect(page.getByText(/Conseguiremos sustentar a necessidade da Montagem hoje\?/)).toBeVisible();
+  await expect(page.getByText(/Estamos protegendo a cadeia para atender a necessidade da Montagem hoje\?/)).toBeVisible();
   await page.getByRole('button', { name: 'Reiniciar demonstração' }).click();
   await expect(oeeTile).toContainText('OEE 66%');
 });
