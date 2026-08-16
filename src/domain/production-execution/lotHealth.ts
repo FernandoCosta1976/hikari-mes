@@ -1,11 +1,11 @@
 import { knownRunTimeMinutes } from '../production-quality/models';
 import type { ProductionExecutionRecord } from './models';
 
-export type LotHealthStatus = 'NOT_DUE' | 'AT_RISK' | 'ON_TRACK' | 'LATE_NOT_STARTED' | 'STARTED_LATE' | 'BEHIND_PLAN' | 'AHEAD_OF_PLAN' | 'COMPLETED' | 'UNKNOWN';
+export type LotHealthStatus = 'NOT_DUE' | 'AT_RISK' | 'ON_TRACK' | 'LATE_NOT_STARTED' | 'STARTED_LATE' | 'BEHIND_PLAN' | 'AHEAD_OF_PLAN' | 'COMPLETED' | 'UNKNOWN' | 'NOT_MONITORED';
 
-export const lotHealthIcon: Record<LotHealthStatus, string> = { NOT_DUE: '○', AT_RISK: '△', ON_TRACK: '✓', LATE_NOT_STARTED: '◷', STARTED_LATE: '◷', BEHIND_PLAN: '⚠', AHEAD_OF_PLAN: '↗', COMPLETED: '✓', UNKNOWN: '?' };
-export const lotHealthLabel: Record<LotHealthStatus, string> = { NOT_DUE: 'Ainda não devido', AT_RISK: 'Risco de atraso', ON_TRACK: 'No plano', LATE_NOT_STARTED: 'Atrasado para iniciar', STARTED_LATE: 'Início atrasado', BEHIND_PLAN: 'Abaixo do plano', AHEAD_OF_PLAN: 'Adiantado', COMPLETED: 'Concluído', UNKNOWN: 'Sem dados' };
-export const lotHealthTone: Record<LotHealthStatus, 'neutral' | 'attention' | 'attentionStrong' | 'positive' | 'informational'> = { NOT_DUE: 'neutral', AT_RISK: 'attention', ON_TRACK: 'positive', LATE_NOT_STARTED: 'attentionStrong', STARTED_LATE: 'attention', BEHIND_PLAN: 'attentionStrong', AHEAD_OF_PLAN: 'informational', COMPLETED: 'positive', UNKNOWN: 'neutral' };
+export const lotHealthIcon: Record<LotHealthStatus, string> = { NOT_DUE: '○', AT_RISK: '△', ON_TRACK: '✓', LATE_NOT_STARTED: '◷', STARTED_LATE: '◷', BEHIND_PLAN: '⚠', AHEAD_OF_PLAN: '↗', COMPLETED: '✓', UNKNOWN: '?', NOT_MONITORED: '○' };
+export const lotHealthLabel: Record<LotHealthStatus, string> = { NOT_DUE: 'Ainda não devido', AT_RISK: 'Risco de atraso', ON_TRACK: 'No plano', LATE_NOT_STARTED: 'Atrasado para iniciar', STARTED_LATE: 'Início atrasado', BEHIND_PLAN: 'Abaixo do plano', AHEAD_OF_PLAN: 'Adiantado', COMPLETED: 'Concluído', UNKNOWN: 'Sem dados', NOT_MONITORED: 'Sem acompanhamento' };
+export const lotHealthTone: Record<LotHealthStatus, 'neutral' | 'attention' | 'attentionStrong' | 'positive' | 'informational'> = { NOT_DUE: 'neutral', AT_RISK: 'attention', ON_TRACK: 'positive', LATE_NOT_STARTED: 'attentionStrong', STARTED_LATE: 'attention', BEHIND_PLAN: 'attentionStrong', AHEAD_OF_PLAN: 'informational', COMPLETED: 'positive', UNKNOWN: 'neutral', NOT_MONITORED: 'neutral' };
 
 const START_LATE_TOLERANCE_MINUTES = 10;
 
@@ -37,8 +37,16 @@ function quantityTolerance(expected: number): number {
  * result via LotHealthIndicator, never recompute the classification itself.
  * DEMONSTRATIVE / BUSINESS VALIDATION REQUIRED.
  */
-export function assessLotExecutionHealth(execution: ProductionExecutionRecord, scheduledStart: string, scheduledFinish: string, cycleTimeSecondsPerPiece: number | undefined, currentTime: string): LotHealthProjection {
+export function assessLotExecutionHealth(execution: ProductionExecutionRecord | null, scheduledStart: string, scheduledFinish: string, cycleTimeSecondsPerPiece: number | undefined, currentTime: string): LotHealthProjection {
   const base = { demonstrative: true as const, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' as const };
+
+  if (execution === null) {
+    // No simulated execution fact exists for this Lot (it is not one of the monitored DCs' current Lots).
+    // A Scheduled Start in the past does NOT mean it is late — it means it was never simulated.
+    const status: LotHealthStatus = Date.parse(currentTime) > Date.parse(scheduledStart) ? 'NOT_MONITORED' : 'NOT_DUE';
+    return { ...base, status, startedLate: false, startDeviationMinutes: null, cycleTimeSecondsPerPiece: cycleTimeSecondsPerPiece ?? null, productionDurationSeconds: null, runTimeMinutes: null, expectedQuantityNow: null, gapQuantity: null, projectedFinish: null };
+  }
+
   const cycleTime = cycleTimeSecondsPerPiece ?? null;
   const durationSeconds = cycleTime !== null ? productionDurationSeconds(execution.plannedQuantity, cycleTime) : null;
   const startDeviationMinutes = execution.actualStart ? Math.round((Date.parse(execution.actualStart) - Date.parse(scheduledStart)) / 60_000) : null;
@@ -74,7 +82,7 @@ export function assessLotExecutionHealth(execution: ProductionExecutionRecord, s
   return { ...base, status, startedLate, startDeviationMinutes, cycleTimeSecondsPerPiece: cycleTime, productionDurationSeconds: durationSeconds, runTimeMinutes, expectedQuantityNow, gapQuantity, projectedFinish };
 }
 
-const ATTENTION_ORDER: readonly LotHealthStatus[] = ['LATE_NOT_STARTED', 'BEHIND_PLAN', 'AT_RISK', 'STARTED_LATE', 'ON_TRACK', 'AHEAD_OF_PLAN', 'NOT_DUE', 'COMPLETED', 'UNKNOWN'];
+const ATTENTION_ORDER: readonly LotHealthStatus[] = ['LATE_NOT_STARTED', 'BEHIND_PLAN', 'AT_RISK', 'STARTED_LATE', 'ON_TRACK', 'AHEAD_OF_PLAN', 'NOT_DUE', 'NOT_MONITORED', 'COMPLETED', 'UNKNOWN'];
 export function byLotHealthAttention(a: LotHealthStatus, b: LotHealthStatus): number {
   return ATTENTION_ORDER.indexOf(a) - ATTENTION_ORDER.indexOf(b);
 }

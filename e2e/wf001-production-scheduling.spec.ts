@@ -206,24 +206,20 @@ test('captures deterministic Capability 04 ready, released and blocked scenes', 
   await expect(page).toHaveScreenshot('CAP-04-BLOCKED-FOR-RELEASE-CANDIDATE.png', { fullPage: true, animations: 'disabled', maxDiffPixelRatio: 0.005 });
 });
 
-test('shows canonical Resource conditions as a read-only timeline overlay and restores the original plan', async ({ page }) => {
+test('shows canonical Resource conditions as a read-only overlay through Avaliar cenário and restores the original plan', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Mostrar condições' })).toHaveCount(0);
-  const toggle = page.getByTestId('evaluation-mode-toggle');
-  await expect(toggle).toHaveAccessibleName('Avaliar cenários');
-  await expect(toggle).toHaveCSS('background-color', 'rgb(7, 89, 199)');
+  const activate = page.getByRole('button', { name: /Avaliar cenário/ });
+  await expect(activate).toBeVisible();
   const laneOrder = () => page.locator('[aria-label^="Máquina programada DC"]').evaluateAll((lanes) => lanes.map((lane) => lane.getAttribute('aria-label')));
   const originalOrder = await laneOrder();
   const originalLotCount = await page.locator('[data-lot-id]').count();
-  await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await expect(toggle).toHaveAccessibleName('Encerrar avaliação');
-  await expect(toggle).toBeFocused();
-  await expect(page.getByRole('status')).toContainText('AVALIAÇÃO DE ALTERNATIVAS');
-  await expect(page.getByRole('status')).toContainText('Selecione um Lote para avaliar quais máquinas podem recebê-lo');
+  await activate.click();
+  await expect(page.getByRole('status')).toContainText('AVALIAR CENÁRIO');
+  await expect(page.getByRole('status')).toContainText('Selecione um Lote para avaliar outra máquina ou horário.');
   await page.getByRole('button', { name: /Lote 257, Material A, 100 peças/ }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByRole('status')).toContainText('AVALIAÇÃO DE ALTERNATIVAS — LOTE 257');
-  await expect(page.getByRole('status')).toContainText('Material A · 100 peças · Programado em DC01');
+  await expect(page.getByRole('status')).toContainText('AVALIAR CENÁRIO — LOTE 257');
+  await expect(page.getByRole('status')).toContainText('Material A · 100 peças · Programação atual: DC01');
   expect(await laneOrder()).toEqual(originalOrder);
   await expect(page.getByRole('region', { name: 'Máquina programada DC01' })).toContainText('Programada');
   await expect(page.getByRole('region', { name: 'Máquina programada DC01' })).toHaveAttribute('data-resource-condition', 'ATTENTION');
@@ -233,7 +229,6 @@ test('shows canonical Resource conditions as a read-only timeline overlay and re
   await expect(page.getByRole('tooltip').first()).toContainText('Elegibilidade: Elegível');
   await expect(page.getByRole('region', { name: 'Impacto conhecido por Recurso' })).toContainText('Setup existente conhecido');
   await expect(page.getByText(/melhor máquina|ótima escolha/i)).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /Atribuir|Trocar máquina|Despachar|Liberar/ })).toHaveCount(0);
   await expect(page.locator('[data-lot-id]')).toHaveCount(originalLotCount);
   await expect(page.getByTestId('scheduled-setup')).toHaveCount(5);
   await expect(page.getByTestId('planned-break')).toHaveCount(9);
@@ -250,22 +245,21 @@ test('shows canonical Resource conditions as a read-only timeline overlay and re
   await page.locator('[data-lot-id="lot-267"]').click();
   await expect(page.getByRole('region', { name: 'Máquina programada DC02' })).toHaveAttribute('data-resource-condition', 'BLOCKED');
   await expect(page.getByRole('region', { name: 'Máquina programada DC02' })).toContainText('Programada');
-  await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-  await expect(toggle).toHaveAccessibleName('Avaliar cenários');
+  await page.getByRole('button', { name: 'Encerrar avaliação' }).click();
+  await expect(page.getByRole('button', { name: /Avaliar cenário/ })).toBeVisible();
   expect(await laneOrder()).toEqual(originalOrder);
   await expect(page.locator('[data-lot-id]')).toHaveCount(originalLotCount);
 });
 
 test('captures Evaluate Scenarios UX refinement candidates', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await expect(page.getByRole('button', { name: 'Avaliar cenários' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Avaliar cenário/ })).toBeVisible();
   await expect(page).toHaveScreenshot('WF-001-EVALUATE-SCENARIOS-CTA-CANDIDATE.png', { fullPage: true, animations: 'disabled', maxDiffPixelRatio: 0.02 });
-  await page.getByRole('button', { name: 'Avaliar cenários' }).click();
+  await page.getByRole('button', { name: /Avaliar cenário/ }).click();
   await expect(page.getByRole('status')).toContainText('Selecione um Lote');
   await expect(page).toHaveScreenshot('WF-001-EVALUATION-MODE-NO-LOT-CANDIDATE.png', { fullPage: true, animations: 'disabled', maxDiffPixelRatio: 0.02 });
   await page.locator('[data-lot-id="lot-257"]').click();
-  await expect(page.getByRole('status')).toContainText('AVALIAÇÃO DE ALTERNATIVAS — LOTE 257');
+  await expect(page.getByRole('status')).toContainText('AVALIAR CENÁRIO — LOTE 257');
   await expect(page).toHaveScreenshot('WF-001-EVALUATION-MODE-LOT257-CANDIDATE.png', { fullPage: true, animations: 'disabled', maxDiffPixelRatio: 0.02 });
 });
 
@@ -273,9 +267,9 @@ test('simulates a vertical Resource move with fixed lanes, comparison, undo and 
   const laneOrder = () => page.locator('[aria-label^="Máquina programada DC"]').evaluateAll((lanes) => lanes.map((lane) => lane.getAttribute('aria-label')));
   const fixedOrder = ['Máquina programada DC01', 'Máquina programada DC02', 'Máquina programada DC03', 'Máquina programada DC04', 'Máquina programada DC05'];
   expect(await laneOrder()).toEqual(fixedOrder);
-  await page.getByRole('button', { name: 'Simular organização' }).click();
+  await page.getByRole('button', { name: /Avaliar cenário/ }).click();
   await page.locator('[data-lot-id="lot-251"]').click();
-  const simulation = page.getByRole('region', { name: 'Simulação de organização' });
+  const simulation = page.getByRole('region', { name: 'Avaliação de cenário' });
   const resourceOptions = simulation.getByRole('button').filter({ has: page.locator('b') });
   await expect(resourceOptions).toHaveCount(5);
   await expect(resourceOptions.nth(0)).toContainText('DC01');
@@ -289,8 +283,8 @@ test('simulates a vertical Resource move with fixed lanes, comparison, undo and 
   await page.getByLabel('Lotes programados na DC05').dispatchEvent('dragover', { dataTransfer });
   await page.getByLabel('Lotes programados na DC05').dispatchEvent('drop', { dataTransfer });
   await expect(simulation).toContainText('1 movimentação');
-  await expect(simulation).toContainText('PlanoDC01');
-  await expect(simulation).toContainText('SimulaçãoDC05');
+  await expect(simulation).toContainText('Programação atualDC01');
+  await expect(simulation).toContainText('Nova programaçãoDC05');
   await expect(page.locator('[data-lot-id="lot-251"]')).toHaveAttribute('data-simulated', 'true');
   await expect(page.getByLabel('Posição original do Lote 251 no plano recebido')).toBeVisible();
   expect(await laneOrder()).toEqual(fixedOrder);
@@ -298,7 +292,7 @@ test('simulates a vertical Resource move with fixed lanes, comparison, undo and 
   const simulationRed = await page.locator('body *').evaluateAll((elements) => { const forbidden = new Set(['rgb(255, 0, 0)', 'rgb(220, 38, 38)', 'rgb(239, 68, 68)']); return elements.flatMap((element) => { const style = getComputedStyle(element); return [style.color, style.backgroundColor, style.borderColor].filter((value) => forbidden.has(value)); }); });
   expect(simulationRed).toEqual([]);
   await simulation.getByRole('button', { name: 'Comparar' }).click();
-  await expect(page.getByRole('region', { name: 'Comparação Plano recebido versus Simulação' })).toContainText('Recurso original: DC01');
+  await expect(page.getByRole('region', { name: 'Comparação Plano recebido versus Simulação' })).toContainText('Máquina original: DC01');
   await simulation.getByRole('button', { name: 'Desfazer' }).click();
   await expect(simulation).toContainText('0 alterações');
   expect(await laneOrder()).toEqual(fixedOrder);
@@ -306,7 +300,7 @@ test('simulates a vertical Resource move with fixed lanes, comparison, undo and 
   await simulation.getByRole('button', { name: /DC03/ }).click();
   await expect(page.getByRole('region', { name: /Cobertura do buffer/ })).toContainText('RISCO PARA META DO BUFFER');
   expect(await laneOrder()).toEqual(fixedOrder);
-  await simulation.getByRole('button', { name: 'Descartar' }).click();
+  await simulation.getByRole('button', { name: 'Encerrar avaliação' }).click();
   await expect(simulation).toHaveCount(0);
   expect(await laneOrder()).toEqual(fixedOrder);
   await expect(page.locator('[data-lot-id="lot-255"]')).toHaveAttribute('data-simulated', 'false');
@@ -316,16 +310,16 @@ test('simulates a vertical Resource move with fixed lanes, comparison, undo and 
 test('adopts an operational Resource for a not-started Lot without overwriting the Programmed baseline', async ({ page }) => {
   const laneOrder = () => page.locator('[aria-label^="Máquina programada DC"]').evaluateAll((lanes) => lanes.map((lane) => lane.getAttribute('aria-label')));
   const fixedOrder = ['Máquina programada DC01', 'Máquina programada DC02', 'Máquina programada DC03', 'Máquina programada DC04', 'Máquina programada DC05'];
-  await page.getByRole('button', { name: 'Simular organização' }).click();
+  await page.getByRole('button', { name: /Avaliar cenário/ }).click();
   await page.locator('[data-lot-id="lot-251"]').click();
-  const simulation = page.getByRole('region', { name: 'Simulação de organização' });
+  const simulation = page.getByRole('region', { name: 'Avaliação de cenário' });
   const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
   await page.locator('[data-lot-id="lot-251"]').dispatchEvent('dragstart', { dataTransfer });
   await page.getByLabel('Lotes programados na DC05').dispatchEvent('dragover', { dataTransfer });
   await page.getByLabel('Lotes programados na DC05').dispatchEvent('drop', { dataTransfer });
   await expect(simulation).toContainText('1 movimentação');
 
-  await simulation.getByRole('button', { name: 'Adotar Organização' }).click();
+  await simulation.getByRole('button', { name: 'Confirmar nova programação' }).click();
   await expect(simulation).toHaveCount(0);
   expect(await laneOrder()).toEqual(fixedOrder);
   const organizedLot = page.locator('[data-lot-id="lot-251"]');
@@ -343,29 +337,22 @@ test('adopts an operational Resource for a not-started Lot without overwriting t
   await expect(modal).toContainText('Lote liberado e organizado em DC05.');
 });
 
-test('captures fixed conditions, buffer and What-If simulation candidates', async ({ page }) => {
+test('captures Avaliar cenário candidates: conditions, buffer restore and impact preview', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.getByRole('button', { name: 'Avaliar cenários' }).click();
+  await page.getByRole('button', { name: /Avaliar cenário/ }).click();
   await page.locator('[data-lot-id="lot-257"]').click();
+  await expect(page.getByRole('region', { name: 'Impacto conhecido por Recurso' })).toBeVisible();
   await expect(page).toHaveScreenshot('WF-001-FIXED-RESOURCE-CONDITION-VIEW-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
   await page.getByRole('button', { name: 'Encerrar avaliação' }).click();
   await expect(page).toHaveScreenshot('WF-001-BUFFER-DECISION-WORKSPACE-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
-  await page.getByRole('button', { name: 'Simular organização' }).click();
+  await page.getByRole('button', { name: /Avaliar cenário/ }).click();
   await page.locator('[data-lot-id="lot-251"]').click();
   await expect(page).toHaveScreenshot('WF-001-SIMULATION-MODE-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
-  await page.getByRole('region', { name: 'Simulação de organização' }).getByRole('button', { name: /DC05/ }).click();
+  await page.getByRole('region', { name: 'Avaliação de cenário' }).getByRole('button', { name: /DC05/ }).click();
   await expect(page).toHaveScreenshot('WF-001-SIMULATION-IMPACT-PREVIEW-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
   await page.locator('[data-lot-id="lot-255"]').click();
-  await page.getByRole('region', { name: 'Simulação de organização' }).getByRole('button', { name: /DC03/ }).click();
+  await page.getByRole('region', { name: 'Avaliação de cenário' }).getByRole('button', { name: /DC03/ }).click();
   await expect(page).toHaveScreenshot('WF-001-SIMULATION-BUFFER-RISK-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
-});
-
-test('captures the Resource condition overlay candidate', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.getByRole('button', { name: 'Avaliar cenários' }).click();
-  await page.getByRole('button', { name: /Lote 257, Material A, 100 peças/ }).click();
-  await expect(page.getByRole('region', { name: 'Impacto conhecido por Recurso' })).toBeVisible();
-  await expect(page).toHaveScreenshot('WF-001-RESOURCE-CONDITION-OVERLAY-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 
 test('captures WF-001 Lot Context modal candidates without replacing earlier baselines', async ({ page }) => {

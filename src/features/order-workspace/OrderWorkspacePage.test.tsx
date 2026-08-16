@@ -93,6 +93,17 @@ test('Cena F: postpones Lote 262 to Turno 3 without starting execution', async (
   expect(screen.getByText('Em espera · Turno 3')).toBeInTheDocument();
 });
 
+test('never shows a false LATE_NOT_STARTED for a Lot whose execution was never simulated, even with a past Scheduled Start', () => {
+  renderWithFoundation(<OrderWorkspacePage lotId="lot-251" />);
+  expect(screen.getByRole('group', { name: /Saúde de execução: Sem acompanhamento/ })).toBeInTheDocument();
+  expect(screen.queryByText('Atrasado para iniciar')).not.toBeInTheDocument();
+});
+
+test('preserves the LATE_NOT_STARTED pedagogical scene for the monitored Lote 271 on DC05', () => {
+  renderWithFoundation(<OrderWorkspacePage lotId="lot-271" />);
+  expect(screen.getByRole('group', { name: /Saúde de execução: Atrasado para iniciar/ })).toBeInTheDocument();
+});
+
 test('shows a not-found message for an unknown Lot id', () => {
   renderWithFoundation(<OrderWorkspacePage lotId="lot-does-not-exist" />);
   expect(screen.getByRole('heading', { name: 'Ordem não encontrada' })).toBeInTheDocument();

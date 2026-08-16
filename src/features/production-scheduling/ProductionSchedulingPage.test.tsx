@@ -135,62 +135,46 @@ test('shows five scheduled Resource lanes without the redundant physical landsca
   expect(screen.getAllByTestId('scheduled-setup')).toHaveLength(5);
 });
 
-test('toggles the Resource condition overlay without changing the timeline plan', async () => {
+test('evaluates a scenario end to end through the single Avaliar cenário entry point: overlay, alternative, impact and confirmation', async () => {
   const user = userEvent.setup();
   const { container } = renderWithFoundation(<ProductionSchedulingPage />);
-  expect(screen.queryByRole('button', { name: 'Mostrar condições' })).not.toBeInTheDocument();
-  const toggle = screen.getByRole('button', { name: 'Avaliar cenários' });
-  expect(toggle).toHaveAttribute('aria-pressed', 'false');
-  const originalOrder = [...container.querySelectorAll('[aria-label^="Máquina programada DC"]')].map((lane) => lane.getAttribute('aria-label'));
+  expect(screen.queryByRole('button', { name: 'Simular organização' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Avaliar cenários' })).not.toBeInTheDocument();
+  const fixedOrder = [...container.querySelectorAll('[aria-label^="Máquina programada DC"]')].map((lane) => lane.getAttribute('aria-label'));
   const originalLotCount = container.querySelectorAll('[data-lot-id]').length;
-  await user.click(toggle);
-  expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  expect(toggle).toHaveAccessibleName('Encerrar avaliação');
-  expect(screen.getByRole('status')).toHaveTextContent('AVALIAÇÃO DE ALTERNATIVASSelecione um Lote para avaliar quais máquinas podem recebê-lo');
-  await user.click(screen.getByRole('button', { name: /Lote 257, Material A, 100 peças/ }));
+
+  await user.click(screen.getByRole('button', { name: /Avaliar cenário/ }));
+  expect(screen.getByRole('region', { name: 'Avaliação de cenário' })).toHaveTextContent('AVALIAR CENÁRIO0 alterações');
+  expect(screen.getByRole('status')).toHaveTextContent('AVALIAR CENÁRIOSelecione um Lote para avaliar outra máquina ou horário.');
+
+  await user.click(screen.getByRole('button', { name: /Lote 251, Material A, 100 peças/ }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  expect(screen.getByRole('status')).toHaveTextContent('AVALIAÇÃO DE ALTERNATIVAS — LOTE 257Material A · 100 peças · Programado em DC01');
-  const contextualOrder = [...container.querySelectorAll('[aria-label^="Máquina programada DC"]')].map((lane) => lane.getAttribute('aria-label'));
-  expect(contextualOrder).toEqual(originalOrder);
-  expect(screen.getByRole('region', { name: 'Máquina programada DC01' })).toHaveTextContent('DC01ProgramadaProgramada · Requer atenção');
+  expect(screen.getByRole('status')).toHaveTextContent('AVALIAR CENÁRIO — LOTE 251Material A · 100 peças · Programação atual: DC01');
+  expect(screen.getByRole('region', { name: 'Máquina programada DC01' })).toHaveAttribute('data-resource-eligible', 'true');
   expect(screen.getByRole('region', { name: 'Máquina programada DC05' })).toHaveAttribute('data-resource-condition', 'UNKNOWN');
   expect(screen.getByRole('region', { name: 'Máquina programada DC02' })).toHaveAttribute('data-resource-eligible', 'false');
-  expect(screen.getByRole('region', { name: 'Máquina programada DC01' })).toHaveTextContent('Elegibilidade: Elegível');
   expect(screen.getByRole('region', { name: 'Impacto conhecido por Recurso' })).toHaveTextContent('Setup existente conhecido');
   expect(container.querySelectorAll('[data-lot-id]')).toHaveLength(originalLotCount);
-  await user.click(toggle);
-  expect(toggle).toHaveAttribute('aria-pressed', 'false');
-  expect(toggle).toHaveAccessibleName('Avaliar cenários');
-  expect([...container.querySelectorAll('[aria-label^="Máquina programada DC"]')].map((lane) => lane.getAttribute('aria-label'))).toEqual(originalOrder);
-  expect(container.querySelectorAll('[data-lot-id]')).toHaveLength(originalLotCount);
-});
 
-test('simulates by keyboard, compares, undoes and discards without mutating fixed lanes', async () => {
-  const user = userEvent.setup();
-  const { container } = renderWithFoundation(<ProductionSchedulingPage />);
-  const fixedOrder = [...container.querySelectorAll('[aria-label^="Máquina programada DC"]')].map((lane) => lane.getAttribute('aria-label'));
-  await user.click(screen.getByRole('button', { name: 'Simular organização' }));
-  expect(screen.getByRole('region', { name: 'Simulação de organização' })).toHaveTextContent('SIMULAÇÃO ATIVA0 alterações');
-  await user.click(screen.getByRole('button', { name: /Lote 251, Material A, 100 peças/ }));
-  const simulation = screen.getByRole('region', { name: 'Simulação de organização' });
+  const simulation = screen.getByRole('region', { name: 'Avaliação de cenário' });
   const options = within(simulation).getAllByRole('button').filter((button) => /^DC0[1-5]/.test(button.textContent ?? ''));
   expect(options.map((button) => button.textContent?.slice(0, 4))).toEqual(['DC01', 'DC02', 'DC03', 'DC04', 'DC05']);
   expect(options[0]).toBeDisabled();
-  expect(options[1]).toBeDisabled();
   await user.click(options[4]);
   expect(simulation).toHaveTextContent('1 movimentação');
-  expect(simulation).toHaveTextContent('PlanoDC01');
-  expect(simulation).toHaveTextContent('SimulaçãoDC05');
+  expect(simulation).toHaveTextContent('Programação atualDC01');
+  expect(simulation).toHaveTextContent('Nova programaçãoDC05');
   expect(container.querySelector('[data-lot-id="lot-251"]')).toHaveAttribute('data-simulated', 'true');
-  expect(screen.getByLabelText('Posição original do Lote 251 no plano recebido')).toBeInTheDocument();
   expect([...container.querySelectorAll('[aria-label^="Máquina programada DC"]')].map((lane) => lane.getAttribute('aria-label'))).toEqual(fixedOrder);
+
   await user.click(within(simulation).getByRole('button', { name: 'Comparar' }));
   expect(screen.getByRole('region', { name: 'Comparação Plano recebido versus Simulação' })).toBeInTheDocument();
   await user.click(within(simulation).getByRole('button', { name: 'Desfazer' }));
   expect(simulation).toHaveTextContent('0 alterações');
-  await user.click(within(simulation).getByRole('button', { name: 'Descartar' }));
-  expect(screen.queryByRole('region', { name: 'Simulação de organização' })).not.toBeInTheDocument();
+  await user.click(within(simulation).getByRole('button', { name: 'Encerrar avaliação' }));
+  expect(screen.queryByRole('region', { name: 'Avaliação de cenário' })).not.toBeInTheDocument();
   expect([...container.querySelectorAll('[aria-label^="Máquina programada DC"]')].map((lane) => lane.getAttribute('aria-label'))).toEqual(fixedOrder);
+  expect(container.querySelectorAll('[data-lot-id]')).toHaveLength(originalLotCount);
 });
 
 test('makes reservation, projected coverage, material attention and selected-Lot scenarios explicit', async () => {

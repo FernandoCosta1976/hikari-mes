@@ -62,6 +62,17 @@ describe('OEE / Lot Health Cycle Time invariance', () => {
   });
 });
 
+describe('assessLotExecutionHealth — no simulated execution', () => {
+  it('reports NOT_MONITORED (not LATE_NOT_STARTED) when Scheduled Start has passed but there is no execution record at all', () => {
+    const result = assessLotExecutionHealth(null, '2025-05-15T00:30:00-03:00', '2025-05-15T02:00:00-03:00', 72, currentTime);
+    expect(result.status).toBe<LotHealthStatus>('NOT_MONITORED');
+  });
+  it('still reports NOT_DUE for a future Scheduled Start with no execution record', () => {
+    const result = assessLotExecutionHealth(null, '2025-05-15T23:00:00-03:00', '2025-05-16T00:00:00-03:00', 72, currentTime);
+    expect(result.status).toBe<LotHealthStatus>('NOT_DUE');
+  });
+});
+
 describe('byLotHealthAttention', () => {
   it('ranks LATE_NOT_STARTED and BEHIND_PLAN above AT_RISK and ON_TRACK', () => {
     const order: LotHealthStatus[] = ['ON_TRACK', 'AT_RISK', 'BEHIND_PLAN', 'LATE_NOT_STARTED'];

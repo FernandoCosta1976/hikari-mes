@@ -6,7 +6,6 @@ import { resolveDemonstrativeRelease } from '../../demo/adapters/releaseResoluti
 import { fundicaoDcIdealCycleTimeSecondsFixture } from '../../demo/fixtures/fundicaoDcIdealCycleTime';
 import { selectMaterialResourceEligibilities, selectOrganizationsByLotId, selectPostponedLotIds, selectPreparationConfirmedByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { assessLotExecutionHealth } from '../../domain/production-execution/lotHealth';
-import type { ProductionExecutionRecord } from '../../domain/production-execution/models';
 import { dominantReadinessCondition } from '../../domain/production-readiness/presentation';
 import { revocationReasonLabel, type ProductionReleaseRecord, type RevocationReason } from '../../domain/production-release/models';
 import { deriveOrderLifecycleStatus, orderLifecycleLabel, orderLifecycleStepIndex, ORDER_LIFECYCLE_SEQUENCE, type OrderLifecycleStatus } from '../../domain/production-scheduling/orderLifecycle';
@@ -59,8 +58,7 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
   const operationalResourceId = organizationsByLotId[lot.id]?.operationalResourceId ?? lot.scheduledResourceId;
   const preparationConfirmed = Boolean(preparationConfirmedByLotId[lot.id]);
   const cycleTimeSeconds = fundicaoDcIdealCycleTimeSecondsFixture[lot.materialId];
-  const executionForHealth: ProductionExecutionRecord = execution ?? { lotId: lot.id, productionOrderId: lot.productionOrderId, resourceId: operationalResourceId, scheduleVersionId: activeScheduleVersionId, plannedQuantity: lot.quantity, producedQuantity: 0, scheduledStart: lot.scheduledStart, status: 'NOT_STARTED', pauses: [], demonstrative: true };
-  const health = assessLotExecutionHealth(executionForHealth, lot.scheduledStart, lot.scheduledFinish, cycleTimeSeconds, currentTime);
+  const health = assessLotExecutionHealth(execution ?? null, lot.scheduledStart, lot.scheduledFinish, cycleTimeSeconds, currentTime);
   // A manually confirmed preparation lets Release proceed even while the underlying Readiness fact still shows ATTENTION — the two remain distinct, separately displayed facts (section 29).
   const effectiveReadinessStatus = preparationConfirmed ? 'READY' : readiness?.status;
   const releaseRecord: ProductionReleaseRecord | undefined = productionReleases[lot.id] ?? (effectiveReadinessStatus ? resolveDemonstrativeRelease({ lotId: lot.id, productionOrderId: lot.productionOrderId, resourceId: operationalResourceId, scheduleVersionId: activeScheduleVersionId, scheduledStart: lot.scheduledStart, scheduledFinish: lot.scheduledFinish, readiness: effectiveReadinessStatus }, lot.materialId, currentTime) : undefined);
