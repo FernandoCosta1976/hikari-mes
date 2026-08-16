@@ -89,82 +89,52 @@ export function StrategicViewPage() {
 
   const oeeRow = (resourceId: string) => oeeDay.rows.find((row) => row.resourceId === resourceId)!;
 
+  const statusReason = status === 'RISCO'
+    ? `${healthCounts.LATE_NOT_STARTED + healthCounts.BEHIND_PLAN} máquina(s) atrasada(s) ou abaixo do plano`
+    : status === 'ATENCAO'
+    ? (downstream.status !== 'PROTECTED' ? 'Usinagem em atenção de cobertura' : `${healthCounts.AT_RISK + healthCounts.STARTED_LATE} máquina(s) em risco de atraso`)
+    : 'Nenhum desvio relevante identificado';
+
   return <OperationalWorkspace perspective="STRATEGIC" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Visão Estratégica</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><button onClick={reset}>Restaurar cenário</button><IconTip icon="ⓘ" label="Cockpit demonstrativo" tip="Cockpit demonstrativo · BUSINESS VALIDATION REQUIRED" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero} aria-labelledby="strategic-title">
-        <div className={styles.heroTitle}>
-          <span>Fundição DC · {currentShift.shiftName.toUpperCase()} · {formatTime(currentTime)}</span>
-          <h1 id="strategic-title">Como está a saúde da Fundição DC?</h1>
-          <p>Estamos sendo eficazes e eficientes para proteger a produção do dia?</p>
-        </div>
-        <div className={styles.statusPill} data-tone={overallTone[status]}><span aria-hidden="true">{overallIcon[status]}</span><strong>{overallLabel[status]}</strong></div>
-        <div className={styles.heroMetrics}>
-          <div><small>Eficácia</small><strong>{pct(effectivenessRatio)}</strong></div>
-          <div><small>Eficiência · OEE</small><strong>{pct(oeeDay.areaOee)}</strong></div>
-          <div><small>Risco principal</small><strong>{priorities[0] ? `${priorities[0].resourceId} · ${lotHealthLabel[priorities[0].health.status]}` : 'Nenhum conhecido'}</strong></div>
+        <span className={styles.eyebrow}>Fundição DC · {currentShift.shiftName.toUpperCase()} · {formatTime(currentTime)}</span>
+        <h1 id="strategic-title">Como está a saúde da Fundição DC?</h1>
+        <div className={styles.statusBanner} data-tone={overallTone[status]}>
+          <span aria-hidden="true">{overallIcon[status]}</span>
+          <strong>{overallLabel[status]}</strong>
+          <span className={styles.statusReason}>{statusReason}</span>
         </div>
       </header>
 
-      <section className={styles.quadrants} aria-label="Quadrante executivo">
+      <section className={styles.n1Row} aria-label="Indicadores principais">
         <article aria-labelledby="q-production">
-          <h2 id="q-production">Produção · Eficácia</h2>
+          <h2 id="q-production">Eficácia</h2>
+          <strong className={styles.n1Value}>{pct(effectivenessRatio)}</strong>
           <Bar ratio={effectivenessRatio} tone="positive" label={`Produzido ${pct(effectivenessRatio)} da meta do dia`} />
-          <dl><div><dt>Meta</dt><dd>{meta.toLocaleString('pt-BR')}</dd></div><div><dt>Produzido</dt><dd>{producedTotal.toLocaleString('pt-BR')}</dd></div><div><dt>Falta</dt><dd>{Math.max(0, meta - producedTotal).toLocaleString('pt-BR')}</dd></div><div><dt>Lotes em atenção</dt><dd>{lotsEmAtencao}</dd></div><div><dt>Lotes em risco</dt><dd>{lotsEmRisco}</dd></div></dl>
+          <small>Meta {meta.toLocaleString('pt-BR')} · Produzido {producedTotal.toLocaleString('pt-BR')} · Falta {Math.max(0, meta - producedTotal).toLocaleString('pt-BR')} · {lotsEmAtencao} em atenção · {lotsEmRisco} em risco</small>
           <a href={withBase('/demo/fundicao-dc/production-scheduling')}>Ver Plano →</a>
         </article>
 
         <article aria-labelledby="q-oee">
-          <h2 id="q-oee">OEE · Eficiência</h2>
+          <h2 id="q-oee">Eficiência · OEE</h2>
+          <strong className={styles.n1Value}>{pct(oeeDay.areaOee)}</strong>
           <div className={styles.oeeBars}>
             <div><span>Disponibilidade</span><Bar ratio={oeeDay.areaAvailability} tone="positive" label={`Disponibilidade ${pct(oeeDay.areaAvailability)}`} /><b>{pct(oeeDay.areaAvailability)}</b></div>
             <div><span>Desempenho</span><Bar ratio={oeeDay.areaPerformance} tone="positive" label={`Desempenho ${pct(oeeDay.areaPerformance)}`} /><b>{pct(oeeDay.areaPerformance)}</b></div>
             <div><span>Qualidade</span><Bar ratio={oeeDay.areaQuality} tone="positive" label={`Qualidade ${pct(oeeDay.areaQuality)}`} /><b>{pct(oeeDay.areaQuality)}</b></div>
           </div>
-          <p><strong>OEE {pct(oeeDay.areaOee)}</strong>{oeeDay.mainImpact ? <span> · Principal perda: {oeeDay.mainImpact.resourceId}</span> : null}</p>
           <a href={withBase('/demo/fundicao-dc/oee')}>Entender perda →</a>
         </article>
 
-        <article aria-labelledby="q-adherence">
-          <h2 id="q-adherence">Aderência ao plano</h2>
-          <div className={styles.shiftBars}>{adherenceShifts.map((shift) => <div key={shift.shiftId} data-current={shift.shiftId === currentShift.shiftId || undefined}><span>{shift.shiftName}</span><Bar ratio={shift.total > 0 ? shift.ratio : null} tone="positive" label={`${shift.shiftName}: ${shift.total > 0 ? pct(shift.ratio) : 'N/A'}`} /><b>{shift.total > 0 ? `${shift.onPlan}/${shift.total}` : 'N/A'}</b></div>)}</div>
-          <p><strong>{adherenceDay.onPlan}/{adherenceDay.total}</strong> Lotes conforme plano no dia</p>
-          <a href={withBase('/demo/fundicao-dc/production-adherence')}>Ver Aderência →</a>
-        </article>
-
-        <article aria-labelledby="q-flow">
-          <h2 id="q-flow">Fluxo · Risco a jusante</h2>
-          <div className={styles.downstream} data-tone={downstreamTone[downstream.status]}>
-            <span>Usinagem</span><strong>{downstreamLabel[downstream.status]}</strong>
-            <Bar ratio={downstream.projectedCoverageHours / downstream.targetCoverageHours} tone={downstreamTone[downstream.status] === 'positive' ? 'positive' : 'attention'} label={`Cobertura projetada ${downstream.projectedCoverageHours}h de meta ${downstream.targetCoverageHours}h`} />
-            <small>Atual {downstream.currentCoverageHours}h · Projetado {downstream.projectedCoverageHours}h · Meta {downstream.targetCoverageHours}h · Material crítico {downstream.criticalMaterial}</small>
-          </div>
-          {criticalMold ? <p className={styles.moldRisk}><span aria-hidden="true">⚠</span> Molde {criticalMold.code} ({criticalMold.resourceId}) · {Math.round(criticalMold.lifeUsedRatio * 100)}% da vida útil · risco de indisponibilidade futura</p> : null}
-          <a href={withBase('/demo/fundicao-dc/production-monitoring')}>Ver Acompanhamento →</a>
-        </article>
-      </section>
-
-      <section className={styles.machines} aria-labelledby="machines-title">
-        <h2 id="machines-title">Situação das Máquinas</h2>
-        <div className={styles.machineGrid}>{FOUNDRY_RESOURCE_IDS.map((resourceId) => { const { health } = healthByResource[resourceId]; const row = oeeRow(resourceId); return <a key={resourceId} className={styles.machineTile} href={withBase('/demo/fundicao-dc/production-execution')}>
-          <strong>{resourceId}</strong>
-          <LotHealthIndicator health={health} compact />
-          <span>{lotHealthLabel[health.status]}</span>
-          <small>OEE {pct(row.oee)}</small>
-        </a>; })}</div>
-      </section>
-
-      <section className={styles.lowerGrid}>
-        <article aria-label="Distribuição de saúde dos Lotes acompanhados">
-          <h2>Saúde dos Lotes acompanhados</h2>
-          <StackedBar segments={(Object.entries(healthCounts) as [LotHealthStatus, number][]).filter(([, count]) => count > 0).map(([statusKey, count]) => ({ value: count, tone: statusKey === 'BEHIND_PLAN' || statusKey === 'LATE_NOT_STARTED' ? 'attention' : statusKey === 'AT_RISK' ? 'attention' : statusKey === 'ON_TRACK' || statusKey === 'COMPLETED' ? 'positive' : 'neutral', label: `${lotHealthIcon[statusKey]} ${lotHealthLabel[statusKey]}: ${count}` }))} />
-          <ul className={styles.healthLegend}>{(Object.entries(healthCounts) as [LotHealthStatus, number][]).filter(([, count]) => count > 0).map(([statusKey, count]) => <li key={statusKey}><span aria-hidden="true">{lotHealthIcon[statusKey]}</span>{lotHealthLabel[statusKey]} · {count}</li>)}</ul>
-        </article>
-
-        <article aria-label="Qualidade do dia">
-          <h2>Qualidade do dia</h2>
-          <StackedBar segments={[{ value: qualityDay.good, tone: 'positive', label: `Boas ${qualityDay.good}` }, { value: qualityDay.reject, tone: 'attention', label: `Refugo ${qualityDay.reject}` }, { value: qualityDay.rework, tone: 'neutral', label: `Retrabalho ${qualityDay.rework}` }]} />
-          <p><strong>{pct(qualityDay.qualityRate)}</strong> de qualidade · {qualityDay.produced} peças produzidas</p>
-          <a href={withBase('/demo/fundicao-dc/production-quality')}>Ver Qualidade →</a>
+        <article aria-labelledby="q-risk" className={styles.riskCard} data-tone={priorities[0] ? 'attentionStrong' : 'positive'}>
+          <h2 id="q-risk">Principal risco</h2>
+          {priorities[0] ? <>
+            <span className={styles.riskIcon} aria-hidden="true">{lotHealthIcon[priorities[0].health.status]}</span>
+            <strong className={styles.n1Value}>{priorities[0].resourceId} · Lote {priorities[0].lot.lotNumber}</strong>
+            <small>{lotHealthLabel[priorities[0].health.status]}</small>
+            <a href={withBase('/demo/fundicao-dc/production-execution')}>Ver {priorities[0].resourceId} →</a>
+          </> : <><strong className={styles.n1Value}>Nenhum</strong><small>Nenhum risco relevante identificado</small></>}
         </article>
       </section>
 
@@ -175,6 +145,43 @@ export function StrategicViewPage() {
           <div><strong>{resourceId} · Lote {lot.lotNumber}</strong><span>{lotHealthLabel[health.status]}</span></div>
           <a href={withBase('/demo/fundicao-dc/production-execution')}>Ver →</a>
         </li>)}</ol> : <p>Nenhuma prioridade identificada nos fatos atuais.</p>}
+      </section>
+
+      <section className={styles.machines} aria-labelledby="machines-title">
+        <div className={styles.machinesHead}><h2 id="machines-title">Situação das Máquinas</h2><StackedBar segments={(Object.entries(healthCounts) as [LotHealthStatus, number][]).filter(([, count]) => count > 0).map(([statusKey, count]) => ({ value: count, tone: statusKey === 'BEHIND_PLAN' || statusKey === 'LATE_NOT_STARTED' || statusKey === 'AT_RISK' ? 'attention' : statusKey === 'ON_TRACK' || statusKey === 'COMPLETED' ? 'positive' : 'neutral', label: `${lotHealthIcon[statusKey]} ${lotHealthLabel[statusKey]}: ${count}` }))} className={styles.machinesSummaryBar} /></div>
+        <div className={styles.machineGrid}>{FOUNDRY_RESOURCE_IDS.map((resourceId) => { const { health } = healthByResource[resourceId]; const row = oeeRow(resourceId); return <a key={resourceId} className={styles.machineTile} href={withBase('/demo/fundicao-dc/production-execution')}>
+          <strong>{resourceId}</strong>
+          <LotHealthIndicator health={health} compact />
+          <span>{lotHealthLabel[health.status]}</span>
+          <small>OEE {pct(row.oee)}</small>
+        </a>; })}</div>
+      </section>
+
+      <section className={styles.n2Row} aria-label="Detalhes de apoio">
+        <article aria-label="Aderência ao plano">
+          <h3>Aderência ao plano</h3>
+          <div className={styles.shiftBars}>{adherenceShifts.map((shift) => <div key={shift.shiftId} data-current={shift.shiftId === currentShift.shiftId || undefined}><span>{shift.shiftName}</span><Bar ratio={shift.total > 0 ? shift.ratio : null} tone="positive" label={`${shift.shiftName}: ${shift.total > 0 ? pct(shift.ratio) : 'N/A'}`} /><b>{shift.total > 0 ? `${shift.onPlan}/${shift.total}` : 'N/A'}</b></div>)}</div>
+          <small>{adherenceDay.onPlan}/{adherenceDay.total} Lotes conforme plano no dia</small>
+          <a href={withBase('/demo/fundicao-dc/production-adherence')}>Ver Aderência →</a>
+        </article>
+
+        <article aria-label="Qualidade do dia">
+          <h3>Qualidade do dia</h3>
+          <StackedBar segments={[{ value: qualityDay.good, tone: 'positive', label: `Boas ${qualityDay.good}` }, { value: qualityDay.reject, tone: 'attention', label: `Refugo ${qualityDay.reject}` }, { value: qualityDay.rework, tone: 'neutral', label: `Retrabalho ${qualityDay.rework}` }]} />
+          <small>{pct(qualityDay.qualityRate)} de qualidade · {qualityDay.produced} peças produzidas</small>
+          <a href={withBase('/demo/fundicao-dc/production-quality')}>Ver Qualidade →</a>
+        </article>
+
+        <article aria-label="Fluxo a jusante · Usinagem">
+          <h3>Fluxo a jusante · Usinagem</h3>
+          <div className={styles.downstream} data-tone={downstreamTone[downstream.status]}>
+            <span>{downstreamLabel[downstream.status]}</span>
+            <Bar ratio={downstream.projectedCoverageHours / downstream.targetCoverageHours} tone={downstreamTone[downstream.status] === 'positive' ? 'positive' : 'attention'} label={`Cobertura projetada ${downstream.projectedCoverageHours}h de meta ${downstream.targetCoverageHours}h`} />
+            <small>Atual {downstream.currentCoverageHours}h · Meta {downstream.targetCoverageHours}h · Material {downstream.criticalMaterial}</small>
+          </div>
+          {criticalMold ? <small className={styles.moldRisk}><span aria-hidden="true">⚠</span> Molde {criticalMold.code} ({criticalMold.resourceId}) · {Math.round(criticalMold.lifeUsedRatio * 100)}% da vida útil</small> : null}
+          <a href={withBase('/demo/fundicao-dc/production-monitoring')}>Ver Acompanhamento →</a>
+        </article>
       </section>
     </div>
   </OperationalWorkspace>;

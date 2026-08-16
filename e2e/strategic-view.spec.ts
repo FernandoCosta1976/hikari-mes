@@ -7,11 +7,11 @@ test('shows the executive cockpit with Meta, RISCO status, five machines and pri
   await expect(page.getByRole('heading', { name: 'Como está a saúde da Fundição DC?' })).toBeVisible();
   await expect(page.getByText('RISCO', { exact: true })).toBeVisible();
 
-  const production = page.getByRole('heading', { name: 'Produção · Eficácia' }).locator('..');
+  const production = page.getByRole('heading', { name: 'Eficácia', exact: true }).locator('..');
   await expect(production).toContainText('2.000');
   await expect(production).toContainText('209');
 
-  const machines = page.getByRole('heading', { name: 'Situação das Máquinas' }).locator('..');
+  const machines = page.getByRole('heading', { name: 'Situação das Máquinas' }).locator('xpath=ancestor::section[1]');
   for (const resource of ['DC01', 'DC02', 'DC03', 'DC04', 'DC05']) await expect(machines.getByText(resource, { exact: true })).toBeVisible();
 
   const priorities = page.getByRole('heading', { name: 'Prioridades agora' }).locator('..');
