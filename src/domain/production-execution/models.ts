@@ -44,3 +44,18 @@ export function completeExecution(record: ProductionExecutionRecord, at: string)
   if (record.status !== 'IN_PROGRESS') return record;
   return { ...record, status: 'COMPLETED' as const, actualFinish: at };
 }
+
+/**
+ * A Resource can end up with more than one execution fact once a Lot is
+ * reprogrammed onto it (its Operational Resource) after the baseline five
+ * — the whole point of the persisted demo is that this decision must be
+ * visible everywhere. Whichever Lot is actively running wins (most recently
+ * started); otherwise the most recently created fact wins.
+ */
+export function currentExecutionForResource(executions: readonly ProductionExecutionRecord[], resourceId: string): ProductionExecutionRecord | undefined {
+  const candidates = executions.filter((item) => item.resourceId === resourceId);
+  if (candidates.length <= 1) return candidates[0];
+  const active = candidates.filter((item) => item.status === 'IN_PROGRESS' || item.status === 'PAUSED');
+  const pool = active.length ? active : candidates;
+  return pool.reduce((latest, item) => Date.parse(item.actualStart ?? '') > Date.parse(latest.actualStart ?? '') ? item : latest);
+}

@@ -57,6 +57,7 @@ test('is accessible, keyboard reachable, responsive and contains no prohibited r
   });
   expect(redUsages).toEqual([]);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.getByRole('button', { name: 'Restaurar cenário' }).click();
+  await page.getByRole('button', { name: 'Reiniciar cenário' }).click();
+  await page.getByRole('alertdialog', { name: 'Reiniciar cenário demonstrativo?' }).getByRole('button', { name: 'Reiniciar cenário' }).click();
   await expect(page.getByText(/DC03 · Lote 266 · Ferramental · 18 min/)).toBeVisible();
 });

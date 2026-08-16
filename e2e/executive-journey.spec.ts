@@ -27,7 +27,8 @@ test('Home inicia a jornada guiada e Próximo percorre 01→08 no mesmo cenário
   }
 
   await expect(page.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' })).toContainText('68%');
-  await page.getByRole('button', { name: 'Restaurar cenário' }).click();
+  await page.getByRole('button', { name: 'Reiniciar cenário' }).click();
+  await page.getByRole('alertdialog', { name: 'Reiniciar cenário demonstrativo?' }).getByRole('button', { name: 'Reiniciar cenário' }).click();
   await expect(page.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' })).toContainText('68%');
   await page.getByRole('link', { name: '← Voltar à Visão Executiva' }).click();
   await expect(page.getByRole('heading', { name: 'PROGRAMA HIKARI' })).toBeVisible();

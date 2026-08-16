@@ -88,6 +88,7 @@ test('completes the governed WF-001 interaction narrative', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Comparação de versões demonstrativas' })).toBeVisible();
   await page.locator('#operational-workspace-sidebar summary[title="Cenário"]').click();
   await page.getByRole('button', { name: 'Reiniciar cenário' }).click();
+  await page.getByRole('alertdialog', { name: 'Reiniciar cenário demonstrativo?' }).getByRole('button', { name: 'Reiniciar cenário' }).click();
   await expect(page.getByRole('button', { name: 'Hoje' })).toHaveAttribute('aria-current', 'date');
   await expect(page.getByLabel('Destino', { exact: true })).toHaveValue('ALL');
 });

@@ -10,6 +10,7 @@ import type { DeviationClassification } from '../../domain/production-adherence/
 import { assessLotExecutionHealth } from '../../domain/production-execution/lotHealth';
 import { eventDurationMinutes, type ProductionEventType } from '../../domain/production-monitoring/models';
 import { timelinePosition, timelineWidth } from '../../domain/production-scheduling/temporalMath';
+import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Bar } from '../../shared/ui/Bar/Bar';
 import { Button } from '../../shared/ui/Button/Button';
 import { IconTip } from '../../shared/ui/IconTip/IconTip';
@@ -53,7 +54,6 @@ export function ProductionAdherencePage() {
   const definition = useScenarioStore(selectProductionScheduling);
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
-  const reset = useScenarioStore((state) => state.resetScenario);
   const [openRow, setOpenRow] = useState<FundicaoDcAdherenceRow | null>(null);
   const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
   if (!definition || !scenario) return <p>Preparando aderência demonstrativa…</p>;
@@ -67,7 +67,7 @@ export function ProductionAdherencePage() {
   const mainException = shiftExceptions[0];
   const dayException = rankedExceptions(day.rows)[0];
 
-  return <OperationalWorkspace perspective="ADHERENCE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Aderência</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><button onClick={reset}>Restaurar cenário</button><IconTip icon="ⓘ" label="Classificação demonstrativa" tip="Classificação demonstrativa · BUSINESS VALIDATION REQUIRED" /></div>}>
+  return <OperationalWorkspace perspective="ADHERENCE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Aderência</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Classificação demonstrativa" tip="Classificação demonstrativa · BUSINESS VALIDATION REQUIRED" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
         <div><span>Capability 07 · Core + Essencial</span><h1>Estamos executando conforme o planejado?</h1></div>

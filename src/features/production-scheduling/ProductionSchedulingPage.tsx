@@ -10,6 +10,7 @@ import { simulateResourceMove, type ResourceSimulationImpact } from '../../domai
 import { FOUNDRY_RESOURCE_IDS, type FoundryResourceId } from '../../domain/resource/models';
 import { shiftForLot } from '../../domain/production-scheduling/shifts';
 import { assessDemonstrativeRelease } from '../../domain/production-release/models';
+import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Button } from '../../shared/ui/Button/Button';
 import { BufferCoverageSummary } from './components/BufferCoverageSummary';
 import { BufferDecisionSupport, BUFFER_CRITICAL_LOT_ID } from './components/BufferDecisionSupport';
@@ -55,7 +56,6 @@ export function ProductionSchedulingPage() {
   const compareWithPreviousVersion = useScenarioStore((state) => state.compareWithPreviousVersion);
   const closeVersionComparison = useScenarioStore((state) => state.closeVersionComparison);
   const activateScenario = useScenarioStore((state) => state.activateWf001Scenario);
-  const resetScenario = useScenarioStore((state) => state.resetScenario);
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
   const [releaseGroup, setReleaseGroup] = useState<keyof ReleaseDecisionCounts | null>(null);
   const [lotModalOpen, setLotModalOpen] = useState(false);
@@ -147,7 +147,7 @@ export function ProductionSchedulingPage() {
         <details open={openSidebarGroups.view} onToggle={(event) => { const open = event.currentTarget.open; setOpenSidebarGroups((groups) => ({ ...groups, view: open })); }}><summary title="Visão"><span aria-hidden="true">▤</span><strong>Visão</strong></summary><div className={styles.treeItems}>{([['24H', '24h'], ['SHIFT_3', 'Turno 3'], ['SHIFT_1', 'Turno 1'], ['SHIFT_2', 'Turno 2']] as const).map(([value, label]) => <Button key={value} aria-current={selectedScheduleView === value ? 'true' : undefined} onClick={() => selectScheduleView(value as ScheduleView)}>{label}</Button>)}</div></details>
         <details open={openSidebarGroups.filters} onToggle={(event) => { const open = event.currentTarget.open; setOpenSidebarGroups((groups) => ({ ...groups, filters: open })); }}><summary title="Filtros"><span aria-hidden="true">⌁</span><strong>Filtros{selectedDestination !== 'ALL' || activeWf001ScenarioId !== 'SCN-WF001-01' ? ' · 1' : ''}</strong></summary><div className={styles.treeFields}><label>Destino<select aria-label="Destino" value={selectedDestination} onChange={(event) => filterByDestination(event.target.value as DemandDestination | 'ALL')}><option value="ALL">Todos os destinos</option>{(Object.entries(destinationLabels) as [DemandDestination, string][]).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Variação<select aria-label="Variação demonstrativa" value={activeWf001ScenarioId} onChange={(event) => activateScenario(event.target.value as Wf001ScenarioId)}>{(Object.entries(scenarioLabels) as [Wf001ScenarioId, string][]).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div></details>
         <details><summary title="Plano"><span aria-hidden="true">⇄</span><strong>Plano</strong></summary><div className={styles.treeItems}><Button onClick={compareWithPreviousVersion}>Comparar anterior</Button><Button onClick={() => { const revision = document.getElementById('schedule-revision'); if (revision instanceof HTMLDetailsElement) revision.open = true; }}>Ver alterações</Button></div></details>
-        <details><summary title="Cenário"><span aria-hidden="true">↺</span><strong>Cenário</strong></summary><div className={styles.treeItems}><Button onClick={() => { resetScenario(); setSelectedLot(null); }}>Reiniciar cenário</Button></div></details>
+        <details><summary title="Cenário"><span aria-hidden="true">↺</span><strong>Cenário</strong></summary><div className={styles.treeItems}><ScenarioResetControl /></div></details>
       </div>}>
       <div className={styles.page}>
       <header className={styles.hero}>

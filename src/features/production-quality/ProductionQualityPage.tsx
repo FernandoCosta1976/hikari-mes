@@ -6,6 +6,7 @@ import { computeFundicaoDcShiftOeeSummaries } from '../../demo/adapters/oeeSumma
 import { computeFundicaoDcQualitySummary, computeFundicaoDcShiftQualitySummaries, type FundicaoDcQualityRow } from '../../demo/adapters/qualitySummaryAdapter';
 import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { isValidQualityConfirmation, qualityRate, type QualityLossReason } from '../../domain/production-quality/models';
+import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Bar, StackedBar } from '../../shared/ui/Bar/Bar';
 import { Button } from '../../shared/ui/Button/Button';
 import { IconTip } from '../../shared/ui/IconTip/IconTip';
@@ -55,7 +56,6 @@ export function ProductionQualityPage() {
   const definition = useScenarioStore(selectProductionScheduling);
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
-  const reset = useScenarioStore((state) => state.resetScenario);
   const [openRow, setOpenRow] = useState<Row | null>(null);
   const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
   if (!definition || !scenario) return <p>Preparando qualidade demonstrativa…</p>;
@@ -68,7 +68,7 @@ export function ProductionQualityPage() {
   const completedShifts = shifts.filter((shift) => shift.status === 'COMPLETED');
   const invariantsHold = day.rows.every((row) => !row.confirmation || isValidQualityConfirmation(row.confirmation));
 
-  return <OperationalWorkspace perspective="QUALITY" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Qualidade &amp; Desempenho</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><button onClick={reset}>Restaurar cenário</button><IconTip icon="ⓘ" label="Confirmações demonstrativas" tip={`Confirmações demonstrativas · BUSINESS VALIDATION REQUIRED${!invariantsHold ? ' · INVARIANTE VIOLADA' : ''}`} /></div>}>
+  return <OperationalWorkspace perspective="QUALITY" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Qualidade &amp; Desempenho</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Confirmações demonstrativas" tip={`Confirmações demonstrativas · BUSINESS VALIDATION REQUIRED${!invariantsHold ? ' · INVARIANTE VIOLADA' : ''}`} /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
         <div><span>Capability 08 · Core + Essencial</span><h1>Quanto produzimos e quanto foi bom?</h1></div>

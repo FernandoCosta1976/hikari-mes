@@ -205,8 +205,23 @@ test('supports temporal navigation, stale state, mismatch, comparison and reset'
   expect(screen.getByRole('heading', { name: 'Comparação de versões demonstrativas' })).toBeInTheDocument();
   await user.click(screen.getByText('Cenário', { selector: 'summary strong' }));
   await user.click(screen.getByRole('button', { name: 'Reiniciar cenário' }));
+  const confirm = screen.getByRole('alertdialog', { name: 'Reiniciar cenário demonstrativo?' });
+  await user.click(within(confirm).getByRole('button', { name: 'Reiniciar cenário' }));
+  expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Comparação de versões demonstrativas' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Hoje' })).toHaveAttribute('aria-current', 'date');
   expect(screen.getByLabelText('Destino')).toHaveValue('ALL');
+});
+
+test('requires confirmation before resetting the scenario, and cancel leaves state untouched', async () => {
+  const user = userEvent.setup();
+  renderWithFoundation(<ProductionSchedulingPage />);
+  await user.click(screen.getByText('Cenário', { selector: 'summary strong' }));
+  await user.click(screen.getByRole('button', { name: 'Reiniciar cenário' }));
+  const confirm = screen.getByRole('alertdialog', { name: 'Reiniciar cenário demonstrativo?' });
+  expect(confirm).toHaveTextContent('Todas as alterações realizadas nesta demonstração serão descartadas.');
+  await user.click(within(confirm).getByRole('button', { name: 'Cancelar' }));
+  expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
 });
 
 test('reveals source-level freshness on demand', async () => {

@@ -1,7 +1,7 @@
 import { fundicaoDcIdealCycleTimeSecondsFixture } from '../fixtures/fundicaoDcIdealCycleTime';
 import { fundicaoDcQualityConfirmationsFixture } from '../fixtures/fundicaoDcQualityConfirmations';
 import { aggregateAvailability, aggregatePerformance, aggregateQuality, assessAvailability, assessOee, assessPerformance, classifyShiftStatus, plannedProductionTimeMinutes, resolveShift, topOeeImpacts, type OeeDimension, type ResourceOeeRow, type ShiftStatus } from '../../domain/oee/calculations';
-import type { ProductionExecutionRecord } from '../../domain/production-execution/models';
+import { currentExecutionForResource, type ProductionExecutionRecord } from '../../domain/production-execution/models';
 import { knownRunTimeMinutes } from '../../domain/production-quality/models';
 import type { Lot, ProductionSchedulingDefinition, Shift } from '../../domain/production-scheduling/models';
 import { FOUNDRY_RESOURCE_IDS, type FoundryResourceId } from '../../domain/resource/models';
@@ -41,7 +41,7 @@ export interface FundicaoDcShiftOeeSummary extends FundicaoDcOeeAggregate {
 function buildRows(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string): readonly FundicaoDcOeeRow[] {
   const confirmationsByLot = Object.fromEntries(fundicaoDcQualityConfirmationsFixture.map((confirmation) => [confirmation.lotId, confirmation]));
   return FOUNDRY_RESOURCE_IDS.map((resourceId) => {
-    const execution = Object.values(executionsByLot).find((item) => item.resourceId === resourceId)!;
+    const execution = currentExecutionForResource(Object.values(executionsByLot), resourceId)!;
     const lot = definition.lots.find((item) => item.id === execution.lotId)!;
     const runTimeMinutes = knownRunTimeMinutes(execution, currentTime);
     const plannedTimeMinutes = plannedProductionTimeMinutes(lot, execution, definition.shifts, currentTime);

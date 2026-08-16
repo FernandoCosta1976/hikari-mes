@@ -1,6 +1,6 @@
 import { classifyShiftStatus, resolveShift, type ShiftStatus } from '../../domain/oee/calculations';
 import { adherenceSummary, assessDeviation, assessSequenceImpact, byOperationalRelevance, type DeviationClassification, type SequenceImpact } from '../../domain/production-adherence/models';
-import type { ProductionExecutionRecord } from '../../domain/production-execution/models';
+import { currentExecutionForResource, type ProductionExecutionRecord } from '../../domain/production-execution/models';
 import type { Lot, ProductionSchedulingDefinition, Shift } from '../../domain/production-scheduling/models';
 import { FOUNDRY_RESOURCE_IDS, type FoundryResourceId } from '../../domain/resource/models';
 
@@ -32,7 +32,7 @@ export interface FundicaoDcShiftAdherenceSummary extends FundicaoDcAdherenceAggr
 
 function buildRows(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string): readonly FundicaoDcAdherenceRow[] {
   return FOUNDRY_RESOURCE_IDS.map((resourceId) => {
-    const execution = Object.values(executionsByLot).find((item) => item.resourceId === resourceId)!;
+    const execution = currentExecutionForResource(Object.values(executionsByLot), resourceId)!;
     const lot = definition.lots.find((item) => item.id === execution.lotId)!;
     const assessment = assessDeviation(execution, lot, currentTime);
     const impact = assessSequenceImpact(definition.lots, lot, assessment.classification);

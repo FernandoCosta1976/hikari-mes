@@ -40,6 +40,7 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
   const revokeLotRelease = useScenarioStore((state) => state.revokeLotRelease);
   const postponeLot = useScenarioStore((state) => state.postponeLot);
   const adoptOrganization = useScenarioStore((state) => state.adoptOrganization);
+  const startLotExecution = useScenarioStore((state) => state.startLotExecution);
 
   const [panel, setPanel] = useState<Panel>(null);
   const [revocationReason, setRevocationReason] = useState<RevocationReason>('PLAN_CHANGE');
@@ -77,7 +78,7 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
     : lifecycle === 'EM_PREPARACAO'
     ? { icon: '⚠', tone: 'attentionStrong' as const, title: `${dominantCondition?.label ?? 'Preparação'} ainda pendente`, body: dominantCondition?.evidence ?? 'Esta Ordem não pode ser liberada enquanto esta condição permanecer pendente.', action: { label: 'Marcar preparação como concluída', onClick: () => confirmPreparation(lot.id) } }
     : releaseRecord?.status === 'RELEASED'
-    ? { icon: '✓', tone: 'positive' as const, title: releaseRecord.releaseType === 'AUTOMATIC' ? 'Liberada automaticamente pela regra HIKARI' : 'Liberada manualmente', body: 'Pronta para iniciar produção quando a máquina estiver disponível.' }
+    ? { icon: '✓', tone: 'positive' as const, title: releaseRecord.releaseType === 'AUTOMATIC' ? 'Liberada automaticamente pela regra HIKARI' : 'Liberada manualmente', body: `Pronta para iniciar produção em ${operationalResourceId}.`, action: { label: 'Iniciar produção', onClick: () => startLotExecution(lot.id) } }
     : releaseRecord?.status === 'READY_FOR_RELEASE'
     ? { icon: '○', tone: 'attention' as const, title: 'Pronta para liberação', body: 'A preparação está concluída; falta a decisão de liberação.', action: { label: 'Liberar para produção', onClick: () => setPanel('RELEASE_CONFIRM') } }
     : releaseRecord?.status === 'BLOCKED_FOR_RELEASE'

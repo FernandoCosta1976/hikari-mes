@@ -9,6 +9,7 @@ import { fundicaoDcQualityConfirmationsFixture } from '../../demo/fixtures/fundi
 import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { OeeDimension } from '../../domain/oee/calculations';
 import type { FoundryResourceId } from '../../domain/resource/models';
+import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Button } from '../../shared/ui/Button/Button';
 import { IconTip } from '../../shared/ui/IconTip/IconTip';
 import { formatTime } from '../production-scheduling/productionSchedulingViewModel';
@@ -88,7 +89,6 @@ export function OeePage() {
   const definition = useScenarioStore(selectProductionScheduling);
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
-  const reset = useScenarioStore((state) => state.resetScenario);
   const [focus, setFocus] = useState<Focus | null>(null);
   const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
   if (!definition || !scenario) return <p>Preparando OEE demonstrativo…</p>;
@@ -100,7 +100,7 @@ export function OeePage() {
   const { rows, mainImpact: dayMainImpact } = day;
   const shiftMainImpactRow = currentShift.mainImpact ? currentShift.rows.find((row) => row.resourceId === currentShift.mainImpact!.resourceId) : undefined;
 
-  return <OperationalWorkspace perspective="OEE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>OEE</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><button onClick={reset}>Restaurar cenário</button><IconTip icon="ⓘ" label="Fórmula demonstrativa" tip="Fórmula demonstrativa · BUSINESS VALIDATION REQUIRED" /></div>}>
+  return <OperationalWorkspace perspective="OEE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>OEE</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Fórmula demonstrativa" tip="Fórmula demonstrativa · BUSINESS VALIDATION REQUIRED" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
         <div><span>Capability 09 · OEE</span><h1>Como estamos performando e por quê?</h1></div>

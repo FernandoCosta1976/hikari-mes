@@ -11,8 +11,10 @@ import { selectProductionExecutions, selectProductionReadiness, selectProduction
 import type { DownstreamAreaStatus } from '../../domain/downstream/models';
 import { mostCriticalMold } from '../../domain/mold/models';
 import { assessLotExecutionHealth, byLotHealthAttention, lotHealthIcon, lotHealthLabel, type LotHealthProjection, type LotHealthStatus } from '../../domain/production-execution/lotHealth';
+import { currentExecutionForResource } from '../../domain/production-execution/models';
 import { FOUNDRY_RESOURCE_IDS, type FoundryResourceId } from '../../domain/resource/models';
 import type { Lot } from '../../domain/production-scheduling/models';
+import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Bar, StackedBar } from '../../shared/ui/Bar/Bar';
 import { IconTip } from '../../shared/ui/IconTip/IconTip';
 import { LotHealthIndicator } from '../../shared/ui/LotHealthIndicator/LotHealthIndicator';
@@ -49,7 +51,6 @@ export function StrategicViewPage() {
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const readinessAssessments = useScenarioStore(selectProductionReadiness);
-  const reset = useScenarioStore((state) => state.resetScenario);
   const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
   if (!definition || !scenario) return <p>Preparando visão estratégica…</p>;
 
@@ -70,7 +71,7 @@ export function StrategicViewPage() {
   const lotsEmAtencao = readinessCounts.ATTENTION + readinessCounts.BLOCKED + readinessCounts.UNKNOWN;
 
   const healthByResource = Object.fromEntries(FOUNDRY_RESOURCE_IDS.map((resourceId) => {
-    const execution = Object.values(executionsByLot).find((item) => item.resourceId === resourceId)!;
+    const execution = currentExecutionForResource(Object.values(executionsByLot), resourceId)!;
     const lot = definition.lots.find((item) => item.id === execution.lotId)!;
     const cycleTimeSeconds = fundicaoDcIdealCycleTimeSecondsFixture[lot.materialId];
     const health = assessLotExecutionHealth(execution, lot.scheduledStart, lot.scheduledFinish, cycleTimeSeconds, currentTime);
@@ -95,7 +96,7 @@ export function StrategicViewPage() {
     ? (downstream.status !== 'PROTECTED' ? 'Usinagem em atenção de cobertura' : `${healthCounts.AT_RISK + healthCounts.STARTED_LATE} máquina(s) em risco de atraso`)
     : 'Nenhum desvio relevante identificado';
 
-  return <OperationalWorkspace perspective="STRATEGIC" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Visão Estratégica</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><button onClick={reset}>Restaurar cenário</button><IconTip icon="ⓘ" label="Cockpit demonstrativo" tip="Cockpit demonstrativo · BUSINESS VALIDATION REQUIRED" /></div>}>
+  return <OperationalWorkspace perspective="STRATEGIC" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Visão Estratégica</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Cockpit demonstrativo" tip="Cockpit demonstrativo · BUSINESS VALIDATION REQUIRED" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero} aria-labelledby="strategic-title">
         <span className={styles.eyebrow}>Fundição DC · {currentShift.shiftName.toUpperCase()} · {formatTime(currentTime)}</span>

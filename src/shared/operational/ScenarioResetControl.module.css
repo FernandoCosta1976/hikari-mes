@@ -1,0 +1,8 @@
+.control{position:relative;display:grid;gap:.4rem}
+.badge{position:relative;display:inline-flex;align-items:center;gap:.3rem;justify-self:start;padding:.2rem .5rem;border-radius:999px;background:var(--color-neutral-100);color:var(--color-text-muted);font-size:.6rem;font-weight:800;text-transform:uppercase;cursor:help}
+.badge span:first-child{color:var(--color-informational);font-size:.7rem}
+.badge[data-tip]:hover::after,.badge[data-tip]:focus-visible::after{content:attr(data-tip);position:absolute;bottom:calc(100% + .35rem);left:0;width:max-content;max-width:14rem;padding:.35rem .55rem;border-radius:.3rem;background:#0b1830;color:#fff;font-size:.6rem;font-weight:600;line-height:1.35;box-shadow:0 6px 16px rgba(8,20,38,.28);z-index:80;pointer-events:none}
+.confirm{position:absolute;top:calc(100% + .4rem);left:0;z-index:60;display:grid;gap:.4rem;width:16rem;padding:.7rem;border:1px solid var(--color-border);border-radius:var(--radius-medium);background:var(--color-surface);box-shadow:0 12px 30px rgba(8,20,38,.18)}
+.confirm strong{font-size:.78rem}
+.confirm p{margin:0;color:var(--color-text-muted);font-size:.66rem}
+.confirmActions{display:flex;justify-content:flex-end;gap:.4rem}
