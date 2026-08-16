@@ -16,8 +16,8 @@ export const DEMO_JOURNEY: readonly DemoJourneyStep[] = [
   { id: '08', label: 'OEE', href: '/demo/fundicao-dc/oee', path: '/demo/fundicao-dc/oee' },
 ];
 
+/** -1 means the current route is not part of the guided demo journey (e.g. Home, Visão Estratégica). */
 export function currentJourneyIndex(pathname: string, search: string): number {
   if (pathname === '/demo/fundicao-dc/production-scheduling' && search.includes('lotId=lot-251')) return 2;
-  const index = DEMO_JOURNEY.findIndex((step) => step.path === pathname);
-  return index === -1 ? 0 : index;
+  return DEMO_JOURNEY.findIndex((step) => step.path === pathname);
 }

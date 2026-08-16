@@ -10,7 +10,7 @@ test('shows Turno 2 beside the day accumulated, a simplified shift history and a
   await expect(turnoRow).toContainText('TURNO 2 · EM ANDAMENTO');
   await expect(turnoRow).toContainText('Parcial até 17:23');
   await expect(turnoRow).toContainText('68%');
-  await expect(turnoRow).toContainText('Performance');
+  await expect(turnoRow).toContainText('Desempenho');
   await expect(turnoRow).toContainText('DC03');
   await expect(turnoRow).toContainText('Acumulado do dia');
   await expect(turnoRow).toContainText('70%');
@@ -45,14 +45,14 @@ test('opens Turno-scoped dimension and Resource drill-downs, and keeps the expla
   const turnoRow = page.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' });
   await turnoRow.getByRole('button', { name: /Disponibilidade/ }).click();
   const dimensionDialog = page.getByRole('dialog', { name: /Disponibilidade/ });
-  await expect(dimensionDialog).toContainText('Run Time');
+  await expect(dimensionDialog).toContainText('Tempo em produção');
   await expect(dimensionDialog).toContainText('TURNO 2');
   await dimensionDialog.getByRole('button', { name: 'Fechar contexto de OEE' }).click();
 
   const machines = page.getByRole('region', { name: 'Situação das Máquinas' });
   await machines.getByRole('button', { name: /DC03/ }).click();
   const resourceDialog = page.getByRole('dialog', { name: /DC03/ });
-  await expect(resourceDialog).toContainText('Planned Production Time');
+  await expect(resourceDialog).toContainText('Tempo de produção planejado');
   await expect(resourceDialog).toContainText('Rastreável');
 });
 

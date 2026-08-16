@@ -12,7 +12,7 @@ test('shows five Resources, parallel execution and the shared Current Time', () 
   const board = screen.getByRole('region', { name: 'Situação das cinco máquinas' });
   for (const resource of ['DC01','DC02','DC03','DC04','DC05']) expect(within(board).getByText(resource)).toBeInTheDocument();
   expect(within(board).getAllByText('Em produção')).toHaveLength(2);
-  expect(screen.getByText(/Current Time 17:23/)).toBeInTheDocument();
+  expect(screen.getByText(/Horário atual 17:23/)).toBeInTheDocument();
 });
 test('shows the installed Mold and the Apontamento da Produção (Automatic and Manual origins)', () => {
   renderWithFoundation(<ProductionExecutionPage />);

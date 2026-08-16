@@ -46,7 +46,7 @@ test('completes the governed WF-001 interaction narrative', async ({ page }) => 
   const detail = page.getByRole('dialog', { name: 'Lote 265' });
   await expect(detail).toBeVisible();
   await detail.getByRole('button', { name: 'Recursos' }).click();
-  await expect(detail).toContainText('Resumo de Resources por condição');
+  await expect(detail).toContainText('Resumo de Recursos por condição');
   await expect(detail).toContainText('Requer atenção');
   await expect(detail).toContainText('DC03');
   await expect(detail).toContainText('DC05');
@@ -230,8 +230,8 @@ test('shows canonical Resource conditions as a read-only timeline overlay and re
   await expect(page.getByRole('region', { name: 'Máquina programada DC05' })).toHaveAttribute('data-resource-condition', 'UNKNOWN');
   await expect(page.getByRole('region', { name: 'Máquina programada DC02' })).toHaveAttribute('data-resource-eligible', 'false');
   await page.getByRole('region', { name: 'Máquina programada DC01' }).locator('header').focus();
-  await expect(page.getByRole('tooltip').first()).toContainText('Eligibility: Elegível');
-  await expect(page.getByRole('region', { name: 'Impacto conhecido por Resource' })).toContainText('Setup existente conhecido');
+  await expect(page.getByRole('tooltip').first()).toContainText('Elegibilidade: Elegível');
+  await expect(page.getByRole('region', { name: 'Impacto conhecido por Recurso' })).toContainText('Setup existente conhecido');
   await expect(page.getByText(/melhor máquina|ótima escolha/i)).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Atribuir|Trocar máquina|Despachar|Liberar/ })).toHaveCount(0);
   await expect(page.locator('[data-lot-id]')).toHaveCount(originalLotCount);
@@ -298,7 +298,7 @@ test('simulates a vertical Resource move with fixed lanes, comparison, undo and 
   const simulationRed = await page.locator('body *').evaluateAll((elements) => { const forbidden = new Set(['rgb(255, 0, 0)', 'rgb(220, 38, 38)', 'rgb(239, 68, 68)']); return elements.flatMap((element) => { const style = getComputedStyle(element); return [style.color, style.backgroundColor, style.borderColor].filter((value) => forbidden.has(value)); }); });
   expect(simulationRed).toEqual([]);
   await simulation.getByRole('button', { name: 'Comparar' }).click();
-  await expect(page.getByRole('region', { name: 'Comparação Plano recebido versus Simulação' })).toContainText('Resource original: DC01');
+  await expect(page.getByRole('region', { name: 'Comparação Plano recebido versus Simulação' })).toContainText('Recurso original: DC01');
   await simulation.getByRole('button', { name: 'Desfazer' }).click();
   await expect(simulation).toContainText('0 alterações');
   expect(await laneOrder()).toEqual(fixedOrder);
@@ -340,7 +340,7 @@ test('adopts an operational Resource for a not-started Lot without overwriting t
   await expect(modal).toContainText('Programado: DC01');
   await modal.getByRole('button', { name: 'Liberar para produção' }).click();
   await modal.getByRole('button', { name: 'Execução' }).click();
-  await expect(modal).toContainText('Lot liberado e organizado em DC05.');
+  await expect(modal).toContainText('Lote liberado e organizado em DC05.');
 });
 
 test('captures fixed conditions, buffer and What-If simulation candidates', async ({ page }) => {
@@ -364,7 +364,7 @@ test('captures the Resource condition overlay candidate', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole('button', { name: 'Avaliar cenários' }).click();
   await page.getByRole('button', { name: /Lote 257, Material A, 100 peças/ }).click();
-  await expect(page.getByRole('region', { name: 'Impacto conhecido por Resource' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Impacto conhecido por Recurso' })).toBeVisible();
   await expect(page).toHaveScreenshot('WF-001-RESOURCE-CONDITION-OVERLAY-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 

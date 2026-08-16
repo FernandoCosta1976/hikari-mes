@@ -46,7 +46,7 @@ test('opens exception-first from the Plan summary and aggregate from direct side
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.getByRole('button', { name: /Preparação.*OK/ }).click();
   await expect(page).toHaveURL(/production-readiness$/);
-  await expect(page.getByRole('region', { name: 'Preparação do plano' })).toContainText('Nenhum Lot foi selecionado silenciosamente');
+  await expect(page.getByRole('region', { name: 'Preparação do plano' })).toContainText('Nenhum Lote foi selecionado silenciosamente');
   await expect(page.getByText('15/05/2025')).toBeVisible();
   await expect(page.getByText('Organização')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Fila operacional de exceções' })).toBeVisible();

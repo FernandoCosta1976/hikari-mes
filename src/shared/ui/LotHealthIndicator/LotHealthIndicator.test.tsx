@@ -11,11 +11,11 @@ describe('LotHealthIndicator', () => {
   it('renders the canonical icon, tone and label for BEHIND_PLAN identically regardless of caller', () => {
     const health = projection({ status: 'BEHIND_PLAN' });
     const { unmount } = render(<LotHealthIndicator health={health} />);
-    expect(screen.getByRole('group', { name: /Execution Health: Abaixo do plano/ })).toHaveTextContent('⚠');
-    expect(screen.getByRole('group', { name: /Execution Health: Abaixo do plano/ })).toHaveAttribute('data-tone', 'attentionStrong');
+    expect(screen.getByRole('group', { name: /Saúde de execução: Abaixo do plano/ })).toHaveTextContent('⚠');
+    expect(screen.getByRole('group', { name: /Saúde de execução: Abaixo do plano/ })).toHaveAttribute('data-tone', 'attentionStrong');
     unmount();
     render(<LotHealthIndicator health={health} compact />);
-    expect(screen.getByRole('group', { name: /Execution Health: Abaixo do plano/ })).toHaveAttribute('data-tone', 'attentionStrong');
+    expect(screen.getByRole('group', { name: /Saúde de execução: Abaixo do plano/ })).toHaveAttribute('data-tone', 'attentionStrong');
   });
 
   it('never uses a red tone token for any status', () => {
@@ -27,13 +27,13 @@ describe('LotHealthIndicator', () => {
     }
   });
 
-  it('exposes Lot/Material/Quantity/Cycle Time/Duration/Scheduled Start-Finish/Resource in the tooltip', () => {
+  it('exposes Lote/Material/Quantidade/Tempo de ciclo/Duração/Início-Término planejado/Recurso in the tooltip', () => {
     const health = projection({ status: 'AT_RISK', cycleTimeSecondsPerPiece: 95, productionDurationSeconds: 9500, expectedQuantityNow: 40, gapQuantity: -2, projectedFinish: '2025-05-15T19:00:00-03:00' });
     render(<LotHealthIndicator health={health} context={{ lotLabel: '266', material: 'Material B', quantity: 100, resourceId: 'DC03', scheduledStart: '15:30', scheduledFinish: '17:30' }} />);
-    const el = screen.getByRole('group', { name: /Execution Health: Risco de atraso/ });
-    expect(el).toHaveAttribute('data-tip', expect.stringContaining('Lot 266 · Material B · 100 peças'));
-    expect(el).toHaveAttribute('data-tip', expect.stringContaining('Engineering Cycle Time 95s/peça'));
-    expect(el).toHaveAttribute('data-tip', expect.stringContaining('Scheduled Start 15:30 · Scheduled Finish 17:30'));
-    expect(el).toHaveAttribute('data-tip', expect.stringContaining('Resource DC03'));
+    const el = screen.getByRole('group', { name: /Saúde de execução: Risco de atraso/ });
+    expect(el).toHaveAttribute('data-tip', expect.stringContaining('Lote 266 · Material B · 100 peças'));
+    expect(el).toHaveAttribute('data-tip', expect.stringContaining('Tempo de ciclo padrão 95s/peça'));
+    expect(el).toHaveAttribute('data-tip', expect.stringContaining('Início planejado 15:30 · Término planejado 17:30'));
+    expect(el).toHaveAttribute('data-tip', expect.stringContaining('Recurso DC03'));
   });
 });

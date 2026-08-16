@@ -3,7 +3,8 @@ import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { withBase } from '../../app/routing/basePath';
 import { useWorkspaceSidebar } from '../../app/providers/WorkspaceSidebarContext';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
-import { selectMaterialResourceEligibilities, selectOrganizationsByLotId, selectProductionReadiness, selectProductionScheduling, selectScenarioDefinition, useScenarioStore, type ScheduleView, type Wf001ScenarioId } from '../../demo/scenario-engine/scenarioStore';
+import { computeFundicaoDcQualitySummary } from '../../demo/adapters/qualitySummaryAdapter';
+import { selectMaterialResourceEligibilities, selectOrganizationsByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionScheduling, selectScenarioDefinition, useScenarioStore, type ScheduleView, type Wf001ScenarioId } from '../../demo/scenario-engine/scenarioStore';
 import type { DemandDestination, Lot } from '../../domain/production-scheduling/models';
 import { simulateResourceMove, type ResourceSimulationImpact } from '../../domain/production-scheduling/resourceSimulation';
 import { FOUNDRY_RESOURCE_IDS, type FoundryResourceId } from '../../domain/resource/models';
@@ -31,6 +32,7 @@ export function ProductionSchedulingPage() {
   const liveScenarioTime = useLiveScenarioTime(scenarioDefinition?.currentScenarioTime);
   const materialResourceEligibilities = useScenarioStore(selectMaterialResourceEligibilities);
   const readinessAssessments = useScenarioStore(selectProductionReadiness);
+  const executionsByLot = useScenarioStore(selectProductionExecutions);
   const journeyContext = useScenarioStore((state) => state.journeyContext);
   const preserveJourneyContext = useScenarioStore((state) => state.preserveJourneyContext);
   const selectedDateOffset = useScenarioStore((state) => state.selectedDateOffset);
@@ -107,6 +109,8 @@ export function ProductionSchedulingPage() {
   const readinessByLotId = Object.fromEntries(readinessAssessments.map((item) => [item.lotId, item.status]));
   const releaseByLotId = Object.fromEntries(Object.values(productionReleases).map((item) => [item.lotId, item.status]));
   const readinessCounts = readinessAssessments.reduce((counts, item) => ({ ...counts, [item.status]: counts[item.status] + 1 }), { READY: 0, ATTENTION: 0, BLOCKED: 0, UNKNOWN: 0 });
+  const compromissoAttentionCount = readinessCounts.ATTENTION + readinessCounts.BLOCKED + readinessCounts.UNKNOWN;
+  const compromissoProduced = selectedDateOffset === 0 ? computeFundicaoDcQualitySummary(definition, executionsByLot, liveScenarioTime).produced : null;
   const releaseCounts: ReleaseDecisionCounts = readinessAssessments.reduce((counts, item) => { const status = productionReleases[item.lotId]?.status; if (status === 'RELEASED') counts.released += 1; else if (item.status === 'READY') counts.ready += 1; else if (item.status === 'BLOCKED') counts.blocked += 1; else counts.attention += 1; return counts; }, { ready: 0, attention: 0, blocked: 0, released: 0 });
   const selectedReadiness = selectedLot ? readinessAssessments.find((item) => item.lotId === selectedLot.id) : undefined;
   const conditionContexts: readonly TimelineResourceConditionContext[] = selectedReadiness && selectedLot ? FOUNDRY_RESOURCE_IDS.map((resourceId) => {
@@ -154,7 +158,7 @@ export function ProductionSchedulingPage() {
       {activeWf001ScenarioId === 'SCN-WF001-03' ? <div className={styles.staleBanner} role="status"><strong>Cobertura recuperada pelo plano.</strong> O Material A parte de 2,4 dias e alcança 3,1 dias de cobertura projetada no cenário demonstrativo.</div> : null}
       {activeWf001ScenarioId === 'SCN-WF001-04' ? <div className={styles.attentionBanner} role="status"><strong>Atenção de matéria-prima.</strong> O Lote 267 requer avaliação na próxima etapa; nenhuma decisão de liberação foi tomada.</div> : null}
 
-      <ScheduleSummary quantity={view.totalQuantity} lotCount={view.scheduledLots.length} destinations={view.destinationQuantities} versionLabel={version.label} periodLabel={view.periodLabel} rangeStart={view.rangeStart} rangeFinish={view.rangeFinish} revision={<ScheduleRevisionSummary activeVersion={version} previousVersion={previousVersion} receivedAt={view.schedule.receivedAt} activeLots={view.allScheduledLots} previousLots={previousLots} />} />
+      <ScheduleSummary quantity={view.totalQuantity} lotCount={view.scheduledLots.length} destinations={view.destinationQuantities} versionLabel={version.label} periodLabel={view.periodLabel} rangeStart={view.rangeStart} rangeFinish={view.rangeFinish} produced={compromissoProduced} attentionCount={compromissoAttentionCount} revision={<ScheduleRevisionSummary activeVersion={version} previousVersion={previousVersion} receivedAt={view.schedule.receivedAt} activeLots={view.allScheduledLots} previousLots={previousLots} />} />
 
       <BufferDecisionSupport position={definition.bufferPositions.find((position) => position.materialId === 'material-a')!} material={definition.materials.find((material) => material.id === 'material-a')!} criticalLot={definition.lots.find((lot) => lot.id === BUFFER_CRITICAL_LOT_ID)} simulationActive={simulationActive} hasConflict={simulationImpact?.bufferImpact === 'RISK'} />
 
@@ -172,7 +176,7 @@ export function ProductionSchedulingPage() {
 
       <ProductionOrderCorrelation items={view.orders} lots={view.allScheduledLots} materials={definition.materials} />
       <div className={styles.lowerGrid}><BufferCoverageSummary positions={definition.bufferPositions} materials={definition.materials} /><OperationalAttentionSummary lots={view.scheduledLots} materials={definition.materials} /></div>
-      <section className={styles.nextStep}><div><span className={styles.step}>7</span><h2>Próxima decisão</h2><p>A liberação é a decisão operacional desta experiência. Após liberar, a próxima capability tratará como a execução será iniciada e controlada.</p></div><Button onClick={() => { setSelectedLot(view.scheduledLots[0] ?? null); setLotModalOpen(true); }}>Selecionar Lot para decisão de liberação</Button></section>
+      <section className={styles.nextStep}><div><span className={styles.step}>7</span><h2>Próxima decisão</h2><p>A liberação é a decisão operacional desta experiência. Após liberar, a próxima capability tratará como a execução será iniciada e controlada.</p></div><Button onClick={() => { setSelectedLot(view.scheduledLots[0] ?? null); setLotModalOpen(true); }}>Selecionar Lote para decisão de liberação</Button></section>
       </div>
     </OperationalWorkspace>
   );

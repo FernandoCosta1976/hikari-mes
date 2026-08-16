@@ -23,7 +23,7 @@ test('shows the live OEE demonstrativo reusing the same projection as the OEE pe
   const oeeTile = screen.getByLabelText('OEE demonstrativo da Fundição DC');
   expect(oeeTile).toHaveTextContent('OEE 70%');
   expect(oeeTile).toHaveTextContent('Disponibilidade 89%');
-  expect(oeeTile).toHaveTextContent('Performance 86%');
+  expect(oeeTile).toHaveTextContent('Desempenho 86%');
   expect(oeeTile).toHaveTextContent('Qualidade 91%');
   expect(oeeTile).toHaveTextContent('Principal impacto: Disponibilidade');
   expect(screen.getByText(/Estamos protegendo a cadeia para atender a necessidade da Montagem hoje\?/)).toBeInTheDocument();
@@ -63,7 +63,7 @@ test('explains the OEE chain and points to the now-materialized OEE perspective'
   renderWithFoundation(<ExecutiveHomePage />);
   const section = screen.getByRole('heading', { name: 'OEE como consequência da execução conectada' }).closest('section')!;
   expect(section).toHaveTextContent('Disponibilidade');
-  expect(section).toHaveTextContent('Performance');
+  expect(section).toHaveTextContent('Desempenho');
   expect(section).toHaveTextContent('Qualidade');
   expect(section).toHaveTextContent('Primeira Onda concluída · OEE disponível na perspectiva OEE');
   expect(section).not.toHaveTextContent(/OEE\s*\d/);

@@ -9,9 +9,9 @@ test('shows a coherent five-Resource live state, WIP and ordered event feed', as
   for (const resource of ['DC01','DC02','DC03','DC04','DC05']) await expect(timeline.getByText(resource, { exact: true })).toBeVisible();
   await expect(timeline.getByText('PLANEJADO')).toHaveCount(5);
   await expect(timeline.getByText('REAL')).toHaveCount(5);
-  await expect(page.getByRole('region', { name: 'Resumo de WIP' })).toContainText('Aguardando1Em produção2Parados1Concluídos1');
+  await expect(page.getByRole('region', { name: 'Resumo de produção em andamento' })).toContainText('Aguardando1Em produção2Parados1Concluídos1');
   await expect(page.getByText(/DC03 · Lote 266 · Ferramental · 18 min/)).toBeVisible();
-  const feed = page.getByRole('region', { name: 'Event Feed' }).locator('button');
+  const feed = page.getByRole('region', { name: 'Registro de Eventos' }).locator('button');
   await expect(feed).toHaveCount(4);
   await expect(feed.nth(0)).toContainText('17:14');
   await expect(feed.nth(0)).toContainText('4 min · ENCERRADO');
@@ -32,8 +32,8 @@ test('opens active event, Lot and Resource contexts without execution actions', 
   await activeLot.getByRole('button', { name: 'Fechar contexto de acompanhamento' }).click();
   await page.getByRole('button', { name: /DC03.*Parada/ }).click();
   const resource = page.getByRole('dialog', { name: 'DC03' });
-  await expect(resource).toContainText('Lot atual: 266');
-  await expect(resource).toContainText('Próximo Lot');
+  await expect(resource).toContainText('Lote atual: 266');
+  await expect(resource).toContainText('Próximo Lote');
   await expect(page).toHaveScreenshot('CAP-06-RESOURCE-CONTEXT-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
   await expect(resource.getByRole('button', { name: /Pausar|Retomar|Concluir|Iniciar/ })).toHaveCount(0);
 });

@@ -14,7 +14,7 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
   const turnoRow = screen.getByRole('region', { name: 'Qualidade do Turno 2 e acumulado do dia' });
   expect(turnoRow).toHaveTextContent('TURNO 2 · EM ANDAMENTO');
   expect(turnoRow).toHaveTextContent('159');
-  expect(turnoRow).toHaveTextContent('Performance vs. Ideal Cycle Time');
+  expect(turnoRow).toHaveTextContent('Desempenho vs. Tempo de ciclo padrão');
   expect(turnoRow).toHaveTextContent('88%');
   expect(turnoRow).toHaveTextContent('Acumulado do dia');
   expect(turnoRow).toHaveTextContent('91%');
@@ -22,7 +22,7 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
   const history = screen.getByRole('region', { name: 'Turnos concluídos hoje' });
   expect(history).toHaveTextContent('Turno 1');
   expect(history).toHaveTextContent('50 peças');
-  expect(history).toHaveTextContent('Quality 98%');
+  expect(history).toHaveTextContent('Qualidade 98%');
 
   const machines = screen.getByRole('region', { name: 'Situação das Máquinas' });
   const dc05 = within(machines).getByRole('button', { name: /DC05/ });
@@ -37,7 +37,7 @@ test('opens the Qualidade & Performance drill-down without execution controls', 
   const machines = screen.getByRole('region', { name: 'Situação das Máquinas' });
   await user.click(within(machines).getByRole('button', { name: /DC04/ }));
   const dialog = screen.getByRole('dialog', { name: /DC04/ });
-  expect(dialog).toHaveTextContent('Quality Rate');
-  expect(dialog).toHaveTextContent('Ideal Cycle Time');
+  expect(dialog).toHaveTextContent('Taxa de qualidade');
+  expect(dialog).toHaveTextContent('Tempo de ciclo padrão');
   expect(screen.queryByRole('button', { name: /Pausar|Retomar|Concluir|Iniciar produção/ })).not.toBeInTheDocument();
 });

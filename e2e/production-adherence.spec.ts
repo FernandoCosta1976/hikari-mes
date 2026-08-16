@@ -16,7 +16,7 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
 
   const history = page.getByRole('region', { name: 'Turnos concluídos hoje' });
   await expect(history).toContainText('Turno 1');
-  await expect(history).toContainText('1/1 Lots conformes');
+  await expect(history).toContainText('1/1 Lotes conformes');
 
   const machines = page.getByRole('region', { name: 'Situação das Máquinas' });
   const dc03 = machines.getByRole('button', { name: /DC03/ });
@@ -35,7 +35,7 @@ test('opens the Aderência drill-down for DC03 and DC04, and expands Planejado �
   await machines.getByRole('button', { name: /DC03/ }).click();
   const stopped = page.getByRole('dialog', { name: /DC03/ });
   await expect(stopped).toContainText('Parado');
-  await expect(stopped).toContainText('Próximo Lot potencialmente impactado');
+  await expect(stopped).toContainText('Próximo Lote potencialmente impactado');
   await expect(stopped.getByRole('button', { name: /Pausar|Retomar|Concluir|Iniciar/ })).toHaveCount(0);
   await stopped.getByRole('button', { name: 'Fechar contexto de aderência' }).click();
   await machines.getByRole('button', { name: /DC04/ }).click();

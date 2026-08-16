@@ -48,7 +48,7 @@ test('releases a ready Lot without starting it and signals the timeline', async 
   expect(modal).toHaveTextContent('PRONTO PARA LIBERAR');
   expect(modal).toHaveTextContent('DC01');
   expect(modal).toHaveTextContent('v08');
-  expect(modal).toHaveTextContent('Ready não significa Organized; Organized não significa Released; Released não significa Started.');
+  expect(modal).toHaveTextContent('Pronto não significa Organizado; Organizado não significa Liberado; Liberado não significa execução iniciada.');
   await user.click(within(modal).getByRole('button', { name: 'Liberar para produção' }));
   expect(modal).toHaveTextContent('Liberado');
   expect(modal).not.toHaveTextContent('Iniciado');
@@ -151,8 +151,8 @@ test('toggles the Resource condition overlay without changing the timeline plan'
   expect(screen.getByRole('region', { name: 'Máquina programada DC01' })).toHaveTextContent('DC01ProgramadaProgramada · Requer atenção');
   expect(screen.getByRole('region', { name: 'Máquina programada DC05' })).toHaveAttribute('data-resource-condition', 'UNKNOWN');
   expect(screen.getByRole('region', { name: 'Máquina programada DC02' })).toHaveAttribute('data-resource-eligible', 'false');
-  expect(screen.getByRole('region', { name: 'Máquina programada DC01' })).toHaveTextContent('Eligibility: Elegível');
-  expect(screen.getByRole('region', { name: 'Impacto conhecido por Resource' })).toHaveTextContent('Setup existente conhecido');
+  expect(screen.getByRole('region', { name: 'Máquina programada DC01' })).toHaveTextContent('Elegibilidade: Elegível');
+  expect(screen.getByRole('region', { name: 'Impacto conhecido por Recurso' })).toHaveTextContent('Setup existente conhecido');
   expect(container.querySelectorAll('[data-lot-id]')).toHaveLength(originalLotCount);
   await user.click(toggle);
   expect(toggle).toHaveAttribute('aria-pressed', 'false');

@@ -12,6 +12,7 @@ import { ProductionMonitoringPage } from '../../features/production-monitoring/P
 import { ProductionAdherencePage } from '../../features/production-adherence/ProductionAdherencePage';
 import { ProductionQualityPage } from '../../features/production-quality/ProductionQualityPage';
 import { OeePage } from '../../features/oee/OeePage';
+import { StrategicViewPage } from '../../features/strategic-view/StrategicViewPage';
 
 export function DemoRouteBoundary() {
   const { scenarioId, experience } = useParams();
@@ -29,9 +30,9 @@ export function DemoRouteBoundary() {
 
   if (!experience) return <ExecutiveHomePage />;
 
-  if (experience !== 'production-scheduling' && experience !== 'production-readiness' && experience !== 'production-execution' && experience !== 'production-monitoring' && experience !== 'production-adherence' && experience !== 'production-quality' && experience !== 'oee') {
+  if (experience !== 'production-scheduling' && experience !== 'production-readiness' && experience !== 'production-execution' && experience !== 'production-monitoring' && experience !== 'production-adherence' && experience !== 'production-quality' && experience !== 'oee' && experience !== 'strategic') {
     return <DemoShell><RouteMessage title="Experiência não disponível" detail="Esta experiência ainda não foi autorizada para implementação." /></DemoShell>;
   }
 
-  return <DemoShell>{experience === 'production-readiness' ? <ProductionReadinessPage /> : experience === 'production-execution' ? <ProductionExecutionPage /> : experience === 'production-monitoring' ? <ProductionMonitoringPage /> : experience === 'production-adherence' ? <ProductionAdherencePage /> : experience === 'production-quality' ? <ProductionQualityPage /> : experience === 'oee' ? <OeePage /> : <ProductionSchedulingPage />}</DemoShell>;
+  return <DemoShell>{experience === 'strategic' ? <StrategicViewPage /> : experience === 'production-readiness' ? <ProductionReadinessPage /> : experience === 'production-execution' ? <ProductionExecutionPage /> : experience === 'production-monitoring' ? <ProductionMonitoringPage /> : experience === 'production-adherence' ? <ProductionAdherencePage /> : experience === 'production-quality' ? <ProductionQualityPage /> : experience === 'oee' ? <OeePage /> : <ProductionSchedulingPage />}</DemoShell>;
 }

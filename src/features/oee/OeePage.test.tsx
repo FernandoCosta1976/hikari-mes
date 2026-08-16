@@ -15,7 +15,7 @@ test('shows Turno 2 beside the day accumulated, a simplified Turno 1/3 history a
   expect(turnoRow).toHaveTextContent('TURNO 2 · EM ANDAMENTO');
   expect(turnoRow).toHaveTextContent('Parcial até 17:23');
   expect(turnoRow).toHaveTextContent('68%');
-  expect(turnoRow).toHaveTextContent('Performance');
+  expect(turnoRow).toHaveTextContent('Desempenho');
   expect(turnoRow).toHaveTextContent('DC03');
   expect(turnoRow).toHaveTextContent('Acumulado do dia');
   expect(turnoRow).toHaveTextContent('70%');
@@ -50,12 +50,12 @@ test('opens Resource and Turno-scoped dimension drill-downs, and keeps details c
   const machines = screen.getByRole('region', { name: 'Situação das Máquinas' });
   await user.click(within(machines).getByRole('button', { name: /DC03/ }));
   const resourceDialog = screen.getByRole('dialog', { name: /DC03/ });
-  expect(resourceDialog).toHaveTextContent('Planned Production Time');
+  expect(resourceDialog).toHaveTextContent('Tempo de produção planejado');
   await user.click(within(resourceDialog).getByRole('button', { name: 'Fechar contexto de OEE' }));
 
   const turnoRow = screen.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' });
   await user.click(within(turnoRow).getByRole('button', { name: /Disponibilidade/ }));
   const dimensionDialog = screen.getByRole('dialog', { name: /Disponibilidade/ });
-  expect(dimensionDialog).toHaveTextContent('Planned');
+  expect(dimensionDialog).toHaveTextContent('Planejado');
   expect(dimensionDialog).toHaveTextContent('TURNO 2');
 });

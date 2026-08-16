@@ -22,7 +22,7 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
 
   const history = screen.getByRole('region', { name: 'Turnos concluídos hoje' });
   expect(history).toHaveTextContent('Turno 1');
-  expect(history).toHaveTextContent('1/1 Lots conformes');
+  expect(history).toHaveTextContent('1/1 Lotes conformes');
 
   const machines = screen.getByRole('region', { name: 'Situação das Máquinas' });
   const dc03 = within(machines).getByRole('button', { name: /DC03/ });
@@ -38,6 +38,6 @@ test('opens the Aderência drill-down for a deviated Lot without execution contr
   await user.click(within(machines).getByRole('button', { name: /DC03/ }));
   const dialog = screen.getByRole('dialog', { name: /DC03/ });
   expect(dialog).toHaveTextContent('Parado');
-  expect(dialog).toHaveTextContent('Scheduled Start');
+  expect(dialog).toHaveTextContent('Início planejado');
   expect(screen.queryByRole('button', { name: /Pausar|Retomar|Concluir|Iniciar produção/ })).not.toBeInTheDocument();
 });

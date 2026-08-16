@@ -9,7 +9,7 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
   const turnoRow = page.getByRole('region', { name: 'Qualidade do Turno 2 e acumulado do dia' });
   await expect(turnoRow).toContainText('TURNO 2 · EM ANDAMENTO');
   await expect(turnoRow).toContainText('159');
-  await expect(turnoRow).toContainText('Performance vs. Ideal Cycle Time');
+  await expect(turnoRow).toContainText('Desempenho vs. Tempo de ciclo padrão');
   await expect(turnoRow).toContainText('88%');
   await expect(turnoRow).toContainText('Acumulado do dia');
   await expect(turnoRow).toContainText('91%');
@@ -17,7 +17,7 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
   const history = page.getByRole('region', { name: 'Turnos concluídos hoje' });
   await expect(history).toContainText('Turno 1');
   await expect(history).toContainText('50 peças');
-  await expect(history).toContainText('Quality 98%');
+  await expect(history).toContainText('Qualidade 98%');
 
   const machines = page.getByRole('region', { name: 'Situação das Máquinas' });
   await expect(machines.getByRole('button', { name: /DC05/ })).toContainText('Aguardando');
@@ -34,8 +34,8 @@ test('opens the Qualidade & Performance drill-down without execution actions', a
   const machines = page.getByRole('region', { name: 'Situação das Máquinas' });
   await machines.getByRole('button', { name: /DC04/ }).click();
   const dialog = page.getByRole('dialog', { name: /DC04/ });
-  await expect(dialog).toContainText('Quality Rate');
-  await expect(dialog).toContainText('Ideal Cycle Time');
+  await expect(dialog).toContainText('Taxa de qualidade');
+  await expect(dialog).toContainText('Tempo de ciclo padrão');
   await expect(dialog.getByRole('button', { name: /Pausar|Retomar|Concluir|Iniciar/ })).toHaveCount(0);
 });
 

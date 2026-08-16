@@ -32,14 +32,14 @@ function AdherenceDialog({ row, currentTime, onClose }: { row: FundicaoDcAdheren
     <header><div><small>ADERÊNCIA</small><h2 id="adherence-context-title">{resourceId} · Lote {lot.lotNumber}</h2></div><Button ref={close} aria-label="Fechar contexto de aderência" onClick={onClose}>×</Button></header>
     <p>{classificationLabel[classification]}{deviationMinutes !== null ? ` · ${deviationMinutes > 0 ? '+' : ''}${deviationMinutes} min` : ''}</p>
     <dl>
-      <div><dt>Scheduled Start</dt><dd>{formatTime(lot.scheduledStart)}</dd></div>
-      <div><dt>Actual Start</dt><dd>{execution.actualStart ? formatTime(execution.actualStart) : '—'}</dd></div>
-      <div><dt>Scheduled Finish</dt><dd>{formatTime(lot.scheduledFinish)}</dd></div>
-      <div><dt>Actual/Projected Finish</dt><dd>{execution.actualFinish ? formatTime(execution.actualFinish) : '—'}</dd></div>
+      <div><dt>Início planejado</dt><dd>{formatTime(lot.scheduledStart)}</dd></div>
+      <div><dt>Início real</dt><dd>{execution.actualStart ? formatTime(execution.actualStart) : '—'}</dd></div>
+      <div><dt>Término planejado</dt><dd>{formatTime(lot.scheduledFinish)}</dd></div>
+      <div><dt>Término real/projetado</dt><dd>{execution.actualFinish ? formatTime(execution.actualFinish) : '—'}</dd></div>
       <div><dt>Progresso</dt><dd>{execution.producedQuantity} / {execution.plannedQuantity} · {Math.round(execution.producedQuantity / execution.plannedQuantity * 100)}%</dd></div>
       <div><dt>Classificação do desvio</dt><dd>{classificationLabel[classification]} <small>DEMONSTRATIVA</small></dd></div>
       <div><dt>Evento ativo</dt><dd>{activeEvent ? `${eventLabel[activeEvent.eventType]} · ${eventDurationMinutes(activeEvent, currentTime)} min` : 'Nenhum'}</dd></div>
-      <div><dt>Próximo Lot potencialmente impactado</dt><dd>{impact ? `${impact.impactedLot.lotNumber} · ${formatDateTime(impact.impactedLot.scheduledStart)}` : 'Nenhum conhecido'}</dd></div>
+      <div><dt>Próximo Lote potencialmente impactado</dt><dd>{impact ? `${impact.impactedLot.lotNumber} · ${formatDateTime(impact.impactedLot.scheduledStart)}` : 'Nenhum conhecido'}</dd></div>
     </dl>
     <small>Aderência ao plano — indicador demonstrativo, sem correspondência a fórmula industrial de OEE.</small>
   </section></div>, document.body);
@@ -63,19 +63,19 @@ export function ProductionAdherencePage() {
   const mainException = shiftExceptions[0];
   const dayException = rankedExceptions(day.rows)[0];
 
-  return <OperationalWorkspace perspective="ADHERENCE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Aderência</strong><IconTip icon="◷" label="Business date" value="15/05" tip="Business date · 15/05/2025" /><IconTip icon="⏱" label="Current Time" value={formatTime(currentTime)} /><button onClick={reset}>Restaurar cenário</button><IconTip icon="ⓘ" label="Classificação demonstrativa" tip="Classificação demonstrativa · BUSINESS VALIDATION REQUIRED" /></div>}>
+  return <OperationalWorkspace perspective="ADHERENCE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Aderência</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><button onClick={reset}>Restaurar cenário</button><IconTip icon="ⓘ" label="Classificação demonstrativa" tip="Classificação demonstrativa · BUSINESS VALIDATION REQUIRED" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
         <div><span>Capability 07 · Core + Essencial</span><h1>Estamos executando conforme o planejado?</h1></div>
-        <aside><IconTip icon="⏱" label="Current Time" value={formatTime(currentTime)} tip="Horário de referência do cenário · passado, agora e futuro" className={styles.currentTimeTip} /></aside>
+        <aside><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} tip="Horário de referência do cenário · passado, agora e futuro" className={styles.currentTimeTip} /></aside>
       </header>
 
       <section className={styles.turnoRow} aria-label={`Aderência do ${currentShift.shiftName} e acumulado do dia`}>
         <div className={styles.shiftHeadline}>
           <div className={styles.shiftBadge}><span data-status={currentShift.status}>{currentShift.shiftName.toUpperCase()} · {shiftStatusLabel[currentShift.status]}</span>{currentShift.status === 'IN_PROGRESS' ? <em>Parcial até {formatTime(currentTime)}</em> : null}</div>
-          <div className={styles.ratioBlock}><strong>{currentShift.total > 0 ? `${currentShift.onPlan} / ${currentShift.total}` : 'N/A'}</strong><Bar ratio={currentShift.total > 0 ? currentShift.ratio : null} tone="positive" label={`Aderência do turno: ${Math.round(currentShift.ratio * 100)}%`} className={styles.ratioBar} /><small>Lots conforme plano / total analisado</small></div>
+          <div className={styles.ratioBlock}><strong>{currentShift.total > 0 ? `${currentShift.onPlan} / ${currentShift.total}` : 'N/A'}</strong><Bar ratio={currentShift.total > 0 ? currentShift.ratio : null} tone="positive" label={`Aderência do turno: ${Math.round(currentShift.ratio * 100)}%`} className={styles.ratioBar} /><small>Lotes conforme plano / total analisado</small></div>
           <div className={styles.mainImpact}>
-            {mainException ? <><span>Principal desvio</span><strong>{mainException.resourceId} · Lote {mainException.lot.lotNumber} · {classificationLabel[mainException.classification]}</strong><p>{mainException.impact ? `Próximo Lot potencialmente impactado: ${mainException.impact.impactedLot.lotNumber} · ${formatDateTime(mainException.impact.impactedLot.scheduledStart)}` : mainException.deviationMinutes !== null ? `${mainException.deviationMinutes > 0 ? '+' : ''}${mainException.deviationMinutes} min vs. plano` : 'Sem impacto conhecido na sequência.'}</p></> : <span>Nenhuma exceção neste turno.</span>}
+            {mainException ? <><span>Principal desvio</span><strong>{mainException.resourceId} · Lote {mainException.lot.lotNumber} · {classificationLabel[mainException.classification]}</strong><p>{mainException.impact ? `Próximo Lote potencialmente impactado: ${mainException.impact.impactedLot.lotNumber} · ${formatDateTime(mainException.impact.impactedLot.scheduledStart)}` : mainException.deviationMinutes !== null ? `${mainException.deviationMinutes > 0 ? '+' : ''}${mainException.deviationMinutes} min vs. plano` : 'Sem impacto conhecido na sequência.'}</p></> : <span>Nenhuma exceção neste turno.</span>}
           </div>
         </div>
         <div className={styles.dayTile}><span>Acumulado do dia</span><strong>{day.onPlan} / {day.total}</strong><Bar ratio={day.ratio} tone="positive" label={`Aderência do dia: ${Math.round(day.ratio * 100)}%`} /><em>{dayException ? `Principal desvio: ${dayException.resourceId} · ${classificationLabel[dayException.classification]}` : 'Sem desvios relevantes'}</em></div>
@@ -85,7 +85,7 @@ export function ProductionAdherencePage() {
         <span>Turnos concluídos hoje</span>
         <div>{completedShifts.map((shift) => <div key={shift.shiftId} className={styles.shiftHistoryRow}>
           <b>{shift.shiftName}</b>
-          {shift.total > 0 ? <><Bar ratio={shift.ratio} tone="positive" label={`${shift.shiftName}: ${Math.round(shift.ratio * 100)}% de aderência`} className={styles.historyBar} /><em>{shift.onPlan}/{shift.total} Lots conformes · {Math.round(shift.ratio * 100)}%</em></> : <em>N/A · sem execução registrada</em>}
+          {shift.total > 0 ? <><Bar ratio={shift.ratio} tone="positive" label={`${shift.shiftName}: ${Math.round(shift.ratio * 100)}% de aderência`} className={styles.historyBar} /><em>{shift.onPlan}/{shift.total} Lotes conformes · {Math.round(shift.ratio * 100)}%</em></> : <em>N/A · sem execução registrada</em>}
         </div>)}{completedShifts.length === 0 ? <p className={styles.empty}>Nenhum turno concluído ainda hoje.</p> : null}</div>
       </section>
 
@@ -105,7 +105,7 @@ export function ProductionAdherencePage() {
       <details className={styles.disclosure}>
         <summary>Planejado × Realizado <span>Ver linha do tempo</span></summary>
         <div className={monitoringStyles.timeline} data-testid="adherence-timeline">
-          <div className={monitoringStyles.axisCorner}>Resource</div>
+          <div className={monitoringStyles.axisCorner}>Recurso</div>
           <div className={monitoringStyles.axis}>{[9,11,13,15,17,19,21].map((hour) => <span key={hour} style={{ left: `${((hour - 9) / 13) * 100}%` }}>{String(hour).padStart(2,'0')}:00</span>)}</div>
           <div className={monitoringStyles.timeLine} style={{ left: `calc(8rem + (100% - 8rem) * ${currentPosition / 100})` }}><span>{formatTime(currentTime)}</span></div>
           <div className={monitoringStyles.lanes}>{day.rows.map((row) => { const { resourceId, lot, execution, classification, deviationMinutes } = row; const actualFinish = execution.actualFinish ?? (execution.status === 'NOT_STARTED' ? execution.scheduledStart : currentTime); return <section className={monitoringStyles.lane} key={resourceId} data-state={execution.status}>

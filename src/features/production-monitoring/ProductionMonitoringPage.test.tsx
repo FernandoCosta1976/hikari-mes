@@ -15,14 +15,14 @@ test('shows five Resources, coherent WIP, Scheduled versus Actual and the active
   expect(within(timeline).getAllByText('PLANEJADO')).toHaveLength(5);
   expect(within(timeline).getAllByText('REAL')).toHaveLength(5);
   expect(screen.getByText(/DC03 · Lote 266 · Ferramental · 18 min/)).toBeInTheDocument();
-  expect(screen.getByRole('region', { name: 'Resumo de WIP' })).toHaveTextContent('Aguardando1Em produção2Parados1Concluídos1');
+  expect(screen.getByRole('region', { name: 'Resumo de produção em andamento' })).toHaveTextContent('Aguardando1Em produção2Parados1Concluídos1');
 });
 
 test('opens Lot and Resource contexts without execution controls', async () => {
   const user = userEvent.setup(); renderWithFoundation(<ProductionMonitoringPage />);
   await user.click(screen.getByRole('button', { name: /DC03.*Parada/ }));
   const resourceDialog = screen.getByRole('dialog', { name: 'DC03' });
-  expect(resourceDialog).toHaveTextContent('Lot atual: 266');
+  expect(resourceDialog).toHaveTextContent('Lote atual: 266');
   expect(resourceDialog).toHaveTextContent('Molde atual');
   expect(resourceDialog).toHaveTextContent('M-118');
   expect(resourceDialog).toHaveTextContent('Atenção');
