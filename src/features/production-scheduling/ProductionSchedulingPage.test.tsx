@@ -73,8 +73,12 @@ test('offers a compact release exception view and preserves buffer-critical cont
   expect(summary).toHaveTextContent('Prontos para liberar');
   expect(summary).toHaveTextContent('Bloqueados');
   await user.click(within(summary).getByRole('button', { name: /Bloqueados/ }));
-  expect(screen.getByRole('dialog', { name: 'Lote 259' })).toBeInTheDocument();
-  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Fechar contexto do Lote' }));
+  const drawer = screen.getByRole('dialog', { name: 'Lotes bloqueados' });
+  expect(within(drawer).getByText('Lote 259')).toBeInTheDocument();
+  expect(within(drawer).getByText('Lote 267')).toBeInTheDocument();
+  expect(within(drawer).getAllByRole('link', { name: 'Abrir Ordem →' })[0]).toHaveAttribute('href', expect.stringContaining('/orders/lot-259'));
+  await user.click(within(drawer).getByRole('button', { name: 'Fechar' }));
+  expect(screen.queryByRole('dialog', { name: 'Lotes bloqueados' })).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: /Lote 255, Material A, 50 peças/ }));
   const modal = screen.getByRole('dialog', { name: 'Lote 255' });
   await user.click(within(modal).getByRole('button', { name: 'Liberação' }));

@@ -13,9 +13,10 @@ import { ProductionAdherencePage } from '../../features/production-adherence/Pro
 import { ProductionQualityPage } from '../../features/production-quality/ProductionQualityPage';
 import { OeePage } from '../../features/oee/OeePage';
 import { StrategicViewPage } from '../../features/strategic-view/StrategicViewPage';
+import { OrderWorkspacePage } from '../../features/order-workspace/OrderWorkspacePage';
 
 export function DemoRouteBoundary() {
-  const { scenarioId, experience } = useParams();
+  const { scenarioId, experience, lotId } = useParams();
   const activeDefinition = useScenarioStore(selectScenarioDefinition);
   const initializeScenario = useScenarioStore((state) => state.initializeScenario);
   const definition = scenarioId ? scenarioDefinitionAdapter.findById(scenarioId) : undefined;
@@ -27,6 +28,8 @@ export function DemoRouteBoundary() {
   if (!definition) {
     return <DemoShell><RouteMessage title="Cenário demonstrativo não encontrado" detail="Selecione um cenário HIKARI disponível." /></DemoShell>;
   }
+
+  if (lotId) return <DemoShell><OrderWorkspacePage lotId={lotId} /></DemoShell>;
 
   if (!experience) return <ExecutiveHomePage />;
 

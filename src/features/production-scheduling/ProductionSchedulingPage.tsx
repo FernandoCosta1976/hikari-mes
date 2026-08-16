@@ -23,6 +23,7 @@ import { ScheduleRevisionSummary } from './components/ScheduleRevisionSummary';
 import { QuickAttentionSummary } from './components/QuickAttentionSummary';
 import { SimulationWorkspace } from './components/SimulationWorkspace';
 import { ReleaseDecisionSummary, type ReleaseDecisionCounts } from './components/ReleaseDecisionSummary';
+import { ReleaseGroupDrawer, type ReleaseGroupRow } from './components/ReleaseGroupDrawer';
 import { buildProductionSchedulingViewModel, destinationLabels, eligibilityForMaterial, formatDate, scenarioLabels } from './productionSchedulingViewModel';
 import styles from './ProductionSchedulingPage.module.css';
 
@@ -56,6 +57,7 @@ export function ProductionSchedulingPage() {
   const activateScenario = useScenarioStore((state) => state.activateWf001Scenario);
   const resetScenario = useScenarioStore((state) => state.resetScenario);
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
+  const [releaseGroup, setReleaseGroup] = useState<keyof ReleaseDecisionCounts | null>(null);
   const [lotModalOpen, setLotModalOpen] = useState(false);
   const [lotDetailSection, setLotDetailSection] = useState<ModalSection>('OVERVIEW');
   const initialLotSection: ModalSection = new URLSearchParams(window.location.search).get('lotId') === 'lot-251' ? 'RELEASE' : 'OVERVIEW';
@@ -111,7 +113,9 @@ export function ProductionSchedulingPage() {
   const readinessCounts = readinessAssessments.reduce((counts, item) => ({ ...counts, [item.status]: counts[item.status] + 1 }), { READY: 0, ATTENTION: 0, BLOCKED: 0, UNKNOWN: 0 });
   const compromissoAttentionCount = readinessCounts.ATTENTION + readinessCounts.BLOCKED + readinessCounts.UNKNOWN;
   const compromissoProduced = selectedDateOffset === 0 ? computeFundicaoDcQualitySummary(definition, executionsByLot, liveScenarioTime).produced : null;
-  const releaseCounts: ReleaseDecisionCounts = readinessAssessments.reduce((counts, item) => { const status = productionReleases[item.lotId]?.status; if (status === 'RELEASED') counts.released += 1; else if (item.status === 'READY') counts.ready += 1; else if (item.status === 'BLOCKED') counts.blocked += 1; else counts.attention += 1; return counts; }, { ready: 0, attention: 0, blocked: 0, released: 0 });
+  const classifyReleaseGroup = (item: (typeof readinessAssessments)[number]): keyof ReleaseDecisionCounts => { const status = productionReleases[item.lotId]?.status; if (status === 'RELEASED') return 'released'; if (item.status === 'READY') return 'ready'; if (item.status === 'BLOCKED') return 'blocked'; return 'attention'; };
+  const releaseCounts: ReleaseDecisionCounts = readinessAssessments.reduce((counts, item) => { counts[classifyReleaseGroup(item)] += 1; return counts; }, { ready: 0, attention: 0, blocked: 0, released: 0 });
+  const releaseGroupRows: readonly ReleaseGroupRow[] = releaseGroup ? readinessAssessments.filter((item) => classifyReleaseGroup(item) === releaseGroup).map((item) => { const groupLot = definition.lots.find((candidate) => candidate.id === item.lotId)!; const groupMaterial = definition.materials.find((candidate) => candidate.id === groupLot.materialId)!; const release = productionReleases[item.lotId]; return { lot: groupLot, material: groupMaterial, reason: release?.reason ?? item.summary, stateLabel: release?.status === 'RELEASED' ? 'Liberado' : item.status === 'READY' ? 'Pronto' : item.status === 'BLOCKED' ? 'Bloqueado' : 'Atenção' }; }) : [];
   const selectedReadiness = selectedLot ? readinessAssessments.find((item) => item.lotId === selectedLot.id) : undefined;
   const conditionContexts: readonly TimelineResourceConditionContext[] = selectedReadiness && selectedLot ? FOUNDRY_RESOURCE_IDS.map((resourceId) => {
     const resource = selectedReadiness.resources.find((item) => item.resourceId === resourceId)!;
@@ -163,7 +167,7 @@ export function ProductionSchedulingPage() {
       <BufferDecisionSupport position={definition.bufferPositions.find((position) => position.materialId === 'material-a')!} material={definition.materials.find((material) => material.id === 'material-a')!} criticalLot={definition.lots.find((lot) => lot.id === BUFFER_CRITICAL_LOT_ID)} simulationActive={simulationActive} hasConflict={simulationImpact?.bufferImpact === 'RISK'} />
 
       <QuickAttentionSummary materialAttentionCount={view.scheduledLots.filter((lot) => lot.materialAttention).length} belowCurrentTargetCount={definition.bufferPositions.filter((position) => position.currentCoverageDays < position.targetCoverageDays).length} hasDivergence={view.hasDivergence} readinessCounts={{ ready: readinessCounts.READY, attention: readinessCounts.ATTENTION, blocked: readinessCounts.BLOCKED, unknown: readinessCounts.UNKNOWN }} onOpenReadiness={() => openReadiness('EXCEPTION_SUMMARY', null)} />
-      <ReleaseDecisionSummary counts={releaseCounts} onOpen={(group) => { const candidate = readinessAssessments.find((assessment) => group === 'released' ? productionReleases[assessment.lotId]?.status === 'RELEASED' : group === 'ready' ? assessment.status === 'READY' && productionReleases[assessment.lotId]?.status !== 'RELEASED' : group === 'blocked' ? assessment.status === 'BLOCKED' : assessment.status === 'ATTENTION' || assessment.status === 'UNKNOWN'); const lot = candidate ? definition.lots.find((item) => item.id === candidate.lotId) ?? null : null; setSelectedLot(lot); setLotModalOpen(Boolean(lot)); }} />
+      <ReleaseDecisionSummary counts={releaseCounts} onOpen={(group) => setReleaseGroup(group)} />
 
 
       {comparisonScheduleVersionId ? <section className={styles.comparison} aria-labelledby="comparison-title"><div><span className={styles.step}>2</span><h2 id="comparison-title">Comparação de versões demonstrativas</h2></div><p><strong>Versão 08 × Versão 07:</strong> Lotes 251 e 252 movidos na sequência; Lote 271 incluído. O baseline anterior permanece preservado.</p><Button onClick={closeVersionComparison}>Fechar comparação</Button></section> : null}
@@ -178,6 +182,7 @@ export function ProductionSchedulingPage() {
       <div className={styles.lowerGrid}><BufferCoverageSummary positions={definition.bufferPositions} materials={definition.materials} /><OperationalAttentionSummary lots={view.scheduledLots} materials={definition.materials} /></div>
       <section className={styles.nextStep}><div><span className={styles.step}>7</span><h2>Próxima decisão</h2><p>A liberação é a decisão operacional desta experiência. Após liberar, a próxima capability tratará como a execução será iniciada e controlada.</p></div><Button onClick={() => { setSelectedLot(view.scheduledLots[0] ?? null); setLotModalOpen(true); }}>Selecionar Lote para decisão de liberação</Button></section>
       </div>
+      {releaseGroup ? <ReleaseGroupDrawer group={releaseGroup} rows={releaseGroupRows} onClose={() => setReleaseGroup(null)} /> : null}
     </OperationalWorkspace>
   );
 }

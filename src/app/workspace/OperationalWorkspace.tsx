@@ -8,7 +8,7 @@ import { Button } from '../../shared/ui/Button/Button';
 import { currentJourneyIndex, DEMO_JOURNEY } from './demoJourney';
 import styles from './OperationalWorkspace.module.css';
 
-export type OperationalPerspective = 'STRATEGIC' | 'PLAN' | 'READINESS' | 'EXECUTION' | 'MONITORING' | 'ADHERENCE' | 'QUALITY' | 'OEE';
+export type OperationalPerspective = 'STRATEGIC' | 'PLAN' | 'READINESS' | 'EXECUTION' | 'MONITORING' | 'ADHERENCE' | 'QUALITY' | 'OEE' | 'ORDER';
 
 /** Portaled to document.body (not the sidebar tree) so its z-index can actually win against Lot/Resource modals, which are portals too — a same-tree z-index cannot outrank a sibling portal's stacking context. */
 function DemoJourneyBar({ pathname, search }: { pathname: string; search: string }) {

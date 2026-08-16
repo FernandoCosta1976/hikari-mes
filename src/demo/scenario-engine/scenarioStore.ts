@@ -3,8 +3,9 @@ import type { DemandDestination, ProductionSchedulingDefinition } from '../../do
 import { adoptOrganization as buildOrganization, type LotOrganization } from '../../domain/production-scheduling/organization';
 import type { ResourceSimulationImpact } from '../../domain/production-scheduling/resourceSimulation';
 import type { ScenarioDefinition } from '../../domain/scenario/ScenarioDefinition';
-import { assessDemonstrativeRelease, releaseDemonstratively, type ProductionReleaseRecord } from '../../domain/production-release/models';
+import { assessDemonstrativeRelease, releaseDemonstratively, revokeRelease, type ProductionReleaseRecord, type RevocationReason } from '../../domain/production-release/models';
 import { completeExecution, pauseExecution, resumeExecution, startExecution, updateProducedQuantity, type DemonstrativePauseReason, type ProductionExecutionRecord } from '../../domain/production-execution/models';
+import { resolveDemonstrativeRelease } from '../adapters/releaseResolution';
 import { fundicaoDcProductionExecutionFixture } from '../fixtures/fundicaoDcProductionExecution';
 
 export type Wf001ScenarioId =
@@ -27,6 +28,8 @@ interface ScenarioState {
   productionReleases: Readonly<Record<string, ProductionReleaseRecord>>;
   productionExecutions: Readonly<Record<string, ProductionExecutionRecord>>;
   organizationsByLotId: Readonly<Record<string, LotOrganization>>;
+  preparationConfirmedByLotId: Readonly<Record<string, boolean>>;
+  postponedLotIds: Readonly<Record<string, { targetLabel: string; postponedAt: string }>>;
 }
 
 interface ScenarioActions {
@@ -40,6 +43,9 @@ interface ScenarioActions {
   resetScenario: () => void;
   preserveJourneyContext: (context: NonNullable<ScenarioState['journeyContext']>) => void;
   releaseLot: (lotId: string) => void;
+  revokeLotRelease: (lotId: string, reason: RevocationReason) => void;
+  confirmPreparation: (lotId: string) => void;
+  postponeLot: (lotId: string, targetLabel: string) => void;
   startLotExecution: (lotId: string) => void;
   pauseLotExecution: (lotId: string, reason: DemonstrativePauseReason) => void;
   resumeLotExecution: (lotId: string) => void;
@@ -65,6 +71,8 @@ const baseline = (definition: ScenarioDefinition | null, revision: number): Scen
   productionReleases: Object.fromEntries(fundicaoDcProductionExecutionFixture.map((execution) => [execution.lotId, { lotId: execution.lotId, productionOrderId: execution.productionOrderId, resourceId: execution.resourceId, scheduleVersionId: execution.scheduleVersionId, readiness: 'READY', status: 'RELEASED', reason: 'Liberação demonstrativa anterior ao estado inicial da execução.', releasedAt: execution.actualStart ?? '2025-05-15T17:00:00-03:00', releasedBy: 'Supervisor da Fundição · demonstrativo', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }])),
   productionExecutions: Object.fromEntries(fundicaoDcProductionExecutionFixture.map((record) => [record.lotId, record])),
   organizationsByLotId: {},
+  preparationConfirmedByLotId: {},
+  postponedLotIds: {},
 });
 
 export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
@@ -86,7 +94,8 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
     const readiness = state.definition?.productionReadiness.find((item) => item.lotId === lotId);
     if (!lot || !readiness) return state;
     const resourceId = state.organizationsByLotId[lotId]?.operationalResourceId ?? lot.scheduledResourceId;
-    const current = state.productionReleases[lotId] ?? assessDemonstrativeRelease({ lotId, productionOrderId: lot.productionOrderId, resourceId, scheduleVersionId: state.activeScheduleVersionId, scheduledStart: lot.scheduledStart, scheduledFinish: lot.scheduledFinish, readiness: readiness.status });
+    const effectiveReadinessStatus = state.preparationConfirmedByLotId[lotId] ? 'READY' : readiness.status;
+    const current = state.productionReleases[lotId] ?? assessDemonstrativeRelease({ lotId, productionOrderId: lot.productionOrderId, resourceId, scheduleVersionId: state.activeScheduleVersionId, scheduledStart: lot.scheduledStart, scheduledFinish: lot.scheduledFinish, readiness: effectiveReadinessStatus });
     const released = releaseDemonstratively(current, state.definition?.currentScenarioTime ?? new Date().toISOString());
     return { productionReleases: { ...state.productionReleases, [lotId]: released } };
   }),
@@ -98,6 +107,20 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
     return { productionExecutions: { ...state.productionExecutions, [lotId]: next } };
   }),
   adoptOrganization: (impact, organizedBy) => set((state) => ({ organizationsByLotId: { ...state.organizationsByLotId, [impact.lotId]: buildOrganization(impact, state.definition?.currentScenarioTime ?? new Date().toISOString(), organizedBy) } })),
+  revokeLotRelease: (lotId, reason) => set((state) => {
+    const lot = state.productionScheduling?.lots.find((item) => item.id === lotId);
+    const readiness = state.definition?.productionReadiness.find((item) => item.lotId === lotId);
+    if (!lot || !readiness) return state;
+    const currentTime = state.definition?.currentScenarioTime ?? new Date().toISOString();
+    const resourceId = state.organizationsByLotId[lotId]?.operationalResourceId ?? lot.scheduledResourceId;
+    const effectiveReadinessStatus = state.preparationConfirmedByLotId[lotId] ? 'READY' : readiness.status;
+    const current = state.productionReleases[lotId] ?? resolveDemonstrativeRelease({ lotId, productionOrderId: lot.productionOrderId, resourceId, scheduleVersionId: state.activeScheduleVersionId, scheduledStart: lot.scheduledStart, scheduledFinish: lot.scheduledFinish, readiness: effectiveReadinessStatus }, lot.materialId, currentTime);
+    const started = (state.productionExecutions[lotId]?.status ?? 'NOT_STARTED') !== 'NOT_STARTED';
+    const revoked = revokeRelease(current, currentTime, 'Supervisor da Fundição · demonstrativo', reason, started);
+    return { productionReleases: { ...state.productionReleases, [lotId]: revoked } };
+  }),
+  confirmPreparation: (lotId) => set((state) => ({ preparationConfirmedByLotId: { ...state.preparationConfirmedByLotId, [lotId]: true } })),
+  postponeLot: (lotId, targetLabel) => set((state) => ({ postponedLotIds: { ...state.postponedLotIds, [lotId]: { targetLabel, postponedAt: state.definition?.currentScenarioTime ?? new Date().toISOString() } } })),
   pauseLotExecution: (lotId, reason) => set((state) => ({ productionExecutions: { ...state.productionExecutions, [lotId]: pauseExecution(state.productionExecutions[lotId], state.definition?.currentScenarioTime ?? new Date().toISOString(), reason) } })),
   resumeLotExecution: (lotId) => set((state) => ({ productionExecutions: { ...state.productionExecutions, [lotId]: resumeExecution(state.productionExecutions[lotId], state.definition?.currentScenarioTime ?? new Date().toISOString()) } })),
   updateLotProducedQuantity: (lotId, quantity) => set((state) => ({ productionExecutions: { ...state.productionExecutions, [lotId]: updateProducedQuantity(state.productionExecutions[lotId], quantity) } })),
@@ -115,6 +138,9 @@ const emptyProductionReadiness: ScenarioDefinition['productionReadiness'] = [];
 export const selectProductionReadiness = (state: ScenarioStore) => state.definition?.productionReadiness ?? emptyProductionReadiness;
 export const selectProductionExecutions = (state: ScenarioStore) => state.productionExecutions;
 export const selectOrganizationsByLotId = (state: ScenarioStore) => state.organizationsByLotId;
+export const selectProductionReleases = (state: ScenarioStore) => state.productionReleases;
+export const selectPreparationConfirmedByLotId = (state: ScenarioStore) => state.preparationConfirmedByLotId;
+export const selectPostponedLotIds = (state: ScenarioStore) => state.postponedLotIds;
 export const selectScheduleControls = (state: ScenarioStore) => ({
   selectedDateOffset: state.selectedDateOffset,
   selectedDestination: state.selectedDestination,
