@@ -3,14 +3,17 @@ import { createPortal } from 'react-dom';
 import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSummaries, rankedExceptions, type FundicaoDcAdherenceRow } from '../../demo/adapters/adherenceSummaryAdapter';
+import { fundicaoDcIdealCycleTimeSecondsFixture } from '../../demo/fixtures/fundicaoDcIdealCycleTime';
 import { fundicaoDcProductionEventsFixture } from '../../demo/fixtures/fundicaoDcProductionEvents';
 import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DeviationClassification } from '../../domain/production-adherence/models';
+import { assessLotExecutionHealth } from '../../domain/production-execution/lotHealth';
 import { eventDurationMinutes, type ProductionEventType } from '../../domain/production-monitoring/models';
 import { timelinePosition, timelineWidth } from '../../domain/production-scheduling/temporalMath';
 import { Bar } from '../../shared/ui/Bar/Bar';
 import { Button } from '../../shared/ui/Button/Button';
 import { IconTip } from '../../shared/ui/IconTip/IconTip';
+import { LotHealthIndicator } from '../../shared/ui/LotHealthIndicator/LotHealthIndicator';
 import { formatDateTime, formatTime } from '../production-scheduling/productionSchedulingViewModel';
 import monitoringStyles from '../production-monitoring/ProductionMonitoringPage.module.css';
 import styles from './ProductionAdherencePage.module.css';
@@ -28,8 +31,9 @@ function AdherenceDialog({ row, currentTime, onClose }: { row: FundicaoDcAdheren
   useEffect(() => { close.current?.focus(); const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [onClose]);
   const { lot, execution, classification, deviationMinutes, impact, resourceId } = row;
   const activeEvent = fundicaoDcProductionEventsFixture.find((event) => event.lotId === lot.id && event.status === 'ACTIVE');
+  const health = assessLotExecutionHealth(execution, lot.scheduledStart, lot.scheduledFinish, fundicaoDcIdealCycleTimeSecondsFixture[lot.materialId], currentTime);
   return createPortal(<div className={styles.modalLayer}><button className={styles.backdrop} aria-label="Fechar contexto" onClick={onClose} /><section role="dialog" aria-modal="true" aria-labelledby="adherence-context-title" className={styles.modal}>
-    <header><div><small>ADERÊNCIA</small><h2 id="adherence-context-title">{resourceId} · Lote {lot.lotNumber}</h2></div><Button ref={close} aria-label="Fechar contexto de aderência" onClick={onClose}>×</Button></header>
+    <header><div><small>ADERÊNCIA</small><h2 id="adherence-context-title">{resourceId} · Lote {lot.lotNumber}</h2><LotHealthIndicator health={health} context={{ lotLabel: lot.lotNumber, material: '', quantity: lot.quantity, resourceId, scheduledStart: formatTime(lot.scheduledStart), scheduledFinish: formatTime(lot.scheduledFinish) }} /></div><Button ref={close} aria-label="Fechar contexto de aderência" onClick={onClose}>×</Button></header>
     <p>{classificationLabel[classification]}{deviationMinutes !== null ? ` · ${deviationMinutes > 0 ? '+' : ''}${deviationMinutes} min` : ''}</p>
     <dl>
       <div><dt>Início planejado</dt><dd>{formatTime(lot.scheduledStart)}</dd></div>
@@ -92,13 +96,14 @@ export function ProductionAdherencePage() {
       <section className={styles.resources} aria-labelledby="resources-title">
         <header><h2 id="resources-title">Situação das Máquinas</h2><p>DC01–DC05 · classificação de aderência · acumulado do dia</p></header>
         <div className={styles.machines}>
-          {day.rows.map((row) => <button key={row.resourceId} className={styles.machineRow} data-tone={classificationTone[row.classification]} onClick={() => setOpenRow(row)}>
+          {day.rows.map((row) => { const health = assessLotExecutionHealth(row.execution, row.lot.scheduledStart, row.lot.scheduledFinish, fundicaoDcIdealCycleTimeSecondsFixture[row.lot.materialId], currentTime); return <button key={row.resourceId} className={styles.machineRow} data-tone={classificationTone[row.classification]} onClick={() => setOpenRow(row)}>
             <span className={styles.machineIcon} aria-hidden="true">{classificationIcon[row.classification]}</span>
             <span className={styles.machineId}>{row.resourceId}</span>
             <span className={styles.machineStatus}><small>Lote {row.lot.lotNumber}</small><strong>{classificationLabel[row.classification]}</strong></span>
+            <LotHealthIndicator health={health} compact />
             <span className={styles.machineApq}>{row.deviationMinutes !== null ? `${row.deviationMinutes > 0 ? '+' : ''}${row.deviationMinutes} min vs. plano` : `${row.execution.producedQuantity}/${row.execution.plannedQuantity}`}</span>
             {row.impact ? <em className={styles.machineNote}>Impacto: Lote {row.impact.impactedLot.lotNumber}</em> : null}
-          </button>)}
+          </button>; })}
         </div>
       </section>
 

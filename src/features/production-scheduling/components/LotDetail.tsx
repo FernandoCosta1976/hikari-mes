@@ -7,8 +7,11 @@ import { BUFFER_CRITICAL_CONTRIBUTION_DAYS, BUFFER_CRITICAL_LOT_ID } from './Buf
 import type { MaterialResourceEligibilityProjection } from '../../../domain/material-resource-eligibility/models';
 import type { LotReadinessAssessment, ReadinessStatus } from '../../../domain/production-readiness/models';
 import { dominantReadinessCondition } from '../../../domain/production-readiness/presentation';
+import { fundicaoDcIdealCycleTimeSecondsFixture } from '../../../demo/fixtures/fundicaoDcIdealCycleTime';
+import { assessLotExecutionHealth } from '../../../domain/production-execution/lotHealth';
 import { Badge } from '../../../shared/ui/Badge/Badge';
 import { Button } from '../../../shared/ui/Button/Button';
+import { LotHealthIndicator } from '../../../shared/ui/LotHealthIndicator/LotHealthIndicator';
 import { ResourceConditionGroups } from '../../../shared/operational/ResourceConditionGroups';
 import { destinationLabels, formatTime } from '../productionSchedulingViewModel';
 import styles from '../ProductionSchedulingPage.module.css';
@@ -19,13 +22,14 @@ export type ModalSection = 'OVERVIEW' | 'READINESS' | 'RELEASE' | 'EXECUTION' | 
 const statusLabels: Record<ReadinessStatus, string> = { READY: 'Condições atendidas', ATTENTION: 'Atenção', BLOCKED: 'Condição impeditiva', UNKNOWN: 'Informação insuficiente' };
 const statusTones: Record<ReadinessStatus, 'positive' | 'attention' | 'unavailable' | 'neutral'> = { READY: 'positive', ATTENTION: 'attention', BLOCKED: 'unavailable', UNKNOWN: 'neutral' };
 
-export function LotDetail({ lot, material, eligibility, readiness, release, execution, order, workCenter, shiftName, scheduleVersion, receivedAt, bufferPosition, simulatedResourceId, operationalResourceId, initialSection = 'OVERVIEW', onClose, onAnalyzeReadiness, onRelease, onStartExecution, onSectionChange }: { lot: Lot; material: Material; eligibility: MaterialResourceEligibilityProjection; readiness?: LotReadinessAssessment; release?: ProductionReleaseRecord; execution?: ProductionExecutionRecord; order: ProductionOrder; workCenter: WorkCenter; shiftName: string; scheduleVersion: string; receivedAt: string; bufferPosition?: BufferPosition; simulatedResourceId?: FoundryResourceId; operationalResourceId?: FoundryResourceId; initialSection?: ModalSection; onClose: () => void; onAnalyzeReadiness?: () => void; onRelease?: () => void; onStartExecution?: () => void; onSectionChange?: (section: ModalSection) => void }) {
+export function LotDetail({ lot, material, eligibility, readiness, release, execution, currentTime, order, workCenter, shiftName, scheduleVersion, receivedAt, bufferPosition, simulatedResourceId, operationalResourceId, initialSection = 'OVERVIEW', onClose, onAnalyzeReadiness, onRelease, onStartExecution, onSectionChange }: { lot: Lot; material: Material; eligibility: MaterialResourceEligibilityProjection; readiness?: LotReadinessAssessment; release?: ProductionReleaseRecord; execution?: ProductionExecutionRecord; currentTime: string; order: ProductionOrder; workCenter: WorkCenter; shiftName: string; scheduleVersion: string; receivedAt: string; bufferPosition?: BufferPosition; simulatedResourceId?: FoundryResourceId; operationalResourceId?: FoundryResourceId; initialSection?: ModalSection; onClose: () => void; onAnalyzeReadiness?: () => void; onRelease?: () => void; onStartExecution?: () => void; onSectionChange?: (section: ModalSection) => void }) {
   const closeButton = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
   const [section, setSectionState] = useState<ModalSection>(initialSection);
   const setSection = (value: ModalSection) => { setSectionState(value); onSectionChange?.(value); };
   const programmed = readiness?.resources.find((resource) => resource.resourceId === lot.scheduledResourceId);
   const dominant = readiness ? dominantReadinessCondition(readiness, lot.scheduledResourceId) : undefined;
+  const health = execution ? assessLotExecutionHealth(execution, lot.scheduledStart, lot.scheduledFinish, fundicaoDcIdealCycleTimeSecondsFixture[lot.materialId], currentTime) : null;
 
   useEffect(() => { closeButton.current?.focus(); }, [lot.id]);
   useEffect(() => { onSectionChange?.(section); }, []); // eslint-disable-line react-hooks/exhaustive-deps -- announce the initial section once on mount only
@@ -51,7 +55,7 @@ export function LotDetail({ lot, material, eligibility, readiness, release, exec
   return createPortal(<div className={styles.lotModalLayer}>
     <button className={styles.lotModalBackdrop} aria-label="Fechar contexto ao clicar fora" onClick={onClose} />
     <div ref={dialog} className={styles.lotModal} role="dialog" aria-modal="true" aria-labelledby="lot-detail-title" aria-describedby="lot-detail-description">
-      <header className={styles.lotModalHeader}><div><span className={styles.overline}>Contexto do Lote</span><div className={styles.lotTitleLine}><h2 id="lot-detail-title">Lote {lot.lotNumber}</h2>{readiness ? <Badge tone={statusTones[readiness.status]}>{statusLabels[readiness.status]}</Badge> : null}</div><p id="lot-detail-description">{material.name} · {lot.quantity} peças<br />{lot.scheduledResourceId} · {formatTime(lot.scheduledStart)}–{formatTime(lot.scheduledFinish)} · {shiftName}<br />{destinationLabels[lot.destination]} · OP {order.orderNumber}</p></div><Button ref={closeButton} aria-label="Fechar contexto do Lote" onClick={onClose}>×</Button></header>
+      <header className={styles.lotModalHeader}><div><span className={styles.overline}>Contexto do Lote</span><div className={styles.lotTitleLine}><h2 id="lot-detail-title">Lote {lot.lotNumber}</h2>{readiness ? <Badge tone={statusTones[readiness.status]}>{statusLabels[readiness.status]}</Badge> : null}{health ? <LotHealthIndicator health={health} context={{ lotLabel: lot.lotNumber, material: material.name, quantity: lot.quantity, resourceId: execution!.resourceId, scheduledStart: formatTime(lot.scheduledStart), scheduledFinish: formatTime(lot.scheduledFinish) }} /> : null}</div><p id="lot-detail-description">{material.name} · {lot.quantity} peças<br />{lot.scheduledResourceId} · {formatTime(lot.scheduledStart)}–{formatTime(lot.scheduledFinish)} · {shiftName}<br />{destinationLabels[lot.destination]} · OP {order.orderNumber}</p></div><Button ref={closeButton} aria-label="Fechar contexto do Lote" onClick={onClose}>×</Button></header>
       {readiness && readiness.status !== 'READY' && dominant ? <section className={styles.dominantReason} data-status={readiness.status} aria-label={readiness.status === 'BLOCKED' ? 'Bloqueio principal' : 'Motivo principal'}><small>{readiness.status === 'BLOCKED' ? 'Bloqueio principal' : 'Motivo principal'}</small><strong>{dominant.label}</strong><span>{dominant.evidence}</span><em>Resultado demonstrativo · regra de agregação não governada</em></section> : null}
       <nav className={styles.modalTabs} aria-label="Seções do contexto do Lote">{tabs.map(([value, label]) => <Button key={value} aria-pressed={section === value} onClick={() => setSection(value)}>{label}</Button>)}</nav>
       <div className={styles.modalBody}>
