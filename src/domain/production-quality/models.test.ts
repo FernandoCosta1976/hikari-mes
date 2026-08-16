@@ -29,8 +29,8 @@ describe('qualityRate', () => {
 });
 
 describe('qualitySummary', () => {
-  it('aggregates Produced/Good/Reject/Rework across the five confirmed Lots', () => {
-    expect(qualitySummary(fundicaoDcQualityConfirmationsFixture)).toEqual({ produced: 198, good: 180, reject: 12, rework: 6 });
+  it('aggregates Produced/Good/Reject/Rework across the four confirmed Lots', () => {
+    expect(qualitySummary(fundicaoDcQualityConfirmationsFixture)).toEqual({ produced: 209, good: 191, reject: 12, rework: 6 });
   });
 });
 
@@ -43,7 +43,7 @@ describe('mainLosses', () => {
 
 describe('knownRunTimeMinutes', () => {
   it('excludes the ongoing pause from DC03 run time', () => {
-    expect(knownRunTimeMinutes(executionByLot['lot-266'], currentTime)).toBe(89);
+    expect(knownRunTimeMinutes(executionByLot['lot-266'], currentTime)).toBe(77);
   });
   it('returns null before a Lot has started (DC05)', () => {
     expect(knownRunTimeMinutes(executionByLot['lot-271'], currentTime)).toBeNull();

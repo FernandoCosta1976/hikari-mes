@@ -8,11 +8,11 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
 
   const turnoRow = page.getByRole('region', { name: 'Aderência do Turno 2 e acumulado do dia' });
   await expect(turnoRow).toContainText('TURNO 2 · EM ANDAMENTO');
-  await expect(turnoRow).toContainText('2 / 4');
+  await expect(turnoRow).toContainText('1 / 4');
   await expect(turnoRow).toContainText('Principal desvio');
   await expect(turnoRow).toContainText('DC03');
   await expect(turnoRow).toContainText('Acumulado do dia');
-  await expect(turnoRow).toContainText('3 / 5');
+  await expect(turnoRow).toContainText('2 / 5');
 
   const history = page.getByRole('region', { name: 'Turnos concluídos hoje' });
   await expect(history).toContainText('Turno 1');
@@ -73,5 +73,5 @@ test('is accessible, keyboard reachable, responsive and contains no prohibited r
   expect(redUsages).toEqual([]);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole('button', { name: 'Restaurar cenário' }).click();
-  await expect(page.getByRole('region', { name: 'Aderência do Turno 2 e acumulado do dia' })).toContainText('2 / 4');
+  await expect(page.getByRole('region', { name: 'Aderência do Turno 2 e acumulado do dia' })).toContainText('1 / 4');
 });

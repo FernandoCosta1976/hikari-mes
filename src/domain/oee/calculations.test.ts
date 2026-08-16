@@ -45,10 +45,10 @@ describe('per-Resource OEE', () => {
   it('computes DC01, DC02, DC03, DC04 within the 0..100% domain', () => {
     const [dc01, dc02, dc03, dc04, dc05] = rows;
     expect(dc01.availability).toBeCloseTo(0.9646, 3);
-    expect(dc01.performance).toBeCloseTo(0.7927, 3);
-    expect(dc01.oee).toBeCloseTo(0.7221, 3);
+    expect(dc01.performance).toBeCloseTo(0.9138, 3);
+    expect(dc01.oee).toBeCloseTo(0.8389, 3);
     expect(dc02.oee).toBeCloseTo(0.7510, 3);
-    expect(dc03.availability).toBeCloseTo(0.7876, 3);
+    expect(dc03.availability).toBeCloseTo(0.6814, 3);
     expect(dc03.oee).toBeCloseTo(0.4904, 3);
     expect(dc04.availability).toBe(1);
     expect(dc04.performance).toBeCloseTo(0.8790, 3);
@@ -73,19 +73,19 @@ describe('area aggregation', () => {
     const simpleAverage = rows.filter((row) => row.availability !== null).reduce((sum, row, _, arr) => sum + row.availability! / arr.length, 0);
     const aggregated = aggregateAvailability(rows)!;
     expect(aggregated).not.toBeCloseTo(simpleAverage, 6);
-    expect(aggregated).toBeCloseTo(0.9197, 3);
+    expect(aggregated).toBeCloseTo(0.8886, 3);
   });
   it('computes area Performance and Quality from totals', () => {
-    expect(aggregatePerformance(rows)).toBeCloseTo(0.7948, 3);
-    expect(aggregateQuality(rows)).toBeCloseTo(0.9091, 3);
+    expect(aggregatePerformance(rows)).toBeCloseTo(0.8611, 3);
+    expect(aggregateQuality(rows)).toBeCloseTo(0.9139, 3);
   });
 });
 
 describe('topOeeImpacts', () => {
-  it('ranks DC03 Performance as the largest known loss', () => {
+  it('ranks DC03 Availability as the largest known loss', () => {
     const impacts = topOeeImpacts(rows);
-    expect(impacts[0].dimension).toBe('PERFORMANCE');
+    expect(impacts[0].dimension).toBe('AVAILABILITY');
     expect(impacts[0].resourceId).toBe('DC03');
-    expect(impacts[0].lossFraction).toBeCloseTo(0.2706, 3);
+    expect(impacts[0].lossFraction).toBeCloseTo(0.3186, 3);
   });
 });

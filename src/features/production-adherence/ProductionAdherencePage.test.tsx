@@ -13,12 +13,12 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
 
   const turnoRow = screen.getByRole('region', { name: 'Aderência do Turno 2 e acumulado do dia' });
   expect(turnoRow).toHaveTextContent('TURNO 2 · EM ANDAMENTO');
-  expect(turnoRow).toHaveTextContent('2 / 4');
+  expect(turnoRow).toHaveTextContent('1 / 4');
   expect(turnoRow).toHaveTextContent('Principal desvio');
   expect(turnoRow).toHaveTextContent('DC03');
   expect(turnoRow).toHaveTextContent('Parado');
   expect(turnoRow).toHaveTextContent('Acumulado do dia');
-  expect(turnoRow).toHaveTextContent('3 / 5');
+  expect(turnoRow).toHaveTextContent('2 / 5');
 
   const history = screen.getByRole('region', { name: 'Turnos concluídos hoje' });
   expect(history).toHaveTextContent('Turno 1');

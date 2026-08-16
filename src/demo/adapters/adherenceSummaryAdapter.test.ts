@@ -8,9 +8,9 @@ const definition = fundicaoDcScenario.productionScheduling;
 const currentTime = fundicaoDcScenario.currentScenarioTime;
 
 describe('computeFundicaoDcAdherenceSummary', () => {
-  it('counts 3/5 Lots on plan for the day (DC03 stopped, DC04 early)', () => {
+  it('counts 2/5 Lots on plan for the day (DC03 stopped, DC04 early, DC05 late to start)', () => {
     const day = computeFundicaoDcAdherenceSummary(definition, executionsByLot, currentTime);
-    expect(day).toMatchObject({ onPlan: 3, total: 5, ratio: 0.6 });
+    expect(day).toMatchObject({ onPlan: 2, total: 5, ratio: 0.4 });
   });
 });
 
@@ -21,7 +21,7 @@ describe('computeFundicaoDcShiftAdherenceSummaries', () => {
     const turno1 = shifts.find((shift) => shift.shiftId === 'SHIFT_1')!;
     const turno2 = shifts.find((shift) => shift.shiftId === 'SHIFT_2')!;
     expect(turno1).toMatchObject({ status: 'COMPLETED', onPlan: 1, total: 1, ratio: 1 });
-    expect(turno2).toMatchObject({ status: 'IN_PROGRESS', onPlan: 2, total: 4, ratio: 0.5 });
+    expect(turno2).toMatchObject({ status: 'IN_PROGRESS', onPlan: 1, total: 4, ratio: 0.25 });
     expect(turno2.rows.map((row) => row.resourceId).sort()).toEqual(['DC01', 'DC03', 'DC04', 'DC05']);
   });
 
@@ -33,10 +33,10 @@ describe('computeFundicaoDcShiftAdherenceSummaries', () => {
 });
 
 describe('rankedExceptions', () => {
-  it('ranks DC03 (stopped) above DC04 (early) and excludes on-plan Resources', () => {
+  it('ranks DC03 (stopped) above DC05 (late to start) and DC04 (early), excluding on-plan Resources', () => {
     const day = computeFundicaoDcAdherenceSummary(definition, executionsByLot, currentTime);
     const exceptions = rankedExceptions(day.rows);
-    expect(exceptions.map((row) => row.resourceId)).toEqual(['DC03', 'DC04']);
+    expect(exceptions.map((row) => row.resourceId)).toEqual(['DC03', 'DC05', 'DC04']);
     expect(exceptions[0].impact?.impactedLot.scheduledResourceId).toBe('DC03');
   });
 });

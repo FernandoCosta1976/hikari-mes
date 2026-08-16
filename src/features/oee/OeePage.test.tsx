@@ -14,11 +14,11 @@ test('shows Turno 2 beside the day accumulated, a simplified Turno 1/3 history a
   const turnoRow = screen.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' });
   expect(turnoRow).toHaveTextContent('TURNO 2 · EM ANDAMENTO');
   expect(turnoRow).toHaveTextContent('Parcial até 17:23');
-  expect(turnoRow).toHaveTextContent('64%');
+  expect(turnoRow).toHaveTextContent('68%');
   expect(turnoRow).toHaveTextContent('Performance');
   expect(turnoRow).toHaveTextContent('DC03');
   expect(turnoRow).toHaveTextContent('Acumulado do dia');
-  expect(turnoRow).toHaveTextContent('66%');
+  expect(turnoRow).toHaveTextContent('70%');
 
   const history = screen.getByRole('region', { name: 'Turnos concluídos hoje' });
   expect(history).toHaveTextContent('Turno 3');
@@ -36,8 +36,8 @@ test('shows Turno 2 beside the day accumulated, a simplified Turno 1/3 history a
   const dc03 = within(machines).getByRole('button', { name: /DC03/ });
   expect(dc03).toHaveAttribute('data-tone', 'attention');
   expect(dc03).toHaveTextContent('Ferramental ativo');
-  const dc02 = within(machines).getByRole('button', { name: /DC02/ });
-  expect(dc02).toHaveAttribute('data-tone', 'positive');
+  const dc01 = within(machines).getByRole('button', { name: /DC01/ });
+  expect(dc01).toHaveAttribute('data-tone', 'positive');
 });
 
 test('opens Resource and Turno-scoped dimension drill-downs, and keeps details collapsed by default', async () => {

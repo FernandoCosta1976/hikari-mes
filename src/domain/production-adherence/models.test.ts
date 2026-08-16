@@ -23,8 +23,8 @@ describe('assessDeviation', () => {
     expect(result.classification).toBe('EARLY');
     expect(result.startDeviationMinutes).toBe(-140);
   });
-  it('classifies DC05 (not yet due) as ON_PLAN', () => {
-    expect(assessDeviation(executionByLot['lot-271'], lot('lot-271'), currentTime).classification).toBe('ON_PLAN');
+  it('classifies DC05 (Scheduled Start passed, not started) as LATE', () => {
+    expect(assessDeviation(executionByLot['lot-271'], lot('lot-271'), currentTime).classification).toBe('LATE');
   });
 });
 

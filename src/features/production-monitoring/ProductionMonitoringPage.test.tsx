@@ -29,5 +29,5 @@ test('opens Lot and Resource contexts without execution controls', async () => {
   expect(screen.queryByRole('button', { name: /Pausar|Retomar|Concluir|Iniciar produção/ })).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Fechar contexto de acompanhamento' }));
   await user.click(screen.getAllByRole('button', { name: /^Lote 265/ })[0]);
-  expect(screen.getByRole('dialog', { name: 'Lote 265' })).toHaveTextContent('72 / 100 · 72%');
+  expect(screen.getByRole('dialog', { name: 'Lote 265' })).toHaveTextContent('83 / 100 · 83%');
 });

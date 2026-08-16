@@ -128,7 +128,7 @@ test('shows five scheduled Resource lanes without the redundant physical landsca
   expect(screen.queryByRole('region', { name: 'Agora na Fundição' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: /Lote 251.*máquina programada DC01.*00:30.*02:00/ })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /Lote 266.*máquina programada DC03.*15:30.*17:30/ })).toBeInTheDocument();
-  expect(screen.getAllByTestId('scheduled-setup')).toHaveLength(4);
+  expect(screen.getAllByTestId('scheduled-setup')).toHaveLength(5);
 });
 
 test('toggles the Resource condition overlay without changing the timeline plan', async () => {

@@ -26,9 +26,9 @@ test('Home inicia a jornada guiada e Próximo percorre 01→08 no mesmo cenário
     if (await next.count()) await next.click();
   }
 
-  await expect(page.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' })).toContainText('64%');
+  await expect(page.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' })).toContainText('68%');
   await page.getByRole('button', { name: 'Restaurar cenário' }).click();
-  await expect(page.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' })).toContainText('64%');
+  await expect(page.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' })).toContainText('68%');
   await page.getByRole('link', { name: '← Voltar à Visão Executiva' }).click();
   await expect(page.getByRole('heading', { name: 'PROGRAMA HIKARI' })).toBeVisible();
 });
@@ -47,11 +47,11 @@ test('o Lot Context Modal da Liberação não bloqueia o Próximo do stepper', a
 test('Home mostra o OEE demonstrativo (mesma projeção da CAP-09), a pergunta de negócio e permite reiniciar', async ({ page }) => {
   await page.goto('/demo/fundicao-dc');
   const oeeTile = page.getByLabel('OEE demonstrativo da Fundição DC');
-  await expect(oeeTile).toContainText('OEE 66%');
-  await expect(oeeTile).toContainText('Principal impacto: Performance');
+  await expect(oeeTile).toContainText('OEE 70%');
+  await expect(oeeTile).toContainText('Principal impacto: Disponibilidade');
   await expect(page.getByText(/Estamos protegendo a cadeia para atender a necessidade da Montagem hoje\?/)).toBeVisible();
   await page.getByRole('button', { name: 'Reiniciar demonstração' }).click();
-  await expect(oeeTile).toContainText('OEE 66%');
+  await expect(oeeTile).toContainText('OEE 70%');
 });
 
 test('Anterior retorna um passo preservando a Área Produtiva', async ({ page }) => {

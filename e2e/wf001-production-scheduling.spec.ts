@@ -32,7 +32,7 @@ test('completes the governed WF-001 interaction narrative', async ({ page }) => 
   await expect(page.getByRole('region', { name: 'Agora na Fundição' })).toHaveCount(0);
   await expect(page.getByText('Versão demonstrativa 08').first()).toBeVisible();
   await expect(page.getByTestId('planned-break')).toHaveCount(9);
-  await expect(page.getByTestId('scheduled-setup')).toHaveCount(4);
+  await expect(page.getByTestId('scheduled-setup')).toHaveCount(5);
   const timeline = page.getByTestId('timeline-scroller');
   await expect.poll(async () => timeline.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
   const markerRatio = await page.evaluate(() => {
@@ -235,7 +235,7 @@ test('shows canonical Resource conditions as a read-only timeline overlay and re
   await expect(page.getByText(/melhor máquina|ótima escolha/i)).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Atribuir|Trocar máquina|Despachar|Liberar/ })).toHaveCount(0);
   await expect(page.locator('[data-lot-id]')).toHaveCount(originalLotCount);
-  await expect(page.getByTestId('scheduled-setup')).toHaveCount(4);
+  await expect(page.getByTestId('scheduled-setup')).toHaveCount(5);
   await expect(page.getByTestId('planned-break')).toHaveCount(9);
   await expect(page.getByTestId('current-time-marker')).toBeAttached();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
