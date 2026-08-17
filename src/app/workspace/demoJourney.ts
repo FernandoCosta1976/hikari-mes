@@ -5,19 +5,46 @@ export interface DemoJourneyStep {
   path: string;
 }
 
-export const DEMO_JOURNEY: readonly DemoJourneyStep[] = [
-  { id: '01', label: 'Plano', href: '/demo/fundicao-dc/production-scheduling', path: '/demo/fundicao-dc/production-scheduling' },
-  { id: '02', label: 'Preparação', href: '/demo/fundicao-dc/production-readiness?lotId=lot-252', path: '/demo/fundicao-dc/production-readiness' },
-  { id: '03', label: 'Liberação', href: '/demo/fundicao-dc/production-scheduling?lotId=lot-251', path: '/demo/fundicao-dc/production-scheduling' },
-  { id: '04', label: 'Execução', href: '/demo/fundicao-dc/production-execution', path: '/demo/fundicao-dc/production-execution' },
-  { id: '05', label: 'Acompanhamento', href: '/demo/fundicao-dc/production-monitoring', path: '/demo/fundicao-dc/production-monitoring' },
-  { id: '06', label: 'Aderência', href: '/demo/fundicao-dc/production-adherence', path: '/demo/fundicao-dc/production-adherence' },
-  { id: '07', label: 'Qualidade', href: '/demo/fundicao-dc/production-quality', path: '/demo/fundicao-dc/production-quality' },
-  { id: '08', label: 'OEE', href: '/demo/fundicao-dc/oee', path: '/demo/fundicao-dc/oee' },
-];
+/**
+ * Etapas Preparação (02) e Liberação (03) fazem deep-link a um Lote
+ * específico — o identificador varia por cenário, então cada cenário
+ * registra o seu aqui em vez de um id fixo hardcoded no journey.
+ */
+const journeyLotIdByScenario: Readonly<Record<string, string>> = {
+  'fundicao-dc': 'lot-sd-401',
+  'fundicao-dc-legacy': 'lot-251',
+};
+const defaultJourneyLotId = journeyLotIdByScenario['fundicao-dc'];
+const preparationLotIdByScenario: Readonly<Record<string, string>> = {
+  'fundicao-dc': 'lot-sd-407',
+  'fundicao-dc-legacy': 'lot-252',
+};
+
+/** Paths are relative to the current scenario (`/demo/:scenarioId`) — see useScenarioPath. */
+export function demoJourney(scenarioId: string | undefined): readonly DemoJourneyStep[] {
+  const liberacaoLotId = (scenarioId && journeyLotIdByScenario[scenarioId]) ?? defaultJourneyLotId;
+  const preparacaoLotId = (scenarioId && preparationLotIdByScenario[scenarioId]) ?? preparationLotIdByScenario['fundicao-dc'];
+  return [
+    { id: '01', label: 'Plano', href: '/production-scheduling', path: '/production-scheduling' },
+    { id: '02', label: 'Preparação', href: `/production-readiness?lotId=${preparacaoLotId}`, path: '/production-readiness' },
+    { id: '03', label: 'Liberação', href: `/production-scheduling?lotId=${liberacaoLotId}`, path: '/production-scheduling' },
+    { id: '04', label: 'Execução', href: '/production-execution', path: '/production-execution' },
+    { id: '05', label: 'Acompanhamento', href: '/production-monitoring', path: '/production-monitoring' },
+    { id: '06', label: 'Aderência', href: '/production-adherence', path: '/production-adherence' },
+    { id: '07', label: 'Qualidade', href: '/production-quality', path: '/production-quality' },
+    { id: '08', label: 'OEE', href: '/oee', path: '/oee' },
+  ];
+}
+
+/** Strips the `/demo/:scenarioId` prefix so journey matching works for any scenario. */
+function relativePath(pathname: string): string {
+  return pathname.replace(/^\/demo\/[^/]+/, '') || '/';
+}
 
 /** -1 means the current route is not part of the guided demo journey (e.g. Home, Visão Estratégica). */
-export function currentJourneyIndex(pathname: string, search: string): number {
-  if (pathname === '/demo/fundicao-dc/production-scheduling' && search.includes('lotId=lot-251')) return 2;
-  return DEMO_JOURNEY.findIndex((step) => step.path === pathname);
+export function currentJourneyIndex(pathname: string, search: string, scenarioId: string | undefined): number {
+  const relative = relativePath(pathname);
+  const liberacaoLotId = (scenarioId && journeyLotIdByScenario[scenarioId]) ?? defaultJourneyLotId;
+  if (relative === '/production-scheduling' && search.includes(`lotId=${liberacaoLotId}`)) return 2;
+  return demoJourney(scenarioId).findIndex((step) => step.path === relative);
 }

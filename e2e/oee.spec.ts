@@ -3,7 +3,7 @@ import { expect, test } from './fixtures';
 
 test('shows Turno 2 beside the day accumulated, a simplified shift history and a highlighted machine panel', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/oee');
+  await page.goto('/demo/fundicao-dc-legacy/oee');
   await expect(page.getByRole('heading', { name: 'Como estamos performando e por quê?' })).toBeVisible();
 
   const turnoRow = page.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' });
@@ -34,7 +34,7 @@ test('shows Turno 2 beside the day accumulated, a simplified shift history and a
 
 test('opens Turno-scoped dimension and Resource drill-downs, and keeps the explanation collapsed by default', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/oee');
+  await page.goto('/demo/fundicao-dc-legacy/oee');
 
   const disclosure = page.locator('details', { hasText: 'Como chegamos a este resultado?' });
   await expect(disclosure).not.toHaveAttribute('open', '');
@@ -57,7 +57,7 @@ test('opens Turno-scoped dimension and Resource drill-downs, and keeps the expla
 });
 
 test('is accessible, keyboard reachable, responsive and contains no prohibited red', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/oee');
+  await page.goto('/demo/fundicao-dc-legacy/oee');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   const machines = page.getByRole('region', { name: 'Situação das Máquinas' });
   await machines.getByRole('button', { name: /DC03/ }).focus();

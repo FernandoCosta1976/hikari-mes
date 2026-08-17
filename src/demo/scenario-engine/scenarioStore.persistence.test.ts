@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { scenarioDefinitionAdapter } from '../adapters/scenarioDefinitionAdapter';
 import { SCENARIO_STORAGE_KEY, selectScenarioModified, useScenarioStore } from './scenarioStore';
 
+// Only the official/canonical scenario ('fundicao-dc') persists decisions to
+// localStorage — the legacy fixture scenario never rehydrates from storage.
 const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
 
 /** Simulates a fresh browser boot: in-memory state is gone, localStorage is not. */
@@ -22,85 +24,85 @@ afterEach(() => {
 
 describe('scenario persistence — serialize / hydrate', () => {
   it('writes decisions to localStorage under the versioned key after a mutating action', () => {
-    useScenarioStore.getState().confirmPreparation('lot-270');
+    useScenarioStore.getState().confirmPreparation('lot-sd-407');
     const raw = window.localStorage.getItem(SCENARIO_STORAGE_KEY);
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
     expect(parsed.schemaVersion).toBe(1);
-    expect(parsed.preparationConfirmedByLotId['lot-270']).toBe(true);
+    expect(parsed.preparationConfirmedByLotId['lot-sd-407']).toBe(true);
   });
 
   it('rehydrates preparation, release, organization, postponement and execution facts after a simulated reload', () => {
-    useScenarioStore.getState().confirmPreparation('lot-270');
-    useScenarioStore.getState().releaseLot('lot-251');
-    useScenarioStore.getState().adoptOrganization({ lotId: 'lot-270', originalResourceId: 'DC01', simulatedResourceId: 'DC04', originSetupDeltaMinutes: 0, destinationSetupDeltaMinutes: 0, netSetupDeltaMinutes: 0, conflictLotIds: [], conflictSetupIds: [], bufferImpact: 'NEUTRAL' }, 'Planejador da Fundição · demonstrativo');
-    useScenarioStore.getState().postponeLot('lot-262', 'Turno 3');
-    useScenarioStore.getState().releaseLot('lot-258');
-    useScenarioStore.getState().startLotExecution('lot-258');
+    useScenarioStore.getState().confirmPreparation('lot-sd-407');
+    useScenarioStore.getState().releaseLot('lot-sd-401');
+    useScenarioStore.getState().adoptOrganization({ lotId: 'lot-sd-407', originalResourceId: 'DC01', simulatedResourceId: 'DC03', originSetupDeltaMinutes: 0, destinationSetupDeltaMinutes: 0, netSetupDeltaMinutes: 0, conflictLotIds: [], conflictSetupIds: [], bufferImpact: 'NEUTRAL' }, 'Planejador da Fundição · demonstrativo');
+    useScenarioStore.getState().postponeLot('lot-sd-403', 'Turno 3');
+    useScenarioStore.getState().releaseLot('lot-sd-402');
+    useScenarioStore.getState().startLotExecution('lot-sd-402');
 
     reboot();
 
     const state = useScenarioStore.getState();
-    expect(state.preparationConfirmedByLotId['lot-270']).toBe(true);
-    expect(state.productionReleases['lot-251']?.status).toBe('RELEASED');
-    expect(state.organizationsByLotId['lot-270']?.operationalResourceId).toBe('DC04');
-    expect(state.organizationsByLotId['lot-270']?.programmedResourceId).toBe('DC01');
-    expect(state.postponedLotIds['lot-262']?.targetLabel).toBe('Turno 3');
-    expect(state.productionExecutions['lot-258']?.status).toBe('IN_PROGRESS');
+    expect(state.preparationConfirmedByLotId['lot-sd-407']).toBe(true);
+    expect(state.productionReleases['lot-sd-401']?.status).toBe('RELEASED');
+    expect(state.organizationsByLotId['lot-sd-407']?.operationalResourceId).toBe('DC03');
+    expect(state.organizationsByLotId['lot-sd-407']?.programmedResourceId).toBe('DC01');
+    expect(state.postponedLotIds['lot-sd-403']?.targetLabel).toBe('Turno 3');
+    expect(state.productionExecutions['lot-sd-402']?.status).toBe('IN_PROGRESS');
     expect(selectScenarioModified(state)).toBe(true);
   });
 
   it('keeps Programmed and Operational Resource distinguishable across a reload (baseline is never lost)', () => {
-    useScenarioStore.getState().adoptOrganization({ lotId: 'lot-270', originalResourceId: 'DC01', simulatedResourceId: 'DC04', originSetupDeltaMinutes: 0, destinationSetupDeltaMinutes: 0, netSetupDeltaMinutes: 0, conflictLotIds: [], conflictSetupIds: [], bufferImpact: 'NEUTRAL' }, 'Planejador da Fundição · demonstrativo');
+    useScenarioStore.getState().adoptOrganization({ lotId: 'lot-sd-407', originalResourceId: 'DC01', simulatedResourceId: 'DC03', originSetupDeltaMinutes: 0, destinationSetupDeltaMinutes: 0, netSetupDeltaMinutes: 0, conflictLotIds: [], conflictSetupIds: [], bufferImpact: 'NEUTRAL' }, 'Planejador da Fundição · demonstrativo');
     reboot();
-    const organization = useScenarioStore.getState().organizationsByLotId['lot-270'];
+    const organization = useScenarioStore.getState().organizationsByLotId['lot-sd-407'];
     expect(organization?.programmedResourceId).toBe('DC01');
-    expect(organization?.operationalResourceId).toBe('DC04');
+    expect(organization?.operationalResourceId).toBe('DC03');
   });
 });
 
 describe('scenario persistence — schema validation and fallback', () => {
   it('ignores a payload with a mismatched schemaVersion and falls back to the fixture baseline', () => {
-    window.localStorage.setItem(SCENARIO_STORAGE_KEY, JSON.stringify({ schemaVersion: 999, productionReleases: {}, productionExecutions: {}, organizationsByLotId: {}, preparationConfirmedByLotId: { 'lot-270': true }, postponedLotIds: {}, scenarioModified: true }));
+    window.localStorage.setItem(SCENARIO_STORAGE_KEY, JSON.stringify({ schemaVersion: 999, productionReleases: {}, productionExecutions: {}, organizationsByLotId: {}, preparationConfirmedByLotId: { 'lot-sd-407': true }, postponedLotIds: {}, scenarioModified: true }));
     reboot();
-    expect(useScenarioStore.getState().preparationConfirmedByLotId['lot-270']).toBeUndefined();
+    expect(useScenarioStore.getState().preparationConfirmedByLotId['lot-sd-407']).toBeUndefined();
     expect(selectScenarioModified(useScenarioStore.getState())).toBe(false);
   });
 
   it('ignores malformed JSON and falls back to the fixture baseline', () => {
     window.localStorage.setItem(SCENARIO_STORAGE_KEY, '{not json');
     reboot();
-    expect(useScenarioStore.getState().productionExecutions['lot-265']).toBeDefined();
+    expect(useScenarioStore.getState().productionExecutions['lot-sd-410']).toBeDefined();
     expect(selectScenarioModified(useScenarioStore.getState())).toBe(false);
   });
 
   it('ignores a structurally incomplete payload and falls back to the fixture baseline', () => {
     window.localStorage.setItem(SCENARIO_STORAGE_KEY, JSON.stringify({ schemaVersion: 1, productionReleases: {} }));
     reboot();
-    expect(useScenarioStore.getState().productionExecutions['lot-265']).toBeDefined();
+    expect(useScenarioStore.getState().productionExecutions['lot-sd-410']).toBeDefined();
   });
 });
 
 describe('scenario persistence — reset', () => {
   it('clears storage and restores the fixture baseline, keeping the deterministic clock and shift', () => {
-    useScenarioStore.getState().confirmPreparation('lot-270');
+    useScenarioStore.getState().confirmPreparation('lot-sd-407');
     expect(window.localStorage.getItem(SCENARIO_STORAGE_KEY)).not.toBeNull();
 
     useScenarioStore.getState().resetScenario();
 
-    expect(useScenarioStore.getState().preparationConfirmedByLotId['lot-270']).toBeUndefined();
+    expect(useScenarioStore.getState().preparationConfirmedByLotId['lot-sd-407']).toBeUndefined();
     expect(selectScenarioModified(useScenarioStore.getState())).toBe(false);
-    expect(useScenarioStore.getState().definition?.currentScenarioTime).toBe('2025-05-15T17:23:00-03:00');
+    expect(useScenarioStore.getState().definition?.currentScenarioTime).toBe('2026-07-09T17:23:00-03:00');
 
     reboot();
-    expect(useScenarioStore.getState().preparationConfirmedByLotId['lot-270']).toBeUndefined();
+    expect(useScenarioStore.getState().preparationConfirmedByLotId['lot-sd-407']).toBeUndefined();
   });
 });
 
 describe('scenario persistence — derived data never persisted', () => {
   it('does not write OEE, Adherence %, Quality Rate or Lot Health into storage', () => {
-    useScenarioStore.getState().confirmPreparation('lot-270');
-    useScenarioStore.getState().releaseLot('lot-251');
+    useScenarioStore.getState().confirmPreparation('lot-sd-407');
+    useScenarioStore.getState().releaseLot('lot-sd-401');
     const raw = window.localStorage.getItem(SCENARIO_STORAGE_KEY)!;
     for (const forbidden of ['areaOee', 'qualityRate', 'LotHealth', 'expectedQuantityNow', 'projectedFinish']) {
       expect(raw).not.toContain(forbidden);

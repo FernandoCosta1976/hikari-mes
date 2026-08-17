@@ -2,16 +2,16 @@ import { scenarioDefinitionAdapter } from '../adapters/scenarioDefinitionAdapter
 import { useScenarioStore } from './scenarioStore';
 
 test('initializes and atomically resets the scenario', () => {
-  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
+  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!;
   useScenarioStore.getState().initializeScenario(fundicaoDcScenario);
-  expect(useScenarioStore.getState().definition?.id).toBe('fundicao-dc');
+  expect(useScenarioStore.getState().definition?.id).toBe('fundicao-dc-legacy');
   expect(useScenarioStore.getState().initialized).toBe(true);
   useScenarioStore.getState().selectDateOffset(2);
   useScenarioStore.getState().filterByDestination('ENGINEERING');
   useScenarioStore.getState().selectScheduleView('SHIFT_2');
   useScenarioStore.getState().activateWf001Scenario('SCN-WF001-06');
   useScenarioStore.getState().resetScenario();
-  expect(useScenarioStore.getState().definition?.id).toBe('fundicao-dc');
+  expect(useScenarioStore.getState().definition?.id).toBe('fundicao-dc-legacy');
   expect(useScenarioStore.getState().initialized).toBe(true);
   expect(useScenarioStore.getState().selectedDateOffset).toBe(0);
   expect(useScenarioStore.getState().selectedDestination).toBe('ALL');
@@ -20,7 +20,7 @@ test('initializes and atomically resets the scenario', () => {
 });
 
 test('stores a demonstrative release and clears it on reset', () => {
-  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
+  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!;
   useScenarioStore.getState().initializeScenario(fundicaoDcScenario);
   useScenarioStore.getState().resetScenario();
   useScenarioStore.getState().releaseLot('lot-251');
@@ -33,7 +33,7 @@ test('stores a demonstrative release and clears it on reset', () => {
 });
 
 test('controls execution using the shared Current Time and restores the fixture on reset', () => {
-  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
+  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!;
   useScenarioStore.getState().initializeScenario(fundicaoDcScenario); useScenarioStore.getState().resetScenario();
   expect(useScenarioStore.getState().productionExecutions['lot-271'].status).toBe('NOT_STARTED');
   useScenarioStore.getState().startLotExecution('lot-271');

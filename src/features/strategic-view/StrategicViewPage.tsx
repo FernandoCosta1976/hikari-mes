@@ -1,5 +1,6 @@
 import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { withBase } from '../../app/routing/basePath';
+import { useScenarioPath } from '../../app/routing/useScenarioPath';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSummaries } from '../../demo/adapters/adherenceSummaryAdapter';
 import { computeFundicaoDcOeeSummary } from '../../demo/adapters/oeeSummaryAdapter';
@@ -48,6 +49,7 @@ function deriveOverallStatus(healthCounts: Record<LotHealthStatus, number>, down
 }
 
 export function StrategicViewPage() {
+  const scenarioPath = useScenarioPath();
   const definition = useScenarioStore(selectProductionScheduling);
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
@@ -63,7 +65,7 @@ export function StrategicViewPage() {
   const downstream = fundicaoDcUsinagemHealthFixture;
   const criticalMold = mostCriticalMold(fundicaoDcMoldsFixture);
 
-  const todaySchedule = definition.schedules.find((item) => item.id === 'schedule-2025-05-15-v08')!;
+  const todaySchedule = definition.schedules.find((item) => item.id === 'schedule-2025-05-15-v08') ?? definition.schedules[0];
   const todayLots = todaySchedule.lotIds.map((id) => definition.lots.find((lot) => lot.id === id)!).filter(Boolean);
   const meta = todayLots.reduce((sum, lot) => sum + lot.quantity, 0);
   const producedTotal = qualityDay.produced;
@@ -115,7 +117,7 @@ export function StrategicViewPage() {
           <strong className={styles.n1Value}>{pct(effectivenessRatio)}</strong>
           <Bar ratio={effectivenessRatio} tone="positive" label={`Produzido ${pct(effectivenessRatio)} da meta do dia`} />
           <small>Meta {meta.toLocaleString('pt-BR')} · Produzido {producedTotal.toLocaleString('pt-BR')} · Falta {Math.max(0, meta - producedTotal).toLocaleString('pt-BR')} · {lotsEmAtencao} em atenção · {lotsEmRisco} em risco</small>
-          <a href={withBase('/demo/fundicao-dc/production-scheduling')}>Ver Plano →</a>
+          <a href={withBase(scenarioPath('/production-scheduling'))}>Ver Plano →</a>
         </article>
 
         <article aria-labelledby="q-oee">
@@ -126,7 +128,7 @@ export function StrategicViewPage() {
             <div><span>Desempenho</span><Bar ratio={oeeDay.areaPerformance} tone="positive" label={`Desempenho ${pct(oeeDay.areaPerformance)}`} /><b>{pct(oeeDay.areaPerformance)}</b></div>
             <div><span>Qualidade</span><Bar ratio={oeeDay.areaQuality} tone="positive" label={`Qualidade ${pct(oeeDay.areaQuality)}`} /><b>{pct(oeeDay.areaQuality)}</b></div>
           </div>
-          <a href={withBase('/demo/fundicao-dc/oee')}>Entender perda →</a>
+          <a href={withBase(scenarioPath('/oee'))}>Entender perda →</a>
         </article>
 
         <article aria-labelledby="q-risk" className={styles.riskCard} data-tone={priorities[0] ? 'attentionStrong' : 'positive'}>
@@ -135,7 +137,7 @@ export function StrategicViewPage() {
             <span className={styles.riskIcon} aria-hidden="true">{lotHealthIcon[priorities[0].health.status]}</span>
             <strong className={styles.n1Value}>{priorities[0].resourceId} · Lote {priorities[0].lot.lotNumber}</strong>
             <small>{lotHealthLabel[priorities[0].health.status]}</small>
-            <a href={withBase('/demo/fundicao-dc/production-execution')}>Ver {priorities[0].resourceId} →</a>
+            <a href={withBase(scenarioPath('/production-execution'))}>Ver {priorities[0].resourceId} →</a>
           </> : <><strong className={styles.n1Value}>Nenhum</strong><small>Nenhum risco relevante identificado</small></>}
         </article>
       </section>
@@ -145,13 +147,13 @@ export function StrategicViewPage() {
         {priorities.length ? <ol>{priorities.map(({ resourceId, health, lot }) => <li key={resourceId}>
           <span aria-hidden="true">{lotHealthIcon[health.status]}</span>
           <div><strong>{resourceId} · Lote {lot.lotNumber}</strong><span>{lotHealthLabel[health.status]}</span></div>
-          <a href={withBase('/demo/fundicao-dc/production-execution')}>Ver {resourceId} →</a>
+          <a href={withBase(scenarioPath('/production-execution'))}>Ver {resourceId} →</a>
         </li>)}</ol> : <p>Nenhuma prioridade identificada nos fatos atuais.</p>}
       </section>
 
       <section className={styles.machines} aria-labelledby="machines-title">
         <div className={styles.machinesHead}><h2 id="machines-title">Situação das Máquinas</h2><StackedBar segments={(Object.entries(healthCounts) as [LotHealthStatus, number][]).filter(([, count]) => count > 0).map(([statusKey, count]) => ({ value: count, tone: statusKey === 'BEHIND_PLAN' || statusKey === 'LATE_NOT_STARTED' || statusKey === 'AT_RISK' ? 'attention' : statusKey === 'ON_TRACK' || statusKey === 'COMPLETED' ? 'positive' : 'neutral', label: `${lotHealthIcon[statusKey]} ${lotHealthLabel[statusKey]}: ${count}` }))} className={styles.machinesSummaryBar} /></div>
-        <div className={styles.machineGrid}>{FOUNDRY_RESOURCE_IDS.map((resourceId) => { const { health } = healthByResource[resourceId]; const row = oeeRow(resourceId); return <a key={resourceId} className={styles.machineTile} href={withBase('/demo/fundicao-dc/production-execution')}>
+        <div className={styles.machineGrid}>{FOUNDRY_RESOURCE_IDS.map((resourceId) => { const { health } = healthByResource[resourceId]; const row = oeeRow(resourceId); return <a key={resourceId} className={styles.machineTile} href={withBase(scenarioPath('/production-execution'))}>
           <strong>{resourceId}</strong>
           <LotHealthIndicator health={health} compact />
           <span>{lotHealthLabel[health.status]}</span>
@@ -164,14 +166,14 @@ export function StrategicViewPage() {
           <h3>Aderência ao plano</h3>
           <div className={styles.shiftBars}>{adherenceShifts.map((shift) => <div key={shift.shiftId} data-current={shift.shiftId === currentShift.shiftId || undefined}><span>{shift.shiftName}</span><Bar ratio={shift.total > 0 ? shift.ratio : null} tone="positive" label={`${shift.shiftName}: ${shift.total > 0 ? pct(shift.ratio) : 'N/A'}`} /><b>{shift.total > 0 ? `${shift.onPlan}/${shift.total}` : 'N/A'}</b></div>)}</div>
           <small>{adherenceDay.onPlan}/{adherenceDay.total} Lotes conforme plano no dia</small>
-          <a href={withBase('/demo/fundicao-dc/production-adherence')}>Ver Aderência →</a>
+          <a href={withBase(scenarioPath('/production-adherence'))}>Ver Aderência →</a>
         </article>
 
         <article aria-label="Qualidade do dia">
           <h3>Qualidade do dia</h3>
           <StackedBar segments={[{ value: qualityDay.good, tone: 'positive', label: `Boas ${qualityDay.good}` }, { value: qualityDay.reject, tone: 'attention', label: `Refugo ${qualityDay.reject}` }, { value: qualityDay.rework, tone: 'neutral', label: `Retrabalho ${qualityDay.rework}` }]} />
           <small>{pct(qualityDay.qualityRate)} de qualidade · {qualityDay.produced} peças produzidas</small>
-          <a href={withBase('/demo/fundicao-dc/production-quality')}>Ver Qualidade →</a>
+          <a href={withBase(scenarioPath('/production-quality'))}>Ver Qualidade →</a>
         </article>
 
         <article aria-label="Risco para a próxima etapa · Usinagem">
@@ -183,7 +185,7 @@ export function StrategicViewPage() {
             <small>Material crítico: {downstream.criticalMaterial}</small>
           </div>
           {criticalMold ? <small className={styles.moldRisk}><span aria-hidden="true">△</span> Molde {criticalMold.code} ({criticalMold.resourceId}) próximo da manutenção · {Math.round(criticalMold.lifeUsedRatio * 100)}% da vida útil</small> : null}
-          <a href={withBase('/demo/fundicao-dc/production-monitoring')}>Ver Acompanhamento →</a>
+          <a href={withBase(scenarioPath('/production-monitoring'))}>Ver Acompanhamento →</a>
         </article>
       </section>
     </div>

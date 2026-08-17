@@ -32,7 +32,7 @@ describe('pt-BR terminology scan', () => {
   for (const [name, renderPage] of pages) {
     it(`renders ${name} without the main English terms leaking into the UI`, () => {
       useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false });
-      useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc')!);
+      useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!);
       useScenarioStore.getState().resetScenario();
       const { container } = render(<></>);
       container.remove();
@@ -44,7 +44,7 @@ describe('pt-BR terminology scan', () => {
 
   it('renders ExecutiveHomePage without the main English terms leaking into the UI', () => {
     useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false });
-    useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc')!);
+    useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!);
     useScenarioStore.getState().resetScenario();
     renderWithFoundation(<ExecutiveHomePage />);
     const text = document.body.textContent ?? '';

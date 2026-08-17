@@ -7,6 +7,7 @@ import { assessDemonstrativeRelease, releaseDemonstratively, revokeRelease, type
 import { completeExecution, pauseExecution, resumeExecution, startExecution, updateProducedQuantity, type DemonstrativePauseReason, type ProductionExecutionRecord } from '../../domain/production-execution/models';
 import { resolveDemonstrativeRelease } from '../adapters/releaseResolution';
 import { fundicaoDcProductionExecutionFixture } from '../fixtures/fundicaoDcProductionExecution';
+import { fundicaoDcSourceDerivedProductionExecutionFixture } from '../fixtures/fundicaoDcSourceDerivedProductionExecution';
 
 /**
  * Persists only decision FACTS made during the demonstration (Preparação,
@@ -15,7 +16,11 @@ import { fundicaoDcProductionExecutionFixture } from '../fixtures/fundicaoDcProd
  * Quantity, Projected Finish). Those are recalculated from the facts on
  * every render by the existing adapters/selectors, exactly as before.
  */
-export const SCENARIO_STORAGE_KEY = 'hikari:demo:fundicao-dc:v1';
+/** Each scenario persists under its own key so decisions never leak from one scenario into another. */
+export function scenarioStorageKey(scenarioId: string): string {
+  return `hikari:demo:${scenarioId}:v1`;
+}
+export const SCENARIO_STORAGE_KEY = scenarioStorageKey('fundicao-dc');
 const SCENARIO_SCHEMA_VERSION = 1;
 
 interface PersistedScenarioDecisions {
@@ -39,10 +44,10 @@ function isPersistedScenarioDecisions(value: unknown): value is PersistedScenari
     && typeof record.postponedLotIds === 'object' && record.postponedLotIds !== null;
 }
 
-function readPersistedScenarioDecisions(): PersistedScenarioDecisions | null {
+function readPersistedScenarioDecisions(scenarioId: string): PersistedScenarioDecisions | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = window.localStorage.getItem(SCENARIO_STORAGE_KEY);
+    const raw = window.localStorage.getItem(scenarioStorageKey(scenarioId));
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     return isPersistedScenarioDecisions(parsed) ? parsed : null;
@@ -51,17 +56,17 @@ function readPersistedScenarioDecisions(): PersistedScenarioDecisions | null {
   }
 }
 
-function clearPersistedScenarioDecisions(): void {
-  if (typeof window === 'undefined') return;
+function clearPersistedScenarioDecisions(scenarioId: string | undefined): void {
+  if (typeof window === 'undefined' || !scenarioId) return;
   try {
-    window.localStorage.removeItem(SCENARIO_STORAGE_KEY);
+    window.localStorage.removeItem(scenarioStorageKey(scenarioId));
   } catch {
     // Storage unavailable — nothing to clear.
   }
 }
 
 function writePersistedScenarioDecisions(state: ScenarioState): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || !state.definition) return;
   const payload: PersistedScenarioDecisions = {
     schemaVersion: SCENARIO_SCHEMA_VERSION,
     productionReleases: state.productionReleases,
@@ -72,7 +77,7 @@ function writePersistedScenarioDecisions(state: ScenarioState): void {
     scenarioModified: state.scenarioModified,
   };
   try {
-    window.localStorage.setItem(SCENARIO_STORAGE_KEY, JSON.stringify(payload));
+    window.localStorage.setItem(scenarioStorageKey(state.definition.id), JSON.stringify(payload));
   } catch {
     // Storage unavailable (private browsing, quota) — the demo continues in-memory only.
   }
@@ -127,29 +132,38 @@ interface ScenarioActions {
 
 export type ScenarioStore = ScenarioState & ScenarioActions;
 
-const baseline = (definition: ScenarioDefinition | null, revision: number, persisted: PersistedScenarioDecisions | null = null): ScenarioState => ({
-  definition,
-  productionScheduling: definition?.productionScheduling ?? null,
-  initialized: definition !== null,
-  selectedDateOffset: 0,
-  selectedDestination: 'ALL',
-  selectedScheduleView: '24H',
-  activeScheduleVersionId: 'v08',
-  comparisonScheduleVersionId: null,
-  activeWf001ScenarioId: 'SCN-WF001-01',
-  resetRevision: revision,
-  journeyContext: null,
-  productionReleases: persisted?.productionReleases ?? Object.fromEntries(fundicaoDcProductionExecutionFixture.map((execution) => [execution.lotId, { lotId: execution.lotId, productionOrderId: execution.productionOrderId, resourceId: execution.resourceId, scheduleVersionId: execution.scheduleVersionId, readiness: 'READY', status: 'RELEASED', reason: 'Liberação demonstrativa anterior ao estado inicial da execução.', releasedAt: execution.actualStart ?? '2025-05-15T17:00:00-03:00', releasedBy: 'Supervisor da Fundição · demonstrativo', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }])),
-  productionExecutions: persisted?.productionExecutions ?? Object.fromEntries(fundicaoDcProductionExecutionFixture.map((record) => [record.lotId, record])),
-  organizationsByLotId: persisted?.organizationsByLotId ?? {},
-  preparationConfirmedByLotId: persisted?.preparationConfirmedByLotId ?? {},
-  postponedLotIds: persisted?.postponedLotIds ?? {},
-  scenarioModified: persisted?.scenarioModified ?? false,
-});
+/** Apontamento inicial de execução por cenário — cada cenário traz seu próprio "estado atual" por máquina. */
+const executionSeedFor = (definition: ScenarioDefinition | null) => definition?.id === 'fundicao-dc' ? fundicaoDcSourceDerivedProductionExecutionFixture : definition?.id === 'fundicao-dc-legacy' ? fundicaoDcProductionExecutionFixture : [];
+
+const baseline = (definition: ScenarioDefinition | null, revision: number): ScenarioState => {
+  const executionSeed = executionSeedFor(definition);
+  // Cada cenário persiste sob a sua própria chave (scenarioStorageKey) — nunca herda
+  // decisões salvas de outro cenário.
+  const persisted = definition ? readPersistedScenarioDecisions(definition.id) : null;
+  return {
+    definition,
+    productionScheduling: definition?.productionScheduling ?? null,
+    initialized: definition !== null,
+    selectedDateOffset: 0,
+    selectedDestination: 'ALL',
+    selectedScheduleView: '24H',
+    activeScheduleVersionId: definition?.productionScheduling.scheduleVersions[0]?.id ?? 'v08',
+    comparisonScheduleVersionId: null,
+    activeWf001ScenarioId: 'SCN-WF001-01',
+    resetRevision: revision,
+    journeyContext: null,
+    productionReleases: persisted?.productionReleases ?? Object.fromEntries(executionSeed.map((execution) => [execution.lotId, { lotId: execution.lotId, productionOrderId: execution.productionOrderId, resourceId: execution.resourceId, scheduleVersionId: execution.scheduleVersionId, readiness: 'READY', status: 'RELEASED', reason: 'Liberação demonstrativa anterior ao estado inicial da execução.', releasedAt: execution.actualStart ?? '2025-05-15T17:00:00-03:00', releasedBy: 'Supervisor da Fundição · demonstrativo', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }])),
+    productionExecutions: persisted?.productionExecutions ?? Object.fromEntries(executionSeed.map((record) => [record.lotId, record])),
+    organizationsByLotId: persisted?.organizationsByLotId ?? {},
+    preparationConfirmedByLotId: persisted?.preparationConfirmedByLotId ?? {},
+    postponedLotIds: persisted?.postponedLotIds ?? {},
+    scenarioModified: persisted?.scenarioModified ?? false,
+  };
+};
 
 export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
   ...baseline(null, 0),
-  initializeScenario: (definition) => set((state) => state.definition?.id === definition.id ? state : baseline(definition, state.resetRevision, readPersistedScenarioDecisions())),
+  initializeScenario: (definition) => set((state) => state.definition?.id === definition.id ? state : baseline(definition, state.resetRevision)),
   selectDateOffset: (selectedDateOffset) => set({ selectedDateOffset }),
   filterByDestination: (selectedDestination) => set({ selectedDestination }),
   selectScheduleView: (selectedScheduleView) => set({ selectedScheduleView }),
@@ -159,7 +173,7 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
     activeWf001ScenarioId,
     comparisonScheduleVersionId: activeWf001ScenarioId === 'SCN-WF001-07' ? 'v07' : null,
   }),
-  resetScenario: () => { clearPersistedScenarioDecisions(); set(baseline(get().definition, get().resetRevision + 1)); },
+  resetScenario: () => { clearPersistedScenarioDecisions(get().definition?.id); set(baseline(get().definition, get().resetRevision + 1)); },
   preserveJourneyContext: (journeyContext) => set({ journeyContext }),
   releaseLot: (lotId) => set((state) => {
     const lot = state.productionScheduling?.lots.find((item) => item.id === lotId);

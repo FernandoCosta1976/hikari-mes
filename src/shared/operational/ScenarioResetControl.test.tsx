@@ -6,7 +6,7 @@ import { useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { ScenarioResetControl } from './ScenarioResetControl';
 
 beforeEach(() => {
-  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
+  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!;
   useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false });
   useScenarioStore.getState().initializeScenario(fundicaoDcScenario);
   useScenarioStore.getState().resetScenario();

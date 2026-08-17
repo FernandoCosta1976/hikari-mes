@@ -6,13 +6,13 @@ async function freezeClockAt(page: import('@playwright/test').Page, iso: string)
 
 test('derives Current Shift from Current Time instead of a hard-coded Turno 2', async ({ page }) => {
   await freezeClockAt(page, '2025-05-15T09:10:00-03:00');
-  await page.goto('/demo/fundicao-dc/oee');
+  await page.goto('/demo/fundicao-dc-legacy/oee');
   await expect(page.getByRole('region', { name: 'OEE do Turno 1 e acumulado do dia' })).toContainText('TURNO 1 · EM ANDAMENTO');
 });
 
 test('shows Turno 3 in progress overnight, with no completed Turno listed yet', async ({ page }) => {
   await freezeClockAt(page, '2025-05-15T02:00:00-03:00');
-  await page.goto('/demo/fundicao-dc/oee');
+  await page.goto('/demo/fundicao-dc-legacy/oee');
   await expect(page.getByRole('region', { name: 'OEE do Turno 3 e acumulado do dia' })).toContainText('TURNO 3 · EM ANDAMENTO');
   const history = page.getByRole('region', { name: 'Turnos concluídos hoje' });
   await expect(history).not.toContainText('Turno 1');

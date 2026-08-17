@@ -3,7 +3,7 @@ import { expect, test } from './fixtures';
 
 test('shows the executive cockpit with Meta, RISCO status, five machines and prioritized attention', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/strategic');
+  await page.goto('/demo/fundicao-dc-legacy/strategic');
   await expect(page.getByRole('heading', { name: 'Como está a saúde da Fundição DC?' })).toBeVisible();
   await expect(page.getByText('RISCO', { exact: true })).toBeVisible();
 
@@ -24,7 +24,7 @@ test('shows the executive cockpit with Meta, RISCO status, five machines and pri
 
 test('is reachable from the sidebar between Home and Plano, and is accessible with no prohibited red', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-scheduling');
+  await page.goto('/demo/fundicao-dc-legacy/production-scheduling');
   await page.getByRole('link', { name: /Visão Estratégica/ }).click();
   await expect(page.getByRole('heading', { name: 'Como está a saúde da Fundição DC?' })).toBeVisible();
 

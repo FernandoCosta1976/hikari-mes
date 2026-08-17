@@ -2,7 +2,7 @@ import { expect, test } from './fixtures';
 import AxeBuilder from '@axe-core/playwright';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-scheduling');
+  await page.goto('/demo/fundicao-dc-legacy/production-scheduling');
   await expect(page.getByRole('heading', { name: 'O que precisamos produzir?' })).toBeVisible();
 });
 
@@ -168,7 +168,7 @@ test('preserves the approved sidebar-only composition while readiness signals ar
 });
 
 test('releases a ready Lot without starting execution and preserves the timeline plan', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-scheduling');
+  await page.goto('/demo/fundicao-dc-legacy/production-scheduling');
   const lot = page.getByRole('button', { name: /Lote 251, Material A, 100 peças/ });
   const originalStyle = await lot.getAttribute('style');
   await lot.click();
@@ -187,7 +187,7 @@ test('releases a ready Lot without starting execution and preserves the timeline
 
 test('captures deterministic Capability 04 ready, released and blocked scenes', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-scheduling');
+  await page.goto('/demo/fundicao-dc-legacy/production-scheduling');
   await page.getByRole('button', { name: /Lote 251, Material A, 100 peças/ }).click();
   let modal = page.getByRole('dialog', { name: 'Lote 251' });
   await modal.getByRole('button', { name: 'Liberação' }).click();

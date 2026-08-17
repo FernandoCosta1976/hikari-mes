@@ -82,9 +82,15 @@ const productionOrders = materials.map((material) => {
   return { id: orderIdFor(material.id), orderNumber: `DEMO-${material.id.slice(-1).toUpperCase()}`, source: 'PyMAC' as const, materialId: material.id, quantity: correlatedLots.reduce((sum, lot) => sum + lot.quantity, 0), businessDate, correlatedLotIds: correlatedLots.map((lot) => lot.id), receivedAt: `${businessDate}T05:51:00-03:00` };
 });
 
+/**
+ * Cenário legado (Material A/B/C sintéticos) — preservado apenas como fixture
+ * de teste histórico. Não é mais o cenário oficial da Fundição DC; ver ADR-002
+ * (docs/prototype/decisions/ADR-002-CANONICAL-FOUNDRY-BASELINE.md) para a
+ * decisão de promoção do dataset derivado das fontes reais a `fundicao-dc`.
+ */
 export const fundicaoDcScenario = {
-  id: 'fundicao-dc',
-  name: 'Fundição DC — Fundação demonstrativa',
+  id: 'fundicao-dc-legacy',
+  name: 'Fundição DC — cenário legado (Material A/B/C sintético)',
   productiveAreaId: 'fundicao-dc',
   demonstrative: true,
   currentScenarioTime: `${businessDate}T17:23:00-03:00`,

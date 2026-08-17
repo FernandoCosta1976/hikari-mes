@@ -1,0 +1,67 @@
+[
+  {
+    "canonicalCode": "44C-E5111-W0",
+    "family": "CARC_ESQ",
+    "productiveArea": "FOUNDRY_DC"
+  },
+  {
+    "canonicalCode": "44C-E5421-W0",
+    "family": "TAMPA_DIR",
+    "productiveArea": "FOUNDRY_DC"
+  },
+  {
+    "canonicalCode": "1S4-E1111-W0",
+    "family": "CABECOTE",
+    "productiveArea": "FOUNDRY_LP"
+  },
+  {
+    "canonicalCode": "1ST-E5111-W0",
+    "family": "CARC_DIR",
+    "productiveArea": "FOUNDRY_DC"
+  },
+  {
+    "canonicalCode": "1ST-E5421-W0",
+    "family": "TAMPA_DIR",
+    "productiveArea": "FOUNDRY_DC"
+  },
+  {
+    "canonicalCode": "1ST-E5411-W0",
+    "family": "TAMPA_ESQ",
+    "productiveArea": "FOUNDRY_DC"
+  },
+  {
+    "canonicalCode": "1ST-E1310-W0",
+    "family": "CILINDRO",
+    "productiveArea": "FOUNDRY_DC"
+  },
+  {
+    "canonicalCode": "1ST-E1111-W0",
+    "family": "CABECOTE",
+    "productiveArea": "FOUNDRY_LP"
+  },
+  {
+    "canonicalCode": "1S4-E5411-W0",
+    "family": "TAMPA_ESQ",
+    "productiveArea": "FOUNDRY_DC"
+  },
+  {
+    "canonicalCode": "5LX-E5421-X0",
+    "family": "TAMPA_DIR",
+    "productiveArea": "FOUNDRY_DC"
+  },
+  {
+    "canonicalCode": "1B2-E5411-W0",
+    "family": "TAMPA_ESQ",
+    "productiveArea": "FOUNDRY_DC"
+  },
+  {
+    "canonicalCode": "5RM-E1111-W0",
+    "family": "CABECOTE",
+    "productiveArea": "FOUNDRY_LP"
+  },
+  {
+    "canonicalCode": "1ST-E5121-W0",
+    "family": "CARC_DIR",
+    "productiveArea": "FOUNDRY_DC"
+  }
+]

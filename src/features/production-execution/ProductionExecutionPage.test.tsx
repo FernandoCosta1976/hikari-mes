@@ -5,7 +5,7 @@ import { useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { renderWithFoundation } from '../../test/renderWithFoundation';
 import { ProductionExecutionPage } from './ProductionExecutionPage';
 
-beforeEach(() => { useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false }); useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc')!); useScenarioStore.getState().resetScenario(); });
+beforeEach(() => { useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false }); useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!); useScenarioStore.getState().resetScenario(); });
 test('shows five Resources, parallel execution and the shared Current Time', () => {
   renderWithFoundation(<ProductionExecutionPage />);
   expect(screen.getByRole('heading', { name: 'O que está sendo executado agora?' })).toBeInTheDocument();

@@ -3,7 +3,7 @@ import { expect, test } from './fixtures';
 
 test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and a highlighted machine panel', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-adherence');
+  await page.goto('/demo/fundicao-dc-legacy/production-adherence');
   await expect(page.getByRole('heading', { name: 'Estamos executando conforme o planejado?' })).toBeVisible();
 
   const turnoRow = page.getByRole('region', { name: 'Aderência do Turno 2 e acumulado do dia' });
@@ -30,7 +30,7 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
 
 test('opens the Aderência drill-down for DC03 and DC04, and expands Planejado × Realizado on demand', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-adherence');
+  await page.goto('/demo/fundicao-dc-legacy/production-adherence');
   const machines = page.getByRole('region', { name: 'Situação das Máquinas' });
   await machines.getByRole('button', { name: /DC03/ }).click();
   const stopped = page.getByRole('dialog', { name: /DC03/ });
@@ -53,7 +53,7 @@ test('opens the Aderência drill-down for DC03 and DC04, and expands Planejado �
 });
 
 test('is accessible, keyboard reachable, responsive and contains no prohibited red', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-adherence');
+  await page.goto('/demo/fundicao-dc-legacy/production-adherence');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   const machines = page.getByRole('region', { name: 'Situação das Máquinas' });
   await machines.getByRole('button', { name: /DC03/ }).focus();

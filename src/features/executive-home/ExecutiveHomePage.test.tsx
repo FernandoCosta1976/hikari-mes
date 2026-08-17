@@ -5,7 +5,7 @@ import { useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { renderWithFoundation } from '../../test/renderWithFoundation';
 import { ExecutiveHomePage } from './ExecutiveHomePage';
 
-beforeEach(() => { useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false }); useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc')!); useScenarioStore.getState().resetScenario(); });
+beforeEach(() => { useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false }); useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!); useScenarioStore.getState().resetScenario(); });
 
 test('presents the complete first wave without fake future navigation', () => {
   renderWithFoundation(<ExecutiveHomePage />);

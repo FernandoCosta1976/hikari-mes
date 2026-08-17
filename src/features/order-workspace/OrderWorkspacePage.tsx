@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { withBase } from '../../app/routing/basePath';
+import { useScenarioPath } from '../../app/routing/useScenarioPath';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { resolveDemonstrativeRelease } from '../../demo/adapters/releaseResolution';
 import { fundicaoDcIdealCycleTimeSecondsFixture } from '../../demo/fixtures/fundicaoDcIdealCycleTime';
@@ -24,6 +25,7 @@ type ReprogramWindow = 'ATUAL' | 'TURNO_3' | 'PROXIMO_DIA';
 const lifecycleStepLabel: Record<OrderLifecycleStatus, string> = { ...orderLifecycleLabel, PAUSADA: 'Produção (pausada)' };
 
 export function OrderWorkspacePage({ lotId }: { lotId: string }) {
+  const scenarioPath = useScenarioPath();
   const definition = useScenarioStore(selectProductionScheduling);
   const scenario = useScenarioStore(selectScenarioDefinition);
   const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
@@ -47,7 +49,7 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
   const [reprogramWindow, setReprogramWindow] = useState<ReprogramWindow>('ATUAL');
   const [reprogramTarget, setReprogramTarget] = useState<FoundryResourceId | null>(null);
 
-  const sidebar = <div className={styles.sidebar}><strong>Gestão da Ordem</strong><a href={withBase('/demo/fundicao-dc/production-scheduling')}>← Plano Hora-Hora</a></div>;
+  const sidebar = <div className={styles.sidebar}><strong>Gestão da Ordem</strong><a href={withBase(scenarioPath('/production-scheduling'))}>← Plano Hora-Hora</a></div>;
 
   if (!definition || !scenario) return <p>Preparando ordem demonstrativa…</p>;
   const lot = definition.lots.find((item) => item.id === lotId);
@@ -70,9 +72,9 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
   const dominantCondition = readiness ? dominantReadinessCondition(readiness, lot.scheduledResourceId) : undefined;
 
   const nextDecision = execution?.status === 'IN_PROGRESS'
-    ? { icon: '▶', tone: 'positive' as const, title: 'Em produção', body: 'Acompanhe o avanço na perspectiva Execução.', href: '/demo/fundicao-dc/production-execution', hrefLabel: 'Abrir Execução' }
+    ? { icon: '▶', tone: 'positive' as const, title: 'Em produção', body: 'Acompanhe o avanço na perspectiva Execução.', href: scenarioPath('/production-execution'), hrefLabel: 'Abrir Execução' }
     : execution?.status === 'PAUSED'
-    ? { icon: '⏸', tone: 'attention' as const, title: 'Produção pausada', body: 'Retome ou trate a pausa na perspectiva Execução.', href: '/demo/fundicao-dc/production-execution', hrefLabel: 'Abrir Execução' }
+    ? { icon: '⏸', tone: 'attention' as const, title: 'Produção pausada', body: 'Retome ou trate a pausa na perspectiva Execução.', href: scenarioPath('/production-execution'), hrefLabel: 'Abrir Execução' }
     : execution?.status === 'COMPLETED'
     ? { icon: '✓', tone: 'positive' as const, title: 'Produção concluída', body: 'Resultados desta Ordem estão disponíveis em Qualidade e OEE.' }
     : lifecycle === 'EM_PREPARACAO'
@@ -89,7 +91,7 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
 
   return <OperationalWorkspace perspective="ORDER" lotId={lot.id} sidebarContent={sidebar}>
     <div className={styles.page}>
-      <nav className={styles.breadcrumb} aria-label="Origem"><a href={withBase('/demo/fundicao-dc/production-scheduling')}>Plano Hora-Hora</a><span>/</span><strong>Ordem</strong></nav>
+      <nav className={styles.breadcrumb} aria-label="Origem"><a href={withBase(scenarioPath('/production-scheduling'))}>Plano Hora-Hora</a><span>/</span><strong>Ordem</strong></nav>
       <header className={styles.hero}>
         <div className={styles.heroTitle}><span className={styles.overline}>Gestão da Ordem</span><h1>Ordem / Lote {lot.lotNumber}</h1><p>O que precisa acontecer para esta Ordem avançar?</p></div>
         <dl className={styles.heroFacts}>
@@ -114,7 +116,7 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
       <div className={styles.actions}>
         {releaseRecord?.status === 'RELEASED' && notStarted ? <Button onClick={() => setPanel('REVOKE_CONFIRM')}>Revogar liberação</Button> : null}
         {notStarted ? <Button onClick={() => { setPanel('REPROGRAM'); setReprogramTarget(null); setReprogramWindow('ATUAL'); }}>Alterar programação</Button> : null}
-        <a href={withBase(`/demo/fundicao-dc/production-readiness?lotId=${lot.id}`)}>Ver preparação →</a>
+        <a href={withBase(scenarioPath(`/production-readiness?lotId=${lot.id}`))}>Ver preparação →</a>
       </div>
 
       {panel === 'RELEASE_CONFIRM' ? <section className={styles.panel} aria-label="Confirmar liberação">

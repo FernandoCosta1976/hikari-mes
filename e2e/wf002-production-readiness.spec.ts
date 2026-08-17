@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures';
 
 test('hands off the selected Lot from WF-001 and restores the complete Plan context', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-scheduling');
+  await page.goto('/demo/fundicao-dc-legacy/production-scheduling');
   await page.getByLabel('Destino', { exact: true }).selectOption('ASSEMBLY');
   const timeline = page.getByTestId('timeline-scroller');
   await timeline.evaluate((element) => { element.scrollLeft = 123; });
@@ -26,7 +26,7 @@ test('hands off the selected Lot from WF-001 and restores the complete Plan cont
 });
 
 test('keeps one Operational Workspace and one canonical Readiness meaning across perspectives', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-scheduling');
+  await page.goto('/demo/fundicao-dc-legacy/production-scheduling');
   await expect(page.getByRole('complementary', { name: 'Painel Operacional' })).toHaveCount(1);
   await expect(page.getByLabel('Contexto da aplicação')).toContainText('Fundição DC');
   const lot = page.getByRole('button', { name: /Lote 267, Material D, 70 peças.*condição impeditiva/i });
@@ -43,7 +43,7 @@ test('keeps one Operational Workspace and one canonical Readiness meaning across
 });
 
 test('opens exception-first from the Plan summary and aggregate from direct sidebar navigation', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-scheduling');
+  await page.goto('/demo/fundicao-dc-legacy/production-scheduling');
   await page.getByRole('button', { name: /Preparação.*OK/ }).click();
   await expect(page).toHaveURL(/production-readiness$/);
   await expect(page.getByRole('region', { name: 'Preparação do plano' })).toContainText('Nenhum Lote foi selecionado silenciosamente');
@@ -59,7 +59,7 @@ test('opens exception-first from the Plan summary and aggregate from direct side
 });
 
 test('supports exception-first navigation and progressive Resource detail without WF-003 actions', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-readiness?lotId=lot-252');
+  await page.goto('/demo/fundicao-dc-legacy/production-readiness?lotId=lot-252');
   for (const state of ['Condições atendidas', 'Atenção', 'Condição impeditiva', 'Informação insuficiente']) await expect(page.getByText(state).first()).toBeVisible();
   await page.getByRole('button', { name: 'Condição impeditiva', exact: true }).click();
   await expect(page.getByRole('button', { name: /Lote 259.*Disponibilidade no intervalo/ })).toBeVisible();
@@ -74,7 +74,7 @@ test('supports exception-first navigation and progressive Resource detail withou
 });
 
 test('passes accessibility, responsive overflow and no-red validation', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-readiness?lotId=lot-252');
+  await page.goto('/demo/fundicao-dc-legacy/production-readiness?lotId=lot-252');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 800 }, { width: 1024, height: 768 }]) {
     await page.setViewportSize(viewport);
@@ -92,16 +92,16 @@ test('passes accessibility, responsive overflow and no-red validation', async ({
 test('honors reduced motion and captures refined Product Review candidates', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-readiness');
+  await page.goto('/demo/fundicao-dc-legacy/production-readiness');
   await expect(page.getByRole('region', { name: 'Preparação do plano' })).toBeVisible();
   await expect(page.getByText('15/05/2025')).toBeVisible();
   await expect(page).toHaveScreenshot('WF-002-EXCEPTION-FIRST-REFINED-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
-  await page.goto('/demo/fundicao-dc/production-readiness?lotId=lot-257');
+  await page.goto('/demo/fundicao-dc-legacy/production-readiness?lotId=lot-257');
   await expect(page).toHaveScreenshot('WF-002-LOT-READINESS-REFINED-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 
 test('shows plan-aware condition groups without ranking or assignment semantics', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-readiness?lotId=lot-257');
+  await page.goto('/demo/fundicao-dc-legacy/production-readiness?lotId=lot-257');
   const groups = page.locator('[data-resource-group]');
   await expect(groups).toHaveCount(3);
   await expect(groups.nth(0)).toHaveAttribute('data-resource-group', 'READY');
@@ -116,7 +116,7 @@ test('shows plan-aware condition groups without ranking or assignment semantics'
 });
 
 test('preserves temporal context and the selected Lot in its programmed lane', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-readiness?lotId=lot-267');
+  await page.goto('/demo/fundicao-dc-legacy/production-readiness?lotId=lot-267');
   const timeline = page.getByTestId('readiness-timeline-scroller');
   await expect(timeline.getByRole('region', { name: 'Máquina programada DC02' })).toBeVisible();
   await expect(timeline.getByRole('region', { name: 'Máquina programada DC05' })).toBeVisible();
@@ -131,9 +131,9 @@ test('preserves temporal context and the selected Lot in its programmed lane', a
 test('captures plan-aware Readiness Product Review candidates', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-readiness?lotId=lot-257');
+  await page.goto('/demo/fundicao-dc-legacy/production-readiness?lotId=lot-257');
   await expect(page).toHaveScreenshot('WF-002-PLAN-AWARE-READINESS-ATTENTION-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
-  await page.goto('/demo/fundicao-dc/production-readiness?lotId=lot-267');
+  await page.goto('/demo/fundicao-dc-legacy/production-readiness?lotId=lot-267');
   await expect(page).toHaveScreenshot('WF-002-PLAN-AWARE-READINESS-BLOCKED-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
   await expect(page.locator('[data-timeline-mode="READINESS_CONTEXT"]')).toHaveScreenshot('WF-002-PLAN-AWARE-RESOURCE-CONTEXT-CANDIDATE.png', { animations: 'disabled' });
 });

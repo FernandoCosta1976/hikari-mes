@@ -1,0 +1,128 @@
+[
+  {
+    "componentCode": "1ST-E5121-W0",
+    "primaryResource": "DC04",
+    "primaryStandardStatus": "SIM",
+    "reserveResources": [
+      "DC02"
+    ],
+    "reserveStandardStatus": "SIM",
+    "machineMasterCode": "1STE5121W00080"
+  },
+  {
+    "componentCode": "1ST-E5111-W0",
+    "primaryResource": "DC02",
+    "primaryStandardStatus": "SIM",
+    "reserveResources": [
+      "DC01",
+      "DC04"
+    ],
+    "reserveStandardStatus": "SIM",
+    "machineMasterCode": "1STE5111W00080"
+  },
+  {
+    "componentCode": "44C-E5111-W0",
+    "primaryResource": "DC05",
+    "primaryStandardStatus": "SIM",
+    "reserveResources": [
+      "DC03",
+      "DC04"
+    ],
+    "reserveStandardStatus": "SIM",
+    "machineMasterCode": "44CE5111W00080"
+  },
+  {
+    "componentCode": "1ST-E1310-W0",
+    "primaryResource": "DC05",
+    "primaryStandardStatus": "SIM",
+    "reserveResources": [],
+    "reserveStandardStatus": "NÃO",
+    "machineMasterCode": "1STE1310W000M0"
+  },
+  {
+    "componentCode": "1ST-E5411-W0",
+    "primaryResource": "DC04",
+    "primaryStandardStatus": "SIM",
+    "reserveResources": [
+      "DC03"
+    ],
+    "reserveStandardStatus": "SIM",
+    "machineMasterCode": "1STE5411W000M0"
+  },
+  {
+    "componentCode": "1S4-E5411-W0",
+    "primaryResource": "DC03",
+    "primaryStandardStatus": "SIM",
+    "reserveResources": [
+      "DC01",
+      "DC02"
+    ],
+    "reserveStandardStatus": "SIM",
+    "machineMasterCode": "1S4E5411W000M0"
+  },
+  {
+    "componentCode": "1B2-E5411-W0",
+    "primaryResource": "DC01",
+    "primaryStandardStatus": "SIM",
+    "reserveResources": [
+      "DC03"
+    ],
+    "reserveStandardStatus": "SIM",
+    "machineMasterCode": "1B2E5411W00080"
+  },
+  {
+    "componentCode": "5LX-E5421-X0",
+    "primaryResource": "DC01",
+    "primaryStandardStatus": "SIM",
+    "reserveResources": [
+      "DC03"
+    ],
+    "reserveStandardStatus": "SIM",
+    "machineMasterCode": "5LXE5421X00080"
+  },
+  {
+    "componentCode": "44C-E5421-W0",
+    "primaryResource": "DC01",
+    "primaryStandardStatus": "SIM",
+    "reserveResources": [
+      "DC02",
+      "DC03"
+    ],
+    "reserveStandardStatus": "SIM",
+    "machineMasterCode": "44CE5421W000M1"
+  },
+  {
+    "componentCode": "1ST-E5421-W0",
+    "primaryResource": "DC01",
+    "primaryStandardStatus": "SIM",
+    "reserveResources": [
+      "DC02"
+    ],
+    "reserveStandardStatus": "SIM",
+    "machineMasterCode": "1STE5421W000M1"
+  },
+  {
+    "componentCode": "1S4-E1111-W0",
+    "primaryResource": null,
+    "primaryStandardStatus": null,
+    "reserveResources": [],
+    "reserveStandardStatus": null,
+    "machineMasterCode": "1S4E1111W000G1"
+  },
+  {
+    "componentCode": "1ST-E1111-W0",
+    "primaryResource": null,
+    "primaryStandardStatus": null,
+    "reserveResources": [],
+    "reserveStandardStatus": null,
+    "machineMasterCode": "1STE1111W00080"
+  },
+  {
+    "componentCode": "5RM-E1111-W0",
+    "primaryResource": null,
+    "primaryStandardStatus": null,
+    "reserveResources": [],
+    "reserveStandardStatus": null,
+    "machineMasterCode": "5RME1111W000G2"
+  }
+]

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { withBase } from '../../app/routing/basePath';
+import { useScenarioPath } from '../../app/routing/useScenarioPath';
 import { computeFundicaoDcOeeSummary } from '../../demo/adapters/oeeSummaryAdapter';
 import { fundicaoDcUsinagemHealthFixture } from '../../demo/fixtures/fundicaoDcDownstreamHealth';
 import { fundicaoDcMoldsFixture } from '../../demo/fixtures/fundicaoDcMolds';
@@ -21,26 +22,26 @@ type Capability = { id: string; name: string; priority: 'CORE' | 'ESSENCIAL' | '
 
 const moments: readonly Moment[] = [
   { id: 'plan', title: 'Planejar e Organizar', capabilities: [
-    { id: '01', name: 'Receber Planejamento da Produção', priority: 'CORE', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-scheduling' },
-    { id: '02', name: 'Atualizar Alterações do Plano', priority: 'ESSENCIAL', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-scheduling' },
-    { id: '03', name: 'Organizar Sequenciamento Operacional da Área', priority: 'CORE', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-scheduling' },
-    { id: '04', name: 'Liberar Produção', priority: 'CORE', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-scheduling?lotId=lot-251' },
+    { id: '01', name: 'Receber Planejamento da Produção', priority: 'CORE', status: 'MATERIALIZED', href: '/production-scheduling' },
+    { id: '02', name: 'Atualizar Alterações do Plano', priority: 'ESSENCIAL', status: 'MATERIALIZED', href: '/production-scheduling' },
+    { id: '03', name: 'Organizar Sequenciamento Operacional da Área', priority: 'CORE', status: 'MATERIALIZED', href: '/production-scheduling' },
+    { id: '04', name: 'Liberar Produção', priority: 'CORE', status: 'MATERIALIZED', href: '/production-scheduling?lotId=lot-sd-401' },
   ] },
   { id: 'execute', title: 'Executar e Registrar', capabilities: [
-    { id: '05', name: 'Executar Ordens de Produção', priority: 'CORE', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-execution' },
-    { id: '06', name: 'Acompanhar Situação / WIP / Eventos', priority: 'CORE', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-monitoring' },
-    { id: '07', name: 'Controlar Aderência / Desvios / Gargalos', priority: 'ESSENCIAL', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-adherence' },
-    { id: '08', name: 'Registrar Qualidade / Perdas / Desempenho', priority: 'ESSENCIAL + OEE', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-quality' },
-    { id: '09', name: 'Controlar WIP', priority: 'ESSENCIAL', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-monitoring' },
+    { id: '05', name: 'Executar Ordens de Produção', priority: 'CORE', status: 'MATERIALIZED', href: '/production-execution' },
+    { id: '06', name: 'Acompanhar Situação / WIP / Eventos', priority: 'CORE', status: 'MATERIALIZED', href: '/production-monitoring' },
+    { id: '07', name: 'Controlar Aderência / Desvios / Gargalos', priority: 'ESSENCIAL', status: 'MATERIALIZED', href: '/production-adherence' },
+    { id: '08', name: 'Registrar Qualidade / Perdas / Desempenho', priority: 'ESSENCIAL + OEE', status: 'MATERIALIZED', href: '/production-quality' },
+    { id: '09', name: 'Controlar WIP', priority: 'ESSENCIAL', status: 'MATERIALIZED', href: '/production-monitoring' },
   ] },
   { id: 'control', title: 'Controlar e Explicar', capabilities: [
-    { id: '10', name: 'Comparar Planejado × Executado', priority: 'ESSENCIAL', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-adherence' },
-    { id: '11', name: 'Identificar Desvios Operacionais', priority: 'ESSENCIAL', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-adherence' },
-    { id: '12', name: 'Monitorar Produção em Tempo Real', priority: 'ESSENCIAL + OEE', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-monitoring' },
+    { id: '10', name: 'Comparar Planejado × Executado', priority: 'ESSENCIAL', status: 'MATERIALIZED', href: '/production-adherence' },
+    { id: '11', name: 'Identificar Desvios Operacionais', priority: 'ESSENCIAL', status: 'MATERIALIZED', href: '/production-adherence' },
+    { id: '12', name: 'Monitorar Produção em Tempo Real', priority: 'ESSENCIAL + OEE', status: 'MATERIALIZED', href: '/production-monitoring' },
   ] },
   { id: 'measure', title: 'Medir e Evoluir', capabilities: [
-    { id: '13', name: 'Estruturar Fundação para Indicadores Operacionais', priority: 'ESSENCIAL + OEE', status: 'MATERIALIZED', href: '/demo/fundicao-dc/production-quality' },
-    { id: '14', name: 'Calcular e Disponibilizar OEE', priority: 'OEE', status: 'MATERIALIZED', href: '/demo/fundicao-dc/oee' },
+    { id: '13', name: 'Estruturar Fundação para Indicadores Operacionais', priority: 'ESSENCIAL + OEE', status: 'MATERIALIZED', href: '/production-quality' },
+    { id: '14', name: 'Calcular e Disponibilizar OEE', priority: 'OEE', status: 'MATERIALIZED', href: '/oee' },
   ] },
 ];
 
@@ -63,6 +64,7 @@ const statusLabel: Record<CapabilityStatus, string> = { MATERIALIZED: 'Materiali
 const priorityLabel: Record<Capability['priority'], string> = { CORE: 'Núcleo', ESSENCIAL: 'Essencial', 'ESSENCIAL + OEE': 'Essencial + OEE', OEE: 'OEE' };
 
 export function ExecutiveHomePage() {
+  const scenarioPath = useScenarioPath();
   const [selectedQuestionId, setSelectedQuestionId] = useState('01');
   const selectedQuestion = questions.find((question) => question.id === selectedQuestionId)!;
   const groups = ['PLANO', 'OPERAÇÃO', 'EFICIÊNCIA', 'GOVERNANÇA'] as const;
@@ -80,10 +82,10 @@ export function ExecutiveHomePage() {
     criticalMold && classifyMoldLife(criticalMold.lifeUsedRatio) !== 'NORMAL' ? { title: `${criticalMold.resourceId} · Molde ${criticalMold.code}`, detail: `${Math.round(criticalMold.lifeUsedRatio * 100)}% da vida útil demonstrativa · avaliar manutenção` } : null,
   ].filter((item): item is { title: string; detail: string } => item !== null).slice(0, 3);
   return <div className={styles.page}>
-    <header className={styles.topbar}><a href={withBase('/demo/fundicao-dc')} className={styles.brand} aria-label="Programa HIKARI — início"><span>H</span><b>HIKARI</b><small>MES</small></a><div className={styles.topbarActions}>{scenario ? <button type="button" onClick={resetScenario}>Reiniciar demonstração</button> : null}<a className={styles.workspaceLink} href={withBase('/demo/fundicao-dc/production-scheduling')}>Entrar na demonstração <span aria-hidden="true">→</span></a></div></header>
+    <header className={styles.topbar}><a href={withBase(scenarioPath(''))} className={styles.brand} aria-label="Programa HIKARI — início"><span>H</span><b>HIKARI</b><small>MES</small></a><div className={styles.topbarActions}>{scenario ? <button type="button" onClick={resetScenario}>Reiniciar demonstração</button> : null}<a className={styles.workspaceLink} href={withBase(scenarioPath('/production-scheduling'))}>Entrar na demonstração <span aria-hidden="true">→</span></a></div></header>
     <main>
       <section className={styles.hero} aria-labelledby="executive-title">
-        <div className={styles.heroCopy}><span className={styles.eyebrow}>Primeira Onda · Fundação Operacional</span><h1 id="executive-title">PROGRAMA HIKARI</h1><h2>Da programação à visibilidade completa da eficiência operacional.</h2><p>Construímos progressivamente as capacidades para saber o que foi planejado, o que está acontecendo, por que houve desvios e qual foi o impacto na eficiência operacional.</p><div className={styles.heroActions}><a className={styles.primaryCta} href={withBase('/demo/fundicao-dc/production-scheduling')}><span aria-hidden="true">▶</span> Iniciar demonstração</a><a href="#primeira-onda">Ver Primeira Onda ↓</a></div></div>
+        <div className={styles.heroCopy}><span className={styles.eyebrow}>Primeira Onda · Fundação Operacional</span><h1 id="executive-title">PROGRAMA HIKARI</h1><h2>Da programação à visibilidade completa da eficiência operacional.</h2><p>Construímos progressivamente as capacidades para saber o que foi planejado, o que está acontecendo, por que houve desvios e qual foi o impacto na eficiência operacional.</p><div className={styles.heroActions}><a className={styles.primaryCta} href={withBase(scenarioPath('/production-scheduling'))}><span aria-hidden="true">▶</span> Iniciar demonstração</a><a href="#primeira-onda">Ver Primeira Onda ↓</a></div></div>
         <div className={styles.heroJourney} aria-label="Jornada da Primeira Onda até OEE"><div className={styles.journeySteps}><span><b>Planejar</b><small>e organizar</small></span><i>→</i><span><b>Executar</b><small>e registrar</small></span><i>→</i><span><b>Controlar</b><small>e explicar</small></span><i>→</i><span><b>Medir</b><small>e evoluir</small></span><i>→</i></div><div className={styles.oeeDestination} aria-label="OEE demonstrativo da Fundição DC"><strong>OEE {pct(oee?.areaOee ?? null)}</strong><span>Disponibilidade {pct(oee?.areaAvailability ?? null)}</span><span>Desempenho {pct(oee?.areaPerformance ?? null)}</span><span>Qualidade {pct(oee?.areaQuality ?? null)}</span>{oee?.mainImpact ? <em>Maior perda: {dimensionLabel[oee.mainImpact.dimension]}</em> : null}</div></div>
         <div className={styles.downstreamPanel} aria-label="Saúde da próxima área: Usinagem">
           <span>Próxima área</span><strong>Usinagem</strong><b data-tone={downstreamStatusTone[usinagem.status]}>{downstreamStatusLabel[usinagem.status]}</b>
@@ -95,7 +97,7 @@ export function ExecutiveHomePage() {
         {actionItems.length ? <div className={styles.actionNow} aria-label="O que exige ação agora"><h3>O que exige ação agora</h3><ol>{actionItems.map((item, index) => <li key={index}><strong>{item.title}</strong><span>{item.detail}</span></li>)}</ol></div> : null}
       </section>
 
-      <section id="primeira-onda" className={styles.section} aria-labelledby="first-wave-title"><header><span>01</span><div><h2 id="first-wave-title">Primeira Onda — Fundação Operacional</h2><p>Quatorze capacidades em quatro momentos, preservando a ordem que constrói a base para o OEE.</p></div></header><div className={styles.roadmap}>{moments.map((moment) => <section key={moment.id} className={styles.moment} data-moment={moment.id} aria-labelledby={`moment-${moment.id}`}><h3 id={`moment-${moment.id}`}>{moment.title}</h3><div>{moment.capabilities.map((capability) => { const content = <><span className={styles.capabilityNumber}>{capability.id}</span><strong>{capability.name}</strong><small className={styles.priority}>{priorityLabel[capability.priority]}</small><span className={styles.status} data-status={capability.status}>{statusLabel[capability.status]}</span></>; return capability.href ? <a key={capability.id} href={withBase(capability.href)} aria-label={`${capability.id} ${capability.name}, ${statusLabel[capability.status]}`}>{content}</a> : <article key={capability.id} aria-label={`${capability.id} ${capability.name}, ${statusLabel[capability.status]}`}>{content}</article>; })}</div></section>)}</div><div className={styles.roadmapLegend}><span data-status="MATERIALIZED">Materializado</span><span data-status="NEXT">Próxima cena</span><span data-status="FUTURE">Futuro</span><strong>Foco da Primeira Onda: fundação operacional → OEE</strong></div></section>
+      <section id="primeira-onda" className={styles.section} aria-labelledby="first-wave-title"><header><span>01</span><div><h2 id="first-wave-title">Primeira Onda — Fundação Operacional</h2><p>Quatorze capacidades em quatro momentos, preservando a ordem que constrói a base para o OEE.</p></div></header><div className={styles.roadmap}>{moments.map((moment) => <section key={moment.id} className={styles.moment} data-moment={moment.id} aria-labelledby={`moment-${moment.id}`}><h3 id={`moment-${moment.id}`}>{moment.title}</h3><div>{moment.capabilities.map((capability) => { const content = <><span className={styles.capabilityNumber}>{capability.id}</span><strong>{capability.name}</strong><small className={styles.priority}>{priorityLabel[capability.priority]}</small><span className={styles.status} data-status={capability.status}>{statusLabel[capability.status]}</span></>; return capability.href ? <a key={capability.id} href={withBase(scenarioPath(capability.href))} aria-label={`${capability.id} ${capability.name}, ${statusLabel[capability.status]}`}>{content}</a> : <article key={capability.id} aria-label={`${capability.id} ${capability.name}, ${statusLabel[capability.status]}`}>{content}</article>; })}</div></section>)}</div><div className={styles.roadmapLegend}><span data-status="MATERIALIZED">Materializado</span><span data-status="NEXT">Próxima cena</span><span data-status="FUTURE">Futuro</span><strong>Foco da Primeira Onda: fundação operacional → OEE</strong></div></section>
 
       <section className={styles.section} aria-labelledby="questions-title"><header><span>02</span><div><h2 id="questions-title">O que o HIKARI passa a responder?</h2><p>A Primeira Onda transforma dados operacionais em respostas para gestão e tomada de decisão.</p></div></header><div className={styles.questionMap}>{groups.map((group) => <section key={group} data-group={group}><h3>{group}</h3>{questions.filter((question) => question.group === group).map((question) => <button key={question.id} type="button" aria-pressed={selectedQuestionId === question.id} onClick={() => setSelectedQuestionId(question.id)} onFocus={() => setSelectedQuestionId(question.id)}><span>{question.id}</span>{question.text}</button>)}</section>)}</div><aside className={styles.questionDetail} aria-live="polite" aria-label="Capacidades relacionadas à pergunta selecionada"><div><span>{selectedQuestion.id}</span><strong>{selectedQuestion.text}</strong></div><p>Capacidades que contribuem:</p><ul>{selectedQuestion.capabilities.map((id) => <li key={id}><b>{id}</b> {capabilityNames[id]}</li>)}</ul></aside><p className={styles.visibilityStatement}>A combinação das capacidades e dos dados coletados constrói <strong>visibilidade operacional completa</strong>.</p></section>
 
@@ -104,7 +106,7 @@ export function ExecutiveHomePage() {
         <p className={styles.businessQuestion}><b>Estamos protegendo a cadeia para atender a necessidade da Montagem hoje?</b> Condição atual: {oee?.mainImpact ? `${dimensionLabel[oee.mainImpact.dimension]} é o principal fator limitando o ritmo da Fundição — ` : ''}Usinagem em {downstreamStatusLabel[usinagem.status].toLowerCase()} de cobertura de {usinagem.criticalMaterial}. Avaliar buffer e prioridade de atendimento à Montagem com base apenas nos fatos demonstrativos capturados.</p>
       </section>
 
-      <section className={styles.finalCta}><div><h2>Pronto para a demonstração?</h2><p>Explore o Plano Hora-Hora por máquina e veja como o HIKARI conecta planejamento, preparação e decisões operacionais.</p></div><a className={styles.primaryCta} href={withBase('/demo/fundicao-dc/production-scheduling')}><span aria-hidden="true">▶</span> Iniciar demonstração</a></section>
+      <section className={styles.finalCta}><div><h2>Pronto para a demonstração?</h2><p>Explore o Plano Hora-Hora por máquina e veja como o HIKARI conecta planejamento, preparação e decisões operacionais.</p></div><a className={styles.primaryCta} href={withBase(scenarioPath('/production-scheduling'))}><span aria-hidden="true">▶</span> Iniciar demonstração</a></section>
     </main>
     <footer className={styles.footer}>HIKARI MES · Cenário demonstrativo · Regras e fontes sujeitas à validação e governança.</footer>
   </div>;

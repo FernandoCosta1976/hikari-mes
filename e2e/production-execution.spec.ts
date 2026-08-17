@@ -3,7 +3,7 @@ import { expect, test } from './fixtures';
 
 test('materializes the five-resource execution perspective and its controlled lifecycle', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-execution');
+  await page.goto('/demo/fundicao-dc-legacy/production-execution');
   await expect(page.getByRole('heading', { name: 'O que está sendo executado agora?' })).toBeVisible();
   for (const resource of ['DC01', 'DC02', 'DC03', 'DC04', 'DC05']) await expect(page.getByText(resource, { exact: true }).first()).toBeVisible();
   await expect(page).toHaveScreenshot('CAP-05-EXECUTION-OVERVIEW-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
@@ -31,7 +31,7 @@ test('materializes the five-resource execution perspective and its controlled li
 });
 
 test('keeps execution accessible, responsive and free from prohibited red', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-execution');
+  await page.goto('/demo/fundicao-dc-legacy/production-execution');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 800 }, { width: 1024, height: 768 }]) {
     await page.setViewportSize(viewport);

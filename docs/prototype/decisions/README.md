@@ -5,6 +5,7 @@ This directory indexes governed Architecture Decision Records for the HIKARI Exe
 | ADR | Title | Status | Date |
 |---|---|---|---|
 | [ADR-001](ADR-001-PROTOTYPE-FRONTEND-FOUNDATION.md) | Prototype Frontend Foundation | Accepted | 2026-08-13 |
+| [ADR-002](ADR-002-CANONICAL-FOUNDRY-BASELINE.md) | Canonical Foundry Baseline & PowerTrain Context | Accepted | 2026-08-17 |
 
 ## Governance
 

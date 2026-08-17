@@ -13,7 +13,7 @@ const STEPS: readonly { id: string; label: string; heading: string }[] = [
 
 test('Home inicia a jornada guiada e Próximo percorre 01→08 no mesmo cenário', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc');
+  await page.goto('/demo/fundicao-dc-legacy');
   await page.getByRole('link', { name: /Iniciar demonstração/ }).first().click();
 
   for (const step of STEPS) {
@@ -36,7 +36,7 @@ test('Home inicia a jornada guiada e Próximo percorre 01→08 no mesmo cenário
 
 test('o Lot Context Modal da Liberação não bloqueia o Próximo do stepper', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-scheduling?lotId=lot-251');
+  await page.goto('/demo/fundicao-dc-legacy/production-scheduling?lotId=lot-251');
   await expect(page.getByRole('dialog', { name: 'Lote 251' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Podemos liberar para produção?' })).toBeVisible();
   const journey = page.getByRole('navigation', { name: 'Navegação guiada da demonstração' });
@@ -46,7 +46,7 @@ test('o Lot Context Modal da Liberação não bloqueia o Próximo do stepper', a
 });
 
 test('Home mostra o OEE demonstrativo (mesma projeção da CAP-09), a pergunta de negócio e permite reiniciar', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc');
+  await page.goto('/demo/fundicao-dc-legacy');
   const oeeTile = page.getByLabel('OEE demonstrativo da Fundição DC');
   await expect(oeeTile).toContainText('OEE 70%');
   await expect(oeeTile).toContainText('Maior perda: Disponibilidade');
@@ -56,7 +56,7 @@ test('Home mostra o OEE demonstrativo (mesma projeção da CAP-09), a pergunta d
 });
 
 test('Anterior retorna um passo preservando a Área Produtiva', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-monitoring');
+  await page.goto('/demo/fundicao-dc-legacy/production-monitoring');
   const journey = page.getByRole('navigation', { name: 'Navegação guiada da demonstração' });
   await expect(journey).toContainText('Etapa 05/08');
   await journey.getByRole('link', { name: /Anterior/ }).click();

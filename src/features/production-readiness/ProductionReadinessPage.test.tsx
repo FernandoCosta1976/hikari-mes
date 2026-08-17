@@ -7,7 +7,7 @@ import { renderWithFoundation } from '../../test/renderWithFoundation';
 import { ProductionReadinessPage } from './ProductionReadinessPage';
 
 beforeEach(() => {
-  const definition = scenarioDefinitionAdapter.findById('fundicao-dc')!;
+  const definition = scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!;
   useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false });
   useScenarioStore.getState().initializeScenario(definition);
   window.history.replaceState(null, '', '/demo/fundicao-dc/production-readiness?lotId=lot-252');

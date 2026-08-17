@@ -30,7 +30,7 @@ export function buildProductionSchedulingViewModel(
   scenarioId: Wf001ScenarioId,
   scheduleView: ScheduleView,
 ) {
-  const schedule = definition.schedules.find((item) => item.id === (dateOffset === 0 ? 'schedule-2025-05-15-v08' : `schedule-day-${dateOffset}`))!;
+  const schedule = definition.schedules.find((item) => item.id === (dateOffset === 0 ? 'schedule-2025-05-15-v08' : `schedule-day-${dateOffset}`)) ?? definition.schedules[0];
   const allScheduledLots = schedule.lotIds.map((id) => definition.lots.find((lot) => lot.id === id)!).filter(Boolean);
   const selectedShift = scheduleView === '24H' ? null : definition.shifts.find((shift) => shift.id === scheduleView)!;
   const rangeStart = selectedShift ? shiftWindow(schedule.businessDate, selectedShift).start : `${schedule.businessDate}T00:00:00-03:00`;
@@ -65,6 +65,12 @@ export function buildProductionSchedulingViewModel(
 
 export function materialFor(definition: ProductionSchedulingDefinition, lot: Lot) {
   return definition.materials.find((material) => material.id === lot.materialId)!;
+}
+
+/** Derives the human-readable family/description from `"{code} · {family}"` material names; falls back to the full name for materials that don't follow that convention (e.g. legacy fixtures). */
+export function materialFamilyLabel(material: { code: string; name: string }) {
+  const prefix = `${material.code} · `;
+  return material.name.startsWith(prefix) ? material.name.slice(prefix.length) : material.name;
 }
 
 export function eligibilityForMaterial(

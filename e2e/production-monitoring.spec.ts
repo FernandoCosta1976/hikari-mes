@@ -3,7 +3,7 @@ import { expect, test } from './fixtures';
 
 test('shows a coherent five-Resource live state, WIP and ordered event feed', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-monitoring');
+  await page.goto('/demo/fundicao-dc-legacy/production-monitoring');
   await expect(page.getByRole('heading', { name: 'O que está acontecendo na produção agora?' })).toBeVisible();
   const timeline = page.getByTestId('live-production-timeline');
   for (const resource of ['DC01','DC02','DC03','DC04','DC05']) await expect(timeline.getByText(resource, { exact: true })).toBeVisible();
@@ -23,7 +23,7 @@ test('shows a coherent five-Resource live state, WIP and ordered event feed', as
 
 test('opens active event, Lot and Resource contexts without execution actions', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-monitoring');
+  await page.goto('/demo/fundicao-dc-legacy/production-monitoring');
   await page.getByRole('button', { name: 'Evento ativo na DC03: Ferramental' }).click();
   const activeLot = page.getByRole('dialog', { name: 'Lote 266' });
   await expect(activeLot).toContainText('Ferramental · 18 min');
@@ -39,7 +39,7 @@ test('opens active event, Lot and Resource contexts without execution actions', 
 });
 
 test('is accessible, keyboard reachable, responsive and contains no prohibited red', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-monitoring');
+  await page.goto('/demo/fundicao-dc-legacy/production-monitoring');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.getByRole('button', { name: /DC03.*Parada/ }).focus();
   await page.keyboard.press('Enter');

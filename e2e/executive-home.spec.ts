@@ -13,7 +13,7 @@ test('opens the Executive Home from root and enters the operational demonstratio
 });
 
 test('supports question disclosure, keyboard and accessibility with no red', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc');
+  await page.goto('/demo/fundicao-dc-legacy');
   const question = page.getByRole('button', { name: /Quanto perdi/ });
   await question.focus();
   await question.press('Enter');
@@ -29,7 +29,7 @@ test('supports question disclosure, keyboard and accessibility with no red', asy
 
 test('captures Executive Home product review candidates', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc');
+  await page.goto('/demo/fundicao-dc-legacy');
   await expect(page).toHaveScreenshot('HIKARI-EXECUTIVE-HOME-ABOVE-THE-FOLD-CANDIDATE.png', { animations: 'disabled' });
   await page.locator('#primeira-onda').scrollIntoViewIfNeeded();
   await expect(page).toHaveScreenshot('HIKARI-EXECUTIVE-HOME-FIRST-WAVE-CANDIDATE.png', { animations: 'disabled' });
@@ -43,7 +43,7 @@ test('captures Executive Home product review candidates', async ({ page }) => {
 for (const viewport of [{ width: 1280, height: 800 }, { width: 1024, height: 768 }]) {
   test(`keeps the executive narrative usable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto('/demo/fundicao-dc');
+    await page.goto('/demo/fundicao-dc-legacy');
     await expect(page.getByRole('heading', { name: 'PROGRAMA HIKARI' })).toBeVisible();
     await expect(page.getByRole('link', { name: /Iniciar demonstração/ }).first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);

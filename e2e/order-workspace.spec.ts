@@ -3,7 +3,7 @@ import { expect, test } from './fixtures';
 
 test('opens the Order Workspace from the Plano Lot Context modal and shows the lifecycle stepper and next decision', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-scheduling');
+  await page.goto('/demo/fundicao-dc-legacy/production-scheduling');
   await page.getByRole('button', { name: /Lote 270, Material C, 70 peças/ }).click();
   await page.getByRole('dialog', { name: 'Lote 270' }).getByRole('link', { name: 'Abrir Ordem →' }).click();
   await expect(page.getByRole('heading', { name: 'Ordem / Lote 270' })).toBeVisible();
@@ -14,7 +14,7 @@ test('opens the Order Workspace from the Plano Lot Context modal and shows the l
 
 test('confirms preparation and releases Lote 270 end to end from the Order Workspace', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/orders/lot-270');
+  await page.goto('/demo/fundicao-dc-legacy/orders/lot-270');
   await page.getByRole('button', { name: 'Marcar preparação como concluída' }).click();
   await page.getByRole('button', { name: 'Liberar para produção' }).click();
   const panel = page.getByRole('region', { name: 'Confirmar liberação' });
@@ -23,7 +23,7 @@ test('confirms preparation and releases Lote 270 end to end from the Order Works
 });
 
 test('is accessible, keyboard reachable, responsive and contains no prohibited red', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/orders/lot-270');
+  await page.goto('/demo/fundicao-dc-legacy/orders/lot-270');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 800 }, { width: 1024, height: 768 }]) {
     await page.setViewportSize(viewport);

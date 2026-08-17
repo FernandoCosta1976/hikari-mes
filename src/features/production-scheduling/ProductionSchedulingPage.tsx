@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { withBase } from '../../app/routing/basePath';
+import { useScenarioPath } from '../../app/routing/useScenarioPath';
 import { useWorkspaceSidebar } from '../../app/providers/WorkspaceSidebarContext';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcQualitySummary } from '../../demo/adapters/qualitySummaryAdapter';
@@ -26,9 +27,12 @@ import { SimulationWorkspace } from './components/SimulationWorkspace';
 import { ReleaseDecisionSummary, type ReleaseDecisionCounts } from './components/ReleaseDecisionSummary';
 import { ReleaseGroupDrawer, type ReleaseGroupRow } from './components/ReleaseGroupDrawer';
 import { buildProductionSchedulingViewModel, destinationLabels, eligibilityForMaterial, formatDate, scenarioLabels } from './productionSchedulingViewModel';
+import { sourceDerivedTraceabilityByLotId } from '../../demo/scenarios/fundicaoDcSourceDerivedScenario';
+import { componentResourceMappingByCode } from '../../demo/reference-data/foundry/componentResourceMappings';
 import styles from './ProductionSchedulingPage.module.css';
 
 export function ProductionSchedulingPage() {
+  const scenarioPath = useScenarioPath();
   const definition = useScenarioStore(selectProductionScheduling);
   const scenarioDefinition = useScenarioStore(selectScenarioDefinition);
   const liveScenarioTime = useLiveScenarioTime(scenarioDefinition?.currentScenarioTime);
@@ -94,9 +98,9 @@ export function ProductionSchedulingPage() {
   if (!definition || !view) return <p>Preparando cenário demonstrativo…</p>;
   const workCenter = definition.workCenters.find((item) => item.id === view.schedule.workCenterId)!;
   const version = definition.scheduleVersions.find((item) => item.id === activeScheduleVersionId)!;
-  const previousVersion = definition.scheduleVersions.find((item) => item.id === 'v07')!;
-  const previousSchedule = definition.schedules.find((item) => item.id === 'schedule-2025-05-15-v07')!;
-  const previousLots = previousSchedule.lotIds.map((id) => definition.lots.find((lot) => lot.id === id)!).filter(Boolean);
+  const previousSchedule = definition.schedules.find((item) => item.id === 'schedule-2025-05-15-v07');
+  const previousVersion = definition.scheduleVersions.find((item) => item.id === 'v07') ?? version;
+  const previousLots = previousSchedule ? previousSchedule.lotIds.map((id) => definition.lots.find((lot) => lot.id === id)!).filter(Boolean) : view.allScheduledLots;
   const selectedMaterial = selectedLot ? definition.materials.find((item) => item.id === selectedLot.materialId)! : null;
   const selectedEligibility = selectedMaterial ? eligibilityForMaterial(materialResourceEligibilities, selectedMaterial.id) : undefined;
   const selectedOrder = selectedLot ? definition.productionOrders.find((item) => item.id === selectedLot.productionOrderId)! : null;
@@ -111,7 +115,11 @@ export function ProductionSchedulingPage() {
   const releaseByLotId = Object.fromEntries(Object.values(productionReleases).map((item) => [item.lotId, item.status]));
   const readinessCounts = readinessAssessments.reduce((counts, item) => ({ ...counts, [item.status]: counts[item.status] + 1 }), { READY: 0, ATTENTION: 0, BLOCKED: 0, UNKNOWN: 0 });
   const compromissoAttentionCount = readinessCounts.ATTENTION + readinessCounts.BLOCKED + readinessCounts.UNKNOWN;
-  const compromissoProduced = selectedDateOffset === 0 ? computeFundicaoDcQualitySummary(definition, executionsByLot, liveScenarioTime).produced : null;
+  // Section 15 (canonical baseline round): Produced Quantity must read as "no data"
+  // (null → hidden), not a fabricated "0 produced", when no Quality confirmation exists
+  // for any Resource yet — 0 is only shown once at least one real confirmation exists.
+  const qualitySummary = selectedDateOffset === 0 ? computeFundicaoDcQualitySummary(definition, executionsByLot, liveScenarioTime) : null;
+  const compromissoProduced = qualitySummary && qualitySummary.rows.some((row) => row.confirmation) ? qualitySummary.produced : null;
   const classifyReleaseGroup = (item: (typeof readinessAssessments)[number]): keyof ReleaseDecisionCounts => { const status = productionReleases[item.lotId]?.status; if (status === 'RELEASED') return 'released'; if (item.status === 'READY') return 'ready'; if (item.status === 'BLOCKED') return 'blocked'; return 'attention'; };
   const releaseCounts: ReleaseDecisionCounts = readinessAssessments.reduce((counts, item) => { counts[classifyReleaseGroup(item)] += 1; return counts; }, { ready: 0, attention: 0, blocked: 0, released: 0 });
   const releaseGroupRows: readonly ReleaseGroupRow[] = releaseGroup ? readinessAssessments.filter((item) => classifyReleaseGroup(item) === releaseGroup).map((item) => { const groupLot = definition.lots.find((candidate) => candidate.id === item.lotId)!; const groupMaterial = definition.materials.find((candidate) => candidate.id === groupLot.materialId)!; const release = productionReleases[item.lotId]; return { lot: groupLot, material: groupMaterial, reason: release?.reason ?? item.summary, stateLabel: release?.status === 'RELEASED' ? 'Liberado' : item.status === 'READY' ? 'Pronto' : item.status === 'BLOCKED' ? 'Bloqueado' : 'Atenção' }; }) : [];
@@ -136,7 +144,7 @@ export function ProductionSchedulingPage() {
   };
   const openReadiness = (origin: 'LOT_CONTEXT' | 'EXCEPTION_SUMMARY', lotId: string | null) => {
     preserveJourneyContext({ origin, selectedLotId: lotId, timelineScrollLeft: document.querySelector<HTMLElement>('[data-testid="timeline-scroller"]')?.scrollLeft ?? 0, pageScrollY: window.scrollY, sidebarExpanded });
-    const target = withBase(`/demo/fundicao-dc/production-readiness${lotId ? `?lotId=${lotId}` : ''}`);
+    const target = withBase(scenarioPath(`/production-readiness${lotId ? `?lotId=${lotId}` : ''}`));
     window.history.pushState(null, '', target);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
@@ -163,7 +171,11 @@ export function ProductionSchedulingPage() {
 
       <ScheduleSummary quantity={view.totalQuantity} lotCount={view.scheduledLots.length} destinations={view.destinationQuantities} versionLabel={version.label} periodLabel={view.periodLabel} rangeStart={view.rangeStart} rangeFinish={view.rangeFinish} produced={compromissoProduced} attentionCount={compromissoAttentionCount} revision={<ScheduleRevisionSummary activeVersion={version} previousVersion={previousVersion} receivedAt={view.schedule.receivedAt} activeLots={view.allScheduledLots} previousLots={previousLots} />} />
 
-      <BufferDecisionSupport position={definition.bufferPositions.find((position) => position.materialId === 'material-a')!} material={definition.materials.find((material) => material.id === 'material-a')!} criticalLot={definition.lots.find((lot) => lot.id === BUFFER_CRITICAL_LOT_ID)} simulationActive={simulationActive} hasConflict={simulationImpact?.bufferImpact === 'RISK'} />
+      {(() => {
+        const bufferMaterial = definition.materials.find((material) => material.id === 'material-a') ?? definition.materials[0];
+        const bufferPosition = definition.bufferPositions.find((position) => position.materialId === bufferMaterial?.id);
+        return bufferMaterial && bufferPosition ? <BufferDecisionSupport position={bufferPosition} material={bufferMaterial} criticalLot={definition.lots.find((lot) => lot.id === BUFFER_CRITICAL_LOT_ID)} simulationActive={simulationActive} hasConflict={simulationImpact?.bufferImpact === 'RISK'} /> : null;
+      })()}
 
       <QuickAttentionSummary materialAttentionCount={view.scheduledLots.filter((lot) => lot.materialAttention).length} belowCurrentTargetCount={definition.bufferPositions.filter((position) => position.currentCoverageDays < position.targetCoverageDays).length} hasDivergence={view.hasDivergence} readinessCounts={{ ready: readinessCounts.READY, attention: readinessCounts.ATTENTION, blocked: readinessCounts.BLOCKED, unknown: readinessCounts.UNKNOWN }} onOpenReadiness={() => openReadiness('EXCEPTION_SUMMARY', null)} />
       <ReleaseDecisionSummary counts={releaseCounts} onOpen={(group) => setReleaseGroup(group)} />
@@ -173,8 +185,8 @@ export function ProductionSchedulingPage() {
 
       <div className={styles.timelineLayout} data-detail-open={lotModalOpen ? 'true' : 'false'}>
         <div className={styles.timelineModeControls}><SimulationWorkspace active={simulationActive} selectedLot={selectedLot} readiness={selectedReadiness} impact={simulationImpact} comparing={simulationComparing} alreadyReleased={selectedLot ? productionReleases[selectedLot.id]?.status === 'RELEASED' : false} locked={selectedLot ? (productionExecutions[selectedLot.id]?.status ?? 'NOT_STARTED') !== 'NOT_STARTED' : false} onActivate={() => { setSimulationActive(true); setLotModalOpen(false); }} onSimulate={(resourceId) => selectedLot && runSimulation(selectedLot.id, resourceId)} onUndo={() => { setSimulationImpact(null); setSimulationComparing(false); }} onDiscard={() => { setSimulationActive(false); setSimulationImpact(null); setSimulationComparing(false); }} onCompare={() => setSimulationComparing((value) => !value)} onAdopt={() => { if (simulationImpact) adoptOrganization(simulationImpact, 'Planejador da Fundição · demonstrativo'); setSimulationActive(false); setSimulationImpact(null); setSimulationComparing(false); }} /></div>
-        <HourByHourSchedule contextLabel={`${formatDate(view.schedule.businessDate)} · ${view.periodLabel}`} lots={view.lots} setups={view.scheduledSetups} materials={definition.materials} workCenter={workCenter} shifts={definition.shifts} businessDate={view.schedule.businessDate} rangeStart={view.rangeStart} rangeFinish={view.rangeFinish} currentScenarioTime={scenarioDefinition ? liveScenarioTime : null} selectedLotId={selectedLot?.id ?? null} readinessByLotId={readinessByLotId} releaseByLotId={releaseByLotId} organizationsByLotId={organizationsByLotId} initialScrollLeft={journeyContext?.selectedLotId === selectedLot?.id ? journeyContext?.timelineScrollLeft : undefined} sceneMode={simulationActive ? 'SIMULATION' : 'STANDARD'} resourceConditionContexts={simulationActive ? conditionContexts : []} simulationImpact={simulationImpact} onSimulateDrop={runSimulation} bufferCriticalLotIds={[BUFFER_CRITICAL_LOT_ID]} onSelectLot={(lot) => { const baselineLot = definition.lots.find((candidate) => candidate.id === lot.id) ?? lot; setSelectedLot(baselineLot); setLotModalOpen(!simulationActive); }} />
-        {lotModalOpen && selectedLot && selectedMaterial && selectedOrder && selectedEligibility && selectedShift ? <LotDetail lot={selectedLot} material={selectedMaterial} eligibility={selectedEligibility} readiness={selectedReadiness} release={productionReleases[selectedLot.id] ?? (selectedReadiness ? assessDemonstrativeRelease({ lotId: selectedLot.id, productionOrderId: selectedLot.productionOrderId, resourceId: organizationsByLotId[selectedLot.id]?.operationalResourceId ?? selectedLot.scheduledResourceId, scheduleVersionId: activeScheduleVersionId, scheduledStart: selectedLot.scheduledStart, scheduledFinish: selectedLot.scheduledFinish, readiness: selectedReadiness.status }) : undefined)} execution={productionExecutions[selectedLot.id]} currentTime={liveScenarioTime} order={selectedOrder} workCenter={workCenter} shiftName={selectedShift.name} scheduleVersion={version.label} receivedAt={view.schedule.receivedAt} bufferPosition={definition.bufferPositions.find((position) => position.materialId === selectedLot.materialId)} simulatedResourceId={simulationImpact?.lotId === selectedLot.id ? simulationImpact.simulatedResourceId : undefined} operationalResourceId={organizationsByLotId[selectedLot.id]?.operationalResourceId} initialSection={selectedLot.id === 'lot-251' ? initialLotSection : 'OVERVIEW'} onSectionChange={setLotDetailSection} onClose={closeLotDetail} onAnalyzeReadiness={() => openReadiness('LOT_CONTEXT', selectedLot.id)} onRelease={() => releaseLot(selectedLot.id)} onStartExecution={() => startLotExecution(selectedLot.id)} /> : null}
+        <HourByHourSchedule contextLabel={`${formatDate(view.schedule.businessDate)} · ${view.periodLabel}`} datasetSubtitle={scenarioDefinition?.id === 'fundicao-dc' ? 'Componentes de Fundição derivados do Plano Linha C' : undefined} lots={view.lots} setups={view.scheduledSetups} materials={definition.materials} workCenter={workCenter} shifts={definition.shifts} businessDate={view.schedule.businessDate} rangeStart={view.rangeStart} rangeFinish={view.rangeFinish} currentScenarioTime={scenarioDefinition ? liveScenarioTime : null} selectedLotId={selectedLot?.id ?? null} readinessByLotId={readinessByLotId} releaseByLotId={releaseByLotId} organizationsByLotId={organizationsByLotId} traceabilityByLotId={scenarioDefinition?.id === 'fundicao-dc' ? sourceDerivedTraceabilityByLotId : undefined} initialScrollLeft={journeyContext?.selectedLotId === selectedLot?.id ? journeyContext?.timelineScrollLeft : undefined} sceneMode={simulationActive ? 'SIMULATION' : 'STANDARD'} resourceConditionContexts={simulationActive ? conditionContexts : []} simulationImpact={simulationImpact} onSimulateDrop={runSimulation} bufferCriticalLotIds={[BUFFER_CRITICAL_LOT_ID]} onSelectLot={(lot) => { const baselineLot = definition.lots.find((candidate) => candidate.id === lot.id) ?? lot; setSelectedLot(baselineLot); setLotModalOpen(!simulationActive); }} />
+        {lotModalOpen && selectedLot && selectedMaterial && selectedOrder && selectedEligibility && selectedShift ? <LotDetail lot={selectedLot} material={selectedMaterial} eligibility={selectedEligibility} readiness={selectedReadiness} release={productionReleases[selectedLot.id] ?? (selectedReadiness ? assessDemonstrativeRelease({ lotId: selectedLot.id, productionOrderId: selectedLot.productionOrderId, resourceId: organizationsByLotId[selectedLot.id]?.operationalResourceId ?? selectedLot.scheduledResourceId, scheduleVersionId: activeScheduleVersionId, scheduledStart: selectedLot.scheduledStart, scheduledFinish: selectedLot.scheduledFinish, readiness: selectedReadiness.status }) : undefined)} execution={productionExecutions[selectedLot.id]} currentTime={liveScenarioTime} order={selectedOrder} workCenter={workCenter} shiftName={selectedShift.name} scheduleVersion={version.label} receivedAt={view.schedule.receivedAt} bufferPosition={definition.bufferPositions.find((position) => position.materialId === selectedLot.materialId)} simulatedResourceId={simulationImpact?.lotId === selectedLot.id ? simulationImpact.simulatedResourceId : undefined} operationalResourceId={organizationsByLotId[selectedLot.id]?.operationalResourceId} traceability={sourceDerivedTraceabilityByLotId[selectedLot.id]} resourceRole={componentResourceMappingByCode[selectedMaterial.code]} initialSection={selectedLot.id === 'lot-251' ? initialLotSection : 'OVERVIEW'} onSectionChange={setLotDetailSection} onClose={closeLotDetail} onAnalyzeReadiness={() => openReadiness('LOT_CONTEXT', selectedLot.id)} onRelease={() => releaseLot(selectedLot.id)} onStartExecution={() => startLotExecution(selectedLot.id)} /> : null}
       </div>
 
       <ProductionOrderCorrelation items={view.orders} lots={view.allScheduledLots} materials={definition.materials} />

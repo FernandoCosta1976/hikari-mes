@@ -1,0 +1,890 @@
+[
+  {
+    "modelPrefix": "1ST",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5111-W0",
+    "candidates": [
+      "1ST-E5111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "1ST",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5121-W0",
+    "candidates": [
+      "1ST-E5121-W0"
+    ]
+  },
+  {
+    "modelPrefix": "1ST",
+    "family": "TAMPA_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5411-W0",
+    "candidates": [
+      "1ST-E5411-W0"
+    ]
+  },
+  {
+    "modelPrefix": "1ST",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5421-W0",
+    "candidates": [
+      "1ST-E5421-W0"
+    ]
+  },
+  {
+    "modelPrefix": "1ST",
+    "family": "CILINDRO",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E1310-W0",
+    "candidates": [
+      "1ST-E1310-W0"
+    ]
+  },
+  {
+    "modelPrefix": "1ST",
+    "family": "CABECOTE",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E1111-W0",
+    "candidates": [
+      "1ST-E1111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2CC",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5111-W0",
+    "candidates": [
+      "1ST-E5111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2CC",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5121-W0",
+    "candidates": [
+      "1ST-E5121-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2CC",
+    "family": "TAMPA_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5411-W0",
+    "candidates": [
+      "1ST-E5411-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2CC",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5421-W0",
+    "candidates": [
+      "1ST-E5421-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2CC",
+    "family": "CILINDRO",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E1310-W0",
+    "candidates": [
+      "1ST-E1310-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2CC",
+    "family": "CABECOTE",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E1111-W0",
+    "candidates": [
+      "1ST-E1111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2RP",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5111-W0",
+    "candidates": [
+      "1ST-E5111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2RP",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5121-W0",
+    "candidates": [
+      "1ST-E5121-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2RP",
+    "family": "TAMPA_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5411-W0",
+    "candidates": [
+      "1ST-E5411-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2RP",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5421-W0",
+    "candidates": [
+      "1ST-E5421-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2RP",
+    "family": "CILINDRO",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E1310-W0",
+    "candidates": [
+      "1ST-E1310-W0"
+    ]
+  },
+  {
+    "modelPrefix": "2RP",
+    "family": "CABECOTE",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E1111-W0",
+    "candidates": [
+      "1ST-E1111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "30S",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "4VW-E5111-W1",
+    "candidates": [
+      "4VW-E5111-W1"
+    ]
+  },
+  {
+    "modelPrefix": "30S",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "4VW-E5121-W1",
+    "candidates": [
+      "4VW-E5121-W1"
+    ]
+  },
+  {
+    "modelPrefix": "30S",
+    "family": "TAMPA_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "30S",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "4VW-E5431-W0",
+    "candidates": [
+      "4VW-E5431-W0"
+    ]
+  },
+  {
+    "modelPrefix": "30S",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "30S",
+    "family": "CABECOTE",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "B37",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5111-W0",
+    "candidates": [
+      "1ST-E5111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B37",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5121-W0",
+    "candidates": [
+      "1ST-E5121-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B37",
+    "family": "TAMPA_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5411-W0",
+    "candidates": [
+      "1ST-E5411-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B37",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5421-W0",
+    "candidates": [
+      "1ST-E5421-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B37",
+    "family": "CILINDRO",
+    "status": "RESOLVED",
+    "resolvedCode": "B37-E1311-W0",
+    "candidates": [
+      "B37-E1311-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B37",
+    "family": "CABECOTE",
+    "status": "RESOLVED",
+    "resolvedCode": "B37-E1111-W0",
+    "candidates": [
+      "B37-E1111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B3G",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "44C-E5111-W0",
+    "candidates": [
+      "44C-E5111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B3G",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1S4-E5121-W0",
+    "candidates": [
+      "1S4-E5121-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B3G",
+    "family": "TAMPA_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "4B4-E5411-W0",
+    "candidates": [
+      "4B4-E5411-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B3G",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "44C-E5421-W0",
+    "candidates": [
+      "44C-E5421-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B3G",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "B3G",
+    "family": "CABECOTE",
+    "status": "RESOLVED",
+    "resolvedCode": "1S4-E1111-W0",
+    "candidates": [
+      "1S4-E1111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B68",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "4VW-E5111-W1",
+    "candidates": [
+      "4VW-E5111-W1"
+    ]
+  },
+  {
+    "modelPrefix": "B68",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "4VW-E5121-W1",
+    "candidates": [
+      "4VW-E5121-W1"
+    ]
+  },
+  {
+    "modelPrefix": "B68",
+    "family": "TAMPA_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "B68",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "4VW-E5431-W0",
+    "candidates": [
+      "4VW-E5431-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B68",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "B68",
+    "family": "CABECOTE",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "B8L",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "44C-E5111-W0",
+    "candidates": [
+      "44C-E5111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B8L",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1S4-E5121-W0",
+    "candidates": [
+      "1S4-E5121-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B8L",
+    "family": "TAMPA_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "4B4-E5411-W0",
+    "candidates": [
+      "4B4-E5411-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B8L",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "44C-E5421-W0",
+    "candidates": [
+      "44C-E5421-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B8L",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "B8L",
+    "family": "CABECOTE",
+    "status": "RESOLVED",
+    "resolvedCode": "1S4-E1111-W0",
+    "candidates": [
+      "1S4-E1111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B9L",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "44C-E5111-W0",
+    "candidates": [
+      "44C-E5111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B9L",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1S4-E5121-W0",
+    "candidates": [
+      "1S4-E5121-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B9L",
+    "family": "TAMPA_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "4B4-E5411-W0",
+    "candidates": [
+      "4B4-E5411-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B9L",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "44C-E5421-W0",
+    "candidates": [
+      "44C-E5421-W0"
+    ]
+  },
+  {
+    "modelPrefix": "B9L",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "B9L",
+    "family": "CABECOTE",
+    "status": "RESOLVED",
+    "resolvedCode": "1S4-E1111-W0",
+    "candidates": [
+      "1S4-E1111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BC5",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "44C-E5111-W0",
+    "candidates": [
+      "44C-E5111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BC5",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1S4-E5121-W0",
+    "candidates": [
+      "1S4-E5121-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BC5",
+    "family": "TAMPA_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "1S4-E5411-W0",
+    "candidates": [
+      "1S4-E5411-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BC5",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "44C-E5421-W0",
+    "candidates": [
+      "44C-E5421-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BC5",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BC5",
+    "family": "CABECOTE",
+    "status": "RESOLVED",
+    "resolvedCode": "1S4-E1111-W0",
+    "candidates": [
+      "1S4-E1111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BDC",
+    "family": "CARC_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BDC",
+    "family": "CARC_DIR",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BDC",
+    "family": "TAMPA_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BDC",
+    "family": "TAMPA_DIR",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BDC",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BDC",
+    "family": "CABECOTE",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BFW",
+    "family": "CARC_ESQ",
+    "status": "AMBIGUOUS",
+    "resolvedCode": null,
+    "candidates": [
+      "1ST-E5111-W0",
+      "1ST-E5121-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BFW",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5111-W0",
+    "candidates": [
+      "1ST-E5111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BFW",
+    "family": "TAMPA_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5411-W0",
+    "candidates": [
+      "1ST-E5411-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BFW",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E5421-W0",
+    "candidates": [
+      "1ST-E5421-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BFW",
+    "family": "CILINDRO",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E1310-W0",
+    "candidates": [
+      "1ST-E1310-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BFW",
+    "family": "CABECOTE",
+    "status": "RESOLVED",
+    "resolvedCode": "1ST-E1111-W0",
+    "candidates": [
+      "1ST-E1111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BJF",
+    "family": "CARC_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BJF",
+    "family": "CARC_DIR",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BJF",
+    "family": "TAMPA_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BJF",
+    "family": "TAMPA_DIR",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BJF",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BJF",
+    "family": "CABECOTE",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BL5",
+    "family": "CARC_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BL5",
+    "family": "CARC_DIR",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BL5",
+    "family": "TAMPA_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BL5",
+    "family": "TAMPA_DIR",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BL5",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BL5",
+    "family": "CABECOTE",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BNN",
+    "family": "CARC_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BNN",
+    "family": "CARC_DIR",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BNN",
+    "family": "TAMPA_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BNN",
+    "family": "TAMPA_DIR",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BNN",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BNN",
+    "family": "CABECOTE",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BPX",
+    "family": "CARC_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BPX",
+    "family": "CARC_DIR",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BPX",
+    "family": "TAMPA_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BPX",
+    "family": "TAMPA_DIR",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BPX",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BPX",
+    "family": "CABECOTE",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "BSR",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "5HH-E5111-W0",
+    "candidates": [
+      "5HH-E5111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BSR",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "5HH-E5121-W0",
+    "candidates": [
+      "5HH-E5121-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BSR",
+    "family": "TAMPA_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "1B2-E5411-W0",
+    "candidates": [
+      "1B2-E5411-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BSR",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "5LX-E5421-X0",
+    "candidates": [
+      "5LX-E5421-X0"
+    ]
+  },
+  {
+    "modelPrefix": "BSR",
+    "family": "CILINDRO",
+    "status": "AMBIGUOUS",
+    "resolvedCode": null,
+    "candidates": [
+      "5HH-E1310-W0",
+      "5HH-E1311-W0"
+    ]
+  },
+  {
+    "modelPrefix": "BSR",
+    "family": "CABECOTE",
+    "status": "RESOLVED",
+    "resolvedCode": "5RM-E1111-W0",
+    "candidates": [
+      "5RM-E1111-W0"
+    ]
+  },
+  {
+    "modelPrefix": "D21",
+    "family": "CARC_ESQ",
+    "status": "RESOLVED",
+    "resolvedCode": "4VW-E5111-W1",
+    "candidates": [
+      "4VW-E5111-W1"
+    ]
+  },
+  {
+    "modelPrefix": "D21",
+    "family": "CARC_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "4VW-E5121-W1",
+    "candidates": [
+      "4VW-E5121-W1"
+    ]
+  },
+  {
+    "modelPrefix": "D21",
+    "family": "TAMPA_ESQ",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "D21",
+    "family": "TAMPA_DIR",
+    "status": "RESOLVED",
+    "resolvedCode": "4VW-E5431-W0",
+    "candidates": [
+      "4VW-E5431-W0"
+    ]
+  },
+  {
+    "modelPrefix": "D21",
+    "family": "CILINDRO",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  },
+  {
+    "modelPrefix": "D21",
+    "family": "CABECOTE",
+    "status": "NOT_FOUND",
+    "resolvedCode": null,
+    "candidates": []
+  }
+]

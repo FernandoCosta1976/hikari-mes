@@ -1,0 +1,170 @@
+[
+  {
+    "modelPrefix": "B3G",
+    "family": "CARC_DIR",
+    "reason": "RESOURCE_MAPPING_NOT_FOUND",
+    "count": 34,
+    "quantity": 3200
+  },
+  {
+    "modelPrefix": "B3G",
+    "family": "TAMPA_ESQ",
+    "reason": "RESOURCE_MAPPING_NOT_FOUND",
+    "count": 34,
+    "quantity": 3200
+  },
+  {
+    "modelPrefix": "B9L",
+    "family": "CARC_DIR",
+    "reason": "RESOURCE_MAPPING_NOT_FOUND",
+    "count": 4,
+    "quantity": 400
+  },
+  {
+    "modelPrefix": "B9L",
+    "family": "TAMPA_ESQ",
+    "reason": "RESOURCE_MAPPING_NOT_FOUND",
+    "count": 4,
+    "quantity": 400
+  },
+  {
+    "modelPrefix": "BC5",
+    "family": "CARC_DIR",
+    "reason": "RESOURCE_MAPPING_NOT_FOUND",
+    "count": 35,
+    "quantity": 3300
+  },
+  {
+    "modelPrefix": "BFW",
+    "family": "CARC_ESQ",
+    "reason": "MODEL_MAPPING_AMBIGUOUS",
+    "count": 40,
+    "quantity": 3600
+  },
+  {
+    "modelPrefix": "BSR",
+    "family": "CARC_DIR",
+    "reason": "RESOURCE_MAPPING_NOT_FOUND",
+    "count": 6,
+    "quantity": 300
+  },
+  {
+    "modelPrefix": "BSR",
+    "family": "CARC_ESQ",
+    "reason": "RESOURCE_MAPPING_NOT_FOUND",
+    "count": 6,
+    "quantity": 300
+  },
+  {
+    "modelPrefix": "BSR",
+    "family": "CILINDRO",
+    "reason": "MODEL_MAPPING_AMBIGUOUS",
+    "count": 6,
+    "quantity": 300
+  },
+  {
+    "modelPrefix": "BUP",
+    "family": "CABECOTE",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 46,
+    "quantity": 4400
+  },
+  {
+    "modelPrefix": "BUP",
+    "family": "CARC_DIR",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 46,
+    "quantity": 4400
+  },
+  {
+    "modelPrefix": "BUP",
+    "family": "CARC_ESQ",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 46,
+    "quantity": 4400
+  },
+  {
+    "modelPrefix": "BUP",
+    "family": "CILINDRO",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 46,
+    "quantity": 4400
+  },
+  {
+    "modelPrefix": "BUP",
+    "family": "TAMPA_DIR",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 46,
+    "quantity": 4400
+  },
+  {
+    "modelPrefix": "BUP",
+    "family": "TAMPA_ESQ",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 46,
+    "quantity": 4400
+  },
+  {
+    "modelPrefix": "BXN",
+    "family": "CABECOTE",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 21,
+    "quantity": 1900
+  },
+  {
+    "modelPrefix": "BXN",
+    "family": "CARC_DIR",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 21,
+    "quantity": 1900
+  },
+  {
+    "modelPrefix": "BXN",
+    "family": "CARC_ESQ",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 21,
+    "quantity": 1900
+  },
+  {
+    "modelPrefix": "BXN",
+    "family": "CILINDRO",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 21,
+    "quantity": 1900
+  },
+  {
+    "modelPrefix": "BXN",
+    "family": "TAMPA_DIR",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 21,
+    "quantity": 1900
+  },
+  {
+    "modelPrefix": "BXN",
+    "family": "TAMPA_ESQ",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 21,
+    "quantity": 1900
+  },
+  {
+    "modelPrefix": "D25",
+    "family": "CARC_DIR",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 3,
+    "quantity": 150
+  },
+  {
+    "modelPrefix": "D25",
+    "family": "CARC_ESQ",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 3,
+    "quantity": 150
+  },
+  {
+    "modelPrefix": "D25",
+    "family": "TAMPA_DIR",
+    "reason": "MODEL_MAPPING_NOT_FOUND",
+    "count": 3,
+    "quantity": 150
+  }
+]

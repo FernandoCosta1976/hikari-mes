@@ -3,7 +3,7 @@ import { expect, test } from './fixtures';
 
 test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and a highlighted machine panel', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-quality');
+  await page.goto('/demo/fundicao-dc-legacy/production-quality');
   await expect(page.getByRole('heading', { name: 'Quanto produzimos e quanto foi bom?' })).toBeVisible();
 
   const turnoRow = page.getByRole('region', { name: 'Qualidade do Turno 2 e acumulado do dia' });
@@ -30,7 +30,7 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
 
 test('opens the Qualidade & Performance drill-down without execution actions', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/fundicao-dc/production-quality');
+  await page.goto('/demo/fundicao-dc-legacy/production-quality');
   const machines = page.getByRole('region', { name: 'Situação das Máquinas' });
   await machines.getByRole('button', { name: /DC04/ }).click();
   const dialog = page.getByRole('dialog', { name: /DC04/ });
@@ -40,7 +40,7 @@ test('opens the Qualidade & Performance drill-down without execution actions', a
 });
 
 test('is accessible, keyboard reachable, responsive and contains no prohibited red', async ({ page }) => {
-  await page.goto('/demo/fundicao-dc/production-quality');
+  await page.goto('/demo/fundicao-dc-legacy/production-quality');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   const machines = page.getByRole('region', { name: 'Situação das Máquinas' });
   await machines.getByRole('button', { name: /DC04/ }).focus();

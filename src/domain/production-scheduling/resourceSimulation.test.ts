@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { scenarioDefinitionAdapter } from '../../demo/adapters/scenarioDefinitionAdapter';
 import { simulateResourceMove } from './resourceSimulation';
 
-const lots = scenarioDefinitionAdapter.findById('fundicao-dc')!.productionScheduling.lots.filter((lot) => !lot.id.includes('-d'));
+const lots = scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!.productionScheduling.lots.filter((lot) => !lot.id.includes('-d'));
 
 test('calculates origin, destination and net Setup without mutating the baseline', () => {
   const baselineResource = lots.find((lot) => lot.id === 'lot-251')!.scheduledResourceId;

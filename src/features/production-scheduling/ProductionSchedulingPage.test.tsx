@@ -7,7 +7,7 @@ import { renderWithFoundation } from '../../test/renderWithFoundation';
 import { ProductionSchedulingPage } from './ProductionSchedulingPage';
 
 beforeEach(() => {
-  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
+  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!;
   useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false });
   useScenarioStore.getState().initializeScenario(fundicaoDcScenario);
   useScenarioStore.getState().resetScenario();
@@ -249,10 +249,10 @@ test('presents quick restrictions, revision summary and progressive drill-down',
 test('switches between the 24h plan and each shift while updating its commitment', async () => {
   const user = userEvent.setup();
   renderWithFoundation(<ProductionSchedulingPage />);
-  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('27 Lotes');
+  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('27 necessidades de produção');
   await user.click(screen.getByRole('button', { name: 'Turno 2' }));
   expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('600 peças');
-  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('8 Lotes');
+  expect(screen.getByRole('region', { name: 'Compromisso do período' })).toHaveTextContent('8 necessidades de produção');
   expect(screen.getByTestId('current-time-marker')).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Turno 1' }));
   expect(screen.queryByTestId('current-time-marker')).not.toBeInTheDocument();
@@ -266,4 +266,16 @@ test('renders hierarchical filters and collapses the sidebar with Escape', async
   expect(sidebar.parentElement).toHaveAttribute('data-sidebar-expanded', 'true');
   await user.keyboard('{Escape}');
   expect(sidebar.parentElement).toHaveAttribute('data-sidebar-expanded', 'false');
+});
+
+/** Section 19.9 — absence of a real Quality confirmation must read as "no data", never a fabricated 0. */
+test('hides Produzido instead of showing a fabricated 0 when the canonical scenario has no Quality confirmation yet', () => {
+  const canonical = scenarioDefinitionAdapter.findById('fundicao-dc')!;
+  useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false });
+  useScenarioStore.getState().initializeScenario(canonical);
+  useScenarioStore.getState().resetScenario();
+  renderWithFoundation(<ProductionSchedulingPage />);
+  const commitment = screen.getByRole('region', { name: 'Compromisso do período' });
+  expect(commitment).not.toHaveTextContent('Produzido');
+  expect(commitment).not.toHaveTextContent('0% atingido');
 });

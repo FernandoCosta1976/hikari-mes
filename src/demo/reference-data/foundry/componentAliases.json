@@ -1,0 +1,93 @@
+[
+  {
+    "canonicalComponentCode": "44C-E5111-W0",
+    "sourceCode": "44CE5111W00080",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "44C-E5421-W0",
+    "sourceCode": "44CE5421W000M1",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "1S4-E1111-W0",
+    "sourceCode": "1S4E1111W000G1",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "1ST-E5111-W0",
+    "sourceCode": "1STE5111W00080",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "1ST-E5421-W0",
+    "sourceCode": "1STE5421W000M0",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "1ST-E5411-W0",
+    "sourceCode": "1STE5411W000M0",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "1ST-E1310-W0",
+    "sourceCode": "1STE1310W00080",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "1ST-E1111-W0",
+    "sourceCode": "1STE1111W00080",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "1S4-E5411-W0",
+    "sourceCode": "1S4E5411W000M0",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "5LX-E5421-X0",
+    "sourceCode": "5LXE5421X00080",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "1B2-E5411-W0",
+    "sourceCode": "1B2E5411W00080",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "5RM-E1111-W0",
+    "sourceCode": "5RME1111W000G2",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  },
+  {
+    "canonicalComponentCode": "1ST-E5121-W0",
+    "sourceCode": "1STE5121W00080",
+    "source": "máquina titular e reserva",
+    "matchMethod": "DASHLESS_PREFIX",
+    "status": "RESOLVED"
+  }
+]

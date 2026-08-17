@@ -5,7 +5,7 @@ import { useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { renderWithFoundation } from '../../test/renderWithFoundation';
 import { ProductionAdherencePage } from './ProductionAdherencePage';
 
-beforeEach(() => { useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false }); useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc')!); useScenarioStore.getState().resetScenario(); });
+beforeEach(() => { useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false }); useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!); useScenarioStore.getState().resetScenario(); });
 
 test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and a highlighted machine panel', () => {
   renderWithFoundation(<ProductionAdherencePage />);

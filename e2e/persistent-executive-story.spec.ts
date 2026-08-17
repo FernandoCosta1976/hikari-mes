@@ -11,7 +11,7 @@ test('a decision on Lote 270 survives reload and reaches every downstream perspe
   await page.setViewportSize({ width: 1440, height: 900 });
 
   // 1-3. Order Workspace baseline.
-  await page.goto('/demo/fundicao-dc/orders/lot-270');
+  await page.goto('/demo/fundicao-dc-legacy/orders/lot-270');
   const heroFacts = page.locator('dl').filter({ hasText: 'Material' });
   await expect(heroFacts).toContainText('Em preparação');
   await expect(heroFacts).toContainText('Não liberada');
@@ -47,7 +47,7 @@ test('a decision on Lote 270 survives reload and reaches every downstream perspe
   await expect(page.getByRole('region', { name: 'Próxima decisão' })).toContainText('Em produção');
 
   // 11. Execução must show Lote 270 under DC04, not the original Lote 268.
-  await page.goto('/demo/fundicao-dc/production-execution');
+  await page.goto('/demo/fundicao-dc-legacy/production-execution');
   const dc04Card = page.locator('article').filter({ has: page.getByText('DC04', { exact: true }) });
   await expect(dc04Card).toContainText('Lote atualLote 270');
   await dc04Card.getByLabel(/Quantidade produzida na DC04/).fill('12');
@@ -59,24 +59,24 @@ test('a decision on Lote 270 survives reload and reaches every downstream perspe
   await expect(dc04CardAfterReload).toContainText('12');
 
   // 13. Acompanhamento consumes the same persisted scenario.
-  await page.goto('/demo/fundicao-dc/production-monitoring');
+  await page.goto('/demo/fundicao-dc-legacy/production-monitoring');
   const monitoringDc04 = page.locator('section').filter({ has: page.getByText('DC04', { exact: true }) }).first();
   await expect(monitoringDc04).toContainText('270');
 
   // 14. Aderência preserves Programado (DC01) vs Operacional (DC04) — Lote 270 now tracked on DC04.
-  await page.goto('/demo/fundicao-dc/production-adherence');
+  await page.goto('/demo/fundicao-dc-legacy/production-adherence');
   await expect(page.getByRole('region', { name: 'Situação das Máquinas' })).toContainText('270');
 
   // 15. Qualidade references the same Lot/Resource.
-  await page.goto('/demo/fundicao-dc/production-quality');
+  await page.goto('/demo/fundicao-dc-legacy/production-quality');
   await expect(page.getByRole('region', { name: 'Situação das Máquinas' })).toContainText('270');
 
   // 16. OEE is recalculated from the same facts (DC04 row still present, no fixed "oee: 70" placeholder).
-  await page.goto('/demo/fundicao-dc/oee');
+  await page.goto('/demo/fundicao-dc-legacy/oee');
   await expect(page.getByRole('region', { name: 'Situação das Máquinas' })).toContainText('DC04');
 
   // 17. Visão Estratégica consumes the same selectors — same consolidated reality.
-  await page.goto('/demo/fundicao-dc/strategic');
+  await page.goto('/demo/fundicao-dc-legacy/strategic');
   await expect(page.getByRole('heading', { name: 'Como está a saúde da Fundição DC?' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Situação das Máquinas' })).toContainText('DC04');
 });

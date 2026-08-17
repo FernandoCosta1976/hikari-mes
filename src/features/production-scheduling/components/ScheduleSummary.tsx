@@ -11,7 +11,7 @@ export function ScheduleSummary({ quantity, lotCount, destinations, versionLabel
       <div className={styles.commitment}>
         <p className={styles.overline} id="commitment-title">Compromisso · {periodLabel}</p>
         <strong>{quantity.toLocaleString('pt-BR')} <small>peças</small></strong>
-        <span>{lotCount} Lotes · {formatTime(rangeStart)} → {formatTime(rangeFinish)}</span>
+        <span>{lotCount} necessidades de produção · {formatTime(rangeStart)} → {formatTime(rangeFinish)}</span>
         {percentReached !== null ? <small className={styles.commitmentProgress}>Produzido {produced!.toLocaleString('pt-BR')} · {percentReached}% atingido · Falta {missing!.toLocaleString('pt-BR')} · {attentionCount ?? 0} Lotes em atenção</small> : null}
       </div>
       <div className={styles.destinations}>

@@ -4,7 +4,7 @@ import { useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { renderWithFoundation } from '../../test/renderWithFoundation';
 import { StrategicViewPage } from './StrategicViewPage';
 
-beforeEach(() => { useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false }); useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc')!); useScenarioStore.getState().resetScenario(); });
+beforeEach(() => { useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false }); useScenarioStore.getState().initializeScenario(scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!); useScenarioStore.getState().resetScenario(); });
 
 test('shows the executive cockpit with Meta 2.000, RISCO status and the five machines with shared Lot Health icons', () => {
   renderWithFoundation(<StrategicViewPage />);
