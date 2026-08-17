@@ -159,11 +159,12 @@ test('evaluates a scenario end to end through the single Avaliar cenário entry 
   const simulation = screen.getByRole('region', { name: 'Avaliação de cenário' });
   const options = within(simulation).getAllByRole('button').filter((button) => /^DC0[1-5]/.test(button.textContent ?? ''));
   expect(options.map((button) => button.textContent?.slice(0, 4))).toEqual(['DC01', 'DC02', 'DC03', 'DC04', 'DC05']);
-  expect(options[0]).toBeDisabled();
+  expect(options[0]).not.toBeDisabled(); // same-machine reprioritization is now a valid target too
   await user.click(options[4]);
+  await user.click(within(simulation).getByRole('button', { name: 'No início' }));
   expect(simulation).toHaveTextContent('1 movimentação');
-  expect(simulation).toHaveTextContent('Programação atualDC01');
-  expect(simulation).toHaveTextContent('Nova programaçãoDC05');
+  expect(simulation).toHaveTextContent('OrigemDC01');
+  expect(simulation).toHaveTextContent('DestinoDC05');
   expect(container.querySelector('[data-lot-id="lot-251"]')).toHaveAttribute('data-simulated', 'true');
   expect([...container.querySelectorAll('[aria-label^="Máquina programada DC"]')].map((lane) => lane.getAttribute('aria-label'))).toEqual(fixedOrder);
 

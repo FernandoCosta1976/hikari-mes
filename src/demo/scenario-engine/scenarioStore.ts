@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { DemandDestination, ProductionSchedulingDefinition } from '../../domain/production-scheduling/models';
 import { adoptOrganization as buildOrganization, type LotOrganization } from '../../domain/production-scheduling/organization';
-import type { ResourceSimulationImpact } from '../../domain/production-scheduling/resourceSimulation';
+import type { ResourceReassignment } from '../../domain/production-scheduling/organization';
 import type { ScenarioDefinition } from '../../domain/scenario/ScenarioDefinition';
 import { assessDemonstrativeRelease, releaseDemonstratively, revokeRelease, type ProductionReleaseRecord, type RevocationReason } from '../../domain/production-release/models';
 import { completeExecution, pauseExecution, resumeExecution, startExecution, updateProducedQuantity, type DemonstrativePauseReason, type ProductionExecutionRecord } from '../../domain/production-execution/models';
@@ -127,7 +127,7 @@ interface ScenarioActions {
   resumeLotExecution: (lotId: string) => void;
   updateLotProducedQuantity: (lotId: string, quantity: number) => void;
   completeLotExecution: (lotId: string) => void;
-  adoptOrganization: (impact: ResourceSimulationImpact, organizedBy: string) => void;
+  adoptOrganization: (impact: ResourceReassignment, organizedBy: string) => void;
 }
 
 export type ScenarioStore = ScenarioState & ScenarioActions;

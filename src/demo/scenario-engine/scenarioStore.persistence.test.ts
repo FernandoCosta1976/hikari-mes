@@ -35,7 +35,7 @@ describe('scenario persistence — serialize / hydrate', () => {
   it('rehydrates preparation, release, organization, postponement and execution facts after a simulated reload', () => {
     useScenarioStore.getState().confirmPreparation('lot-sd-407');
     useScenarioStore.getState().releaseLot('lot-sd-401');
-    useScenarioStore.getState().adoptOrganization({ lotId: 'lot-sd-407', originalResourceId: 'DC01', simulatedResourceId: 'DC03', originSetupDeltaMinutes: 0, destinationSetupDeltaMinutes: 0, netSetupDeltaMinutes: 0, conflictLotIds: [], conflictSetupIds: [], bufferImpact: 'NEUTRAL' }, 'Planejador da Fundição · demonstrativo');
+    useScenarioStore.getState().adoptOrganization({ lotId: 'lot-sd-407', originalResourceId: 'DC01', simulatedResourceId: 'DC03' }, 'Planejador da Fundição · demonstrativo');
     useScenarioStore.getState().postponeLot('lot-sd-403', 'Turno 3');
     useScenarioStore.getState().releaseLot('lot-sd-402');
     useScenarioStore.getState().startLotExecution('lot-sd-402');
@@ -53,7 +53,7 @@ describe('scenario persistence — serialize / hydrate', () => {
   });
 
   it('keeps Programmed and Operational Resource distinguishable across a reload (baseline is never lost)', () => {
-    useScenarioStore.getState().adoptOrganization({ lotId: 'lot-sd-407', originalResourceId: 'DC01', simulatedResourceId: 'DC03', originSetupDeltaMinutes: 0, destinationSetupDeltaMinutes: 0, netSetupDeltaMinutes: 0, conflictLotIds: [], conflictSetupIds: [], bufferImpact: 'NEUTRAL' }, 'Planejador da Fundição · demonstrativo');
+    useScenarioStore.getState().adoptOrganization({ lotId: 'lot-sd-407', originalResourceId: 'DC01', simulatedResourceId: 'DC03' }, 'Planejador da Fundição · demonstrativo');
     reboot();
     const organization = useScenarioStore.getState().organizationsByLotId['lot-sd-407'];
     expect(organization?.programmedResourceId).toBe('DC01');

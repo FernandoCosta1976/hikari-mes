@@ -284,8 +284,8 @@ test('simulates a vertical Resource move with fixed lanes, comparison, undo and 
   await page.getByLabel('Lotes programados na DC05').dispatchEvent('dragover', { dataTransfer });
   await page.getByLabel('Lotes programados na DC05').dispatchEvent('drop', { dataTransfer });
   await expect(simulation).toContainText('1 movimentação');
-  await expect(simulation).toContainText('Programação atualDC01');
-  await expect(simulation).toContainText('Nova programaçãoDC05');
+  await expect(simulation).toContainText('OrigemDC01');
+  await expect(simulation).toContainText('DestinoDC05');
   await expect(page.locator('[data-lot-id="lot-251"]')).toHaveAttribute('data-simulated', 'true');
   await expect(page.getByLabel('Posição original do Lote 251 no plano recebido')).toBeVisible();
   expect(await laneOrder()).toEqual(fixedOrder);
@@ -299,6 +299,7 @@ test('simulates a vertical Resource move with fixed lanes, comparison, undo and 
   expect(await laneOrder()).toEqual(fixedOrder);
   await page.locator('[data-lot-id="lot-255"]').click();
   await simulation.getByRole('button', { name: /DC03/ }).click();
+  await simulation.getByRole('button', { name: /Depois de Lote 266/ }).click(); // last on DC03 — genuinely pushes the Resource's closing time later
   await expect(page.getByRole('region', { name: /Cobertura para sustentar a produção/ })).toContainText('Risco para a meta de cobertura');
   expect(await laneOrder()).toEqual(fixedOrder);
   await simulation.getByRole('button', { name: 'Encerrar avaliação' }).click();

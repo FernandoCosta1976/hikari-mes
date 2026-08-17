@@ -1,5 +1,4 @@
 import type { FoundryResourceId } from '../resource/models';
-import type { ResourceSimulationImpact } from './resourceSimulation';
 
 /**
  * Operational reorganization of a Lot to a Resource other than the one it was
@@ -17,6 +16,12 @@ export interface LotOrganization {
   ruleStatus: 'BUSINESS_VALIDATION_REQUIRED';
 }
 
-export function adoptOrganization(impact: ResourceSimulationImpact, organizedAt: string, organizedBy: string): LotOrganization {
+export interface ResourceReassignment {
+  lotId: string;
+  originalResourceId: FoundryResourceId;
+  simulatedResourceId: FoundryResourceId;
+}
+
+export function adoptOrganization(impact: ResourceReassignment, organizedAt: string, organizedBy: string): LotOrganization {
   return { lotId: impact.lotId, programmedResourceId: impact.originalResourceId, operationalResourceId: impact.simulatedResourceId, organizedAt, organizedBy, demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' };
 }
