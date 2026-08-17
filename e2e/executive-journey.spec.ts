@@ -5,7 +5,7 @@ const STEPS: readonly { id: string; label: string; heading: string }[] = [
   { id: '02', label: 'Preparação', heading: 'Temos condições de produzir?' },
   { id: '03', label: 'Liberação', heading: 'Podemos liberar para produção?' },
   { id: '04', label: 'Execução', heading: 'O que está sendo executado agora?' },
-  { id: '05', label: 'Acompanhamento', heading: 'O que está acontecendo na produção agora?' },
+  { id: '05', label: 'Acompanhamento', heading: 'O que está acontecendo em relação ao plano?' },
   { id: '06', label: 'Aderência', heading: 'Estamos executando conforme o planejado?' },
   { id: '07', label: 'Qualidade', heading: 'Quanto produzimos e quanto foi bom?' },
   { id: '08', label: 'OEE', heading: 'Como estamos performando e por quê?' },

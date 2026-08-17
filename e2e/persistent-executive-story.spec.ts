@@ -58,10 +58,11 @@ test('a decision on Lote 270 survives reload and reaches every downstream perspe
   await expect(dc04CardAfterReload).toContainText('Lote 270');
   await expect(dc04CardAfterReload).toContainText('12');
 
-  // 13. Acompanhamento consumes the same persisted scenario.
-  await page.goto('/demo/fundicao-dc-legacy/production-monitoring');
-  const monitoringDc04 = page.locator('section').filter({ has: page.getByText('DC04', { exact: true }) }).first();
-  await expect(monitoringDc04).toContainText('270');
+  // 13. Acompanhamento is now a bounded demonstrative capability for the
+  // canonical 2026-07-10/17:23 scenario (see the HIKARI 10/07 round) — it no
+  // longer reads live execution facts from the shared scenario store, so
+  // this persistence chain no longer flows through it. Verified separately
+  // in production-monitoring.spec.ts.
 
   // 14. Aderência preserves Programado (DC01) vs Operacional (DC04) — Lote 270 now tracked on DC04.
   await page.goto('/demo/fundicao-dc-legacy/production-adherence');
