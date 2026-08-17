@@ -61,7 +61,7 @@ test('applies Material × Resource Eligibility before progressive readiness deta
   const { container } = renderWithFoundation(<ProductionReadinessPage />);
   expect(container.querySelector('[data-resource-id="DC02"]')).toHaveTextContent('Não elegível');
   expect(screen.queryByRole('button', { name: 'Ver condições de DC02' })).not.toBeInTheDocument();
-  await user.click(screen.getByText('Detalhes de Readiness por máquina'));
+  await user.click(screen.getByText('Detalhes de preparação por máquina'));
   await user.click(screen.getByRole('button', { name: 'Ver condições de DC03' }));
   expect(screen.getByRole('dialog', { name: /DC03 · Lote 252/ })).toHaveTextContent('Setup necessário; duração não calculada.');
 });

@@ -11,11 +11,11 @@ test('completes the governed WF-001 interaction narrative', async ({ page }) => 
   const applicationContext = page.getByRole('region', { name: 'Contexto da aplicação' });
   await expect(applicationContext).toContainText('Fundição DC');
   await expect(applicationContext).toContainText('Demonstrativo');
-  await expect(page.getByRole('complementary', { name: 'Operational Workspace' })).toContainText('HIKARI');
-  await expect(page.getByRole('complementary', { name: 'Operational Workspace' })).toContainText('Produção');
+  await expect(page.getByRole('complementary', { name: 'Painel Operacional' })).toContainText('HIKARI');
+  await expect(page.getByRole('complementary', { name: 'Painel Operacional' })).toContainText('Produção');
   await expect(page.locator('main .workspaceLayout, main [data-sidebar-expanded]').first().locator('h1')).toHaveText('O que precisamos produzir?');
   const menuButton = page.getByRole('button', { name: 'Recolher sidebar' });
-  await expect(page.getByRole('complementary', { name: 'Operational Workspace' })).toBeVisible();
+  await expect(page.getByRole('complementary', { name: 'Painel Operacional' })).toBeVisible();
   await menuButton.click();
   const expandButton = page.getByRole('button', { name: 'Expandir sidebar' });
   await expect(expandButton).toHaveAttribute('aria-expanded', 'false');
@@ -45,8 +45,8 @@ test('completes the governed WF-001 interaction narrative', async ({ page }) => 
   await page.getByRole('button', { name: /Lote 265, Material A, 100 peças/ }).click();
   const detail = page.getByRole('dialog', { name: 'Lote 265' });
   await expect(detail).toBeVisible();
-  await detail.getByRole('button', { name: 'Recursos' }).click();
-  await expect(detail).toContainText('Resumo de Recursos por condição');
+  await detail.getByRole('button', { name: 'Máquinas' }).click();
+  await expect(detail).toContainText('Resumo de máquinas por condição');
   await expect(detail).toContainText('Requer atenção');
   await expect(detail).toContainText('DC03');
   await expect(detail).toContainText('DC05');
@@ -58,7 +58,7 @@ test('completes the governed WF-001 interaction narrative', async ({ page }) => 
 
   await page.getByRole('button', { name: /Lote 266, Material B, 100 peças/ }).click();
   const materialBDetail = page.getByRole('dialog', { name: 'Lote 266' });
-  await materialBDetail.getByRole('button', { name: 'Recursos' }).click();
+  await materialBDetail.getByRole('button', { name: 'Máquinas' }).click();
   await expect(materialBDetail).toContainText('DC02');
   await expect(materialBDetail).toContainText('DC05');
   await expect(materialBDetail.getByText('DC03', { exact: true }).first()).toBeVisible();
@@ -136,7 +136,7 @@ test('honors reduced-motion preferences', async ({ page }) => {
 
 test('uses the sidebar as an overlay drawer on a small viewport', async ({ page }) => {
   await page.setViewportSize({ width: 720, height: 800 });
-  const sidebar = page.getByRole('complementary', { name: 'Operational Workspace' });
+  const sidebar = page.getByRole('complementary', { name: 'Painel Operacional' });
   const toggle = page.locator('button[aria-controls="operational-workspace-sidebar"]');
   await expect(sidebar).toHaveCSS('position', 'fixed');
   await toggle.click();
@@ -228,7 +228,7 @@ test('shows canonical Resource conditions as a read-only overlay through Avaliar
   await expect(page.getByRole('region', { name: 'Máquina programada DC02' })).toHaveAttribute('data-resource-eligible', 'false');
   await page.getByRole('region', { name: 'Máquina programada DC01' }).locator('header').focus();
   await expect(page.getByRole('tooltip').first()).toContainText('Elegibilidade: Elegível');
-  await expect(page.getByRole('region', { name: 'Impacto conhecido por Recurso' })).toContainText('Setup existente conhecido');
+  await expect(page.getByRole('region', { name: 'Impacto conhecido por máquina' })).toContainText('Setup existente conhecido');
   await expect(page.getByText(/melhor máquina|ótima escolha/i)).toHaveCount(0);
   await expect(page.locator('[data-lot-id]')).toHaveCount(originalLotCount);
   await expect(page.getByTestId('scheduled-setup')).toHaveCount(5);
@@ -299,7 +299,7 @@ test('simulates a vertical Resource move with fixed lanes, comparison, undo and 
   expect(await laneOrder()).toEqual(fixedOrder);
   await page.locator('[data-lot-id="lot-255"]').click();
   await simulation.getByRole('button', { name: /DC03/ }).click();
-  await expect(page.getByRole('region', { name: /Cobertura do buffer/ })).toContainText('RISCO PARA META DO BUFFER');
+  await expect(page.getByRole('region', { name: /Cobertura para sustentar a produção/ })).toContainText('Risco para a meta de cobertura');
   expect(await laneOrder()).toEqual(fixedOrder);
   await simulation.getByRole('button', { name: 'Encerrar avaliação' }).click();
   await expect(simulation).toHaveCount(0);
@@ -342,7 +342,7 @@ test('captures Avaliar cenário candidates: conditions, buffer restore and impac
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole('button', { name: /Avaliar cenário/ }).click();
   await page.locator('[data-lot-id="lot-257"]').click();
-  await expect(page.getByRole('region', { name: 'Impacto conhecido por Recurso' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Impacto conhecido por máquina' })).toBeVisible();
   await expect(page).toHaveScreenshot('WF-001-FIXED-RESOURCE-CONDITION-VIEW-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
   await page.getByRole('button', { name: 'Encerrar avaliação' }).click();
   await expect(page).toHaveScreenshot('WF-001-BUFFER-DECISION-WORKSPACE-CANDIDATE.png', { fullPage: true, animations: 'disabled' });

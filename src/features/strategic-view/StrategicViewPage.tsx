@@ -29,8 +29,9 @@ const overallLabel: Record<OverallStatus, string> = { SAUDAVEL: 'SAUDÁVEL', ATE
 const overallIcon: Record<OverallStatus, string> = { SAUDAVEL: '✓', ATENCAO: '△', RISCO: '⚠' };
 const overallTone: Record<OverallStatus, 'positive' | 'attention' | 'attentionStrong'> = { SAUDAVEL: 'positive', ATENCAO: 'attention', RISCO: 'attentionStrong' };
 
-const downstreamLabel: Record<DownstreamAreaStatus, string> = { PROTECTED: 'Protegida', ATTENTION: 'Atenção', RISK: 'Risco', UNKNOWN: 'Sem dados' };
+const downstreamLabel: Record<DownstreamAreaStatus, string> = { PROTECTED: 'Sem risco', ATTENTION: 'Atenção', RISK: 'Risco', UNKNOWN: 'Sem dados' };
 const downstreamTone: Record<DownstreamAreaStatus, 'positive' | 'attention' | 'neutral'> = { PROTECTED: 'positive', ATTENTION: 'attention', RISK: 'attention', UNKNOWN: 'neutral' };
+const downstreamIcon: Record<DownstreamAreaStatus, string> = { PROTECTED: '✓', ATTENTION: '△', RISK: '⚠', UNKNOWN: '?' };
 
 /**
  * Deterministic, page-local aggregation over already-governed facts (Lot
@@ -96,7 +97,7 @@ export function StrategicViewPage() {
     ? (downstream.status !== 'PROTECTED' ? 'Usinagem em atenção de cobertura' : `${healthCounts.AT_RISK + healthCounts.STARTED_LATE} máquina(s) em risco de atraso`)
     : 'Nenhum desvio relevante identificado';
 
-  return <OperationalWorkspace perspective="STRATEGIC" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Visão Estratégica</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Cockpit demonstrativo" tip="Cockpit demonstrativo · BUSINESS VALIDATION REQUIRED" /></div>}>
+  return <OperationalWorkspace perspective="STRATEGIC" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Visão Estratégica</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Cockpit demonstrativo" tip="Cockpit demonstrativo · requer validação de negócio" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero} aria-labelledby="strategic-title">
         <span className={styles.eyebrow}>Fundição DC · {currentShift.shiftName.toUpperCase()} · {formatTime(currentTime)}</span>
@@ -144,7 +145,7 @@ export function StrategicViewPage() {
         {priorities.length ? <ol>{priorities.map(({ resourceId, health, lot }) => <li key={resourceId}>
           <span aria-hidden="true">{lotHealthIcon[health.status]}</span>
           <div><strong>{resourceId} · Lote {lot.lotNumber}</strong><span>{lotHealthLabel[health.status]}</span></div>
-          <a href={withBase('/demo/fundicao-dc/production-execution')}>Ver →</a>
+          <a href={withBase('/demo/fundicao-dc/production-execution')}>Ver {resourceId} →</a>
         </li>)}</ol> : <p>Nenhuma prioridade identificada nos fatos atuais.</p>}
       </section>
 
@@ -173,14 +174,15 @@ export function StrategicViewPage() {
           <a href={withBase('/demo/fundicao-dc/production-quality')}>Ver Qualidade →</a>
         </article>
 
-        <article aria-label="Fluxo a jusante · Usinagem">
-          <h3>Fluxo a jusante · Usinagem</h3>
+        <article aria-label="Risco para a próxima etapa · Usinagem">
+          <h3>Risco para a próxima etapa · Usinagem</h3>
           <div className={styles.downstream} data-tone={downstreamTone[downstream.status]}>
-            <span>{downstreamLabel[downstream.status]}</span>
-            <Bar ratio={downstream.projectedCoverageHours / downstream.targetCoverageHours} tone={downstreamTone[downstream.status] === 'positive' ? 'positive' : 'attention'} label={`Cobertura projetada ${downstream.projectedCoverageHours}h de meta ${downstream.targetCoverageHours}h`} />
-            <small>Atual {downstream.currentCoverageHours}h · Meta {downstream.targetCoverageHours}h · Material {downstream.criticalMaterial}</small>
+            <span className={styles.downstreamStatus}><span aria-hidden="true">{downstreamIcon[downstream.status]}</span> {downstreamLabel[downstream.status]}</span>
+            <Bar ratio={downstream.projectedCoverageHours / downstream.targetCoverageHours} tone={downstreamTone[downstream.status] === 'positive' ? 'positive' : 'attention'} label={`Cobertura projetada ${downstream.projectedCoverageHours}h de referência ${downstream.targetCoverageHours}h`} />
+            <small>{downstream.currentCoverageHours}h de cobertura / referência {downstream.targetCoverageHours}h · Projetada {downstream.projectedCoverageHours}h</small>
+            <small>Material crítico: {downstream.criticalMaterial}</small>
           </div>
-          {criticalMold ? <small className={styles.moldRisk}><span aria-hidden="true">⚠</span> Molde {criticalMold.code} ({criticalMold.resourceId}) · {Math.round(criticalMold.lifeUsedRatio * 100)}% da vida útil</small> : null}
+          {criticalMold ? <small className={styles.moldRisk}><span aria-hidden="true">△</span> Molde {criticalMold.code} ({criticalMold.resourceId}) próximo da manutenção · {Math.round(criticalMold.lifeUsedRatio * 100)}% da vida útil</small> : null}
           <a href={withBase('/demo/fundicao-dc/production-monitoring')}>Ver Acompanhamento →</a>
         </article>
       </section>

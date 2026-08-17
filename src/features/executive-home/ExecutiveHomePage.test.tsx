@@ -14,7 +14,7 @@ test('presents the complete first wave without fake future navigation', () => {
   expect(screen.getAllByLabelText(/^0[1-9]|^1[0-4]/)).toHaveLength(14);
   expect(screen.getByLabelText(/01 Receber Planejamento.*Materializado/)).toHaveAttribute('href', '/demo/fundicao-dc/production-scheduling');
   expect(screen.getByLabelText(/05 Executar Ordens.*Materializado/)).toHaveAttribute('href', '/demo/fundicao-dc/production-execution');
-  expect(screen.getByLabelText(/06 Acompanhar Status.*Materializado/).tagName).toBe('A');
+  expect(screen.getByLabelText(/06 Acompanhar Situação.*Materializado/).tagName).toBe('A');
 });
 
 test('shows the live OEE demonstrativo reusing the same projection as the OEE perspective, and a reset action', async () => {
@@ -25,7 +25,7 @@ test('shows the live OEE demonstrativo reusing the same projection as the OEE pe
   expect(oeeTile).toHaveTextContent('Disponibilidade 89%');
   expect(oeeTile).toHaveTextContent('Desempenho 86%');
   expect(oeeTile).toHaveTextContent('Qualidade 91%');
-  expect(oeeTile).toHaveTextContent('Principal impacto: Disponibilidade');
+  expect(oeeTile).toHaveTextContent('Maior perda: Disponibilidade');
   expect(screen.getByText(/Estamos protegendo a cadeia para atender a necessidade da Montagem hoje\?/)).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Reiniciar demonstração' }));
   expect(screen.getByLabelText('OEE demonstrativo da Fundição DC')).toHaveTextContent('OEE 70%');
@@ -49,14 +49,14 @@ test('shows downstream Usinagem health and the ranked action-now list, without a
 test('reveals capability relationships for each executive question', async () => {
   const user = userEvent.setup();
   renderWithFoundation(<ExecutiveHomePage />);
-  const detail = screen.getByRole('complementary', { name: 'Capabilities relacionadas à pergunta selecionada' });
+  const detail = screen.getByRole('complementary', { name: 'Capacidades relacionadas à pergunta selecionada' });
   expect(detail).toHaveTextContent('O que foi planejado?');
   await user.click(screen.getByRole('button', { name: /Estou aderente ao plano/ }));
   expect(detail).toHaveTextContent('10 Comparar Planejado × Executado');
   expect(detail).toHaveTextContent('11 Identificar Desvios Operacionais');
   expect(detail).toHaveTextContent('12 Monitorar Produção em Tempo Real');
   await user.tab();
-  expect(within(detail).getByText('Capabilities que contribuem:')).toBeInTheDocument();
+  expect(within(detail).getByText('Capacidades que contribuem:')).toBeInTheDocument();
 });
 
 test('explains the OEE chain and points to the now-materialized OEE perspective', () => {

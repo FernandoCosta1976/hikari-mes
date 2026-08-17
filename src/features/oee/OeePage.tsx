@@ -54,15 +54,15 @@ function FocusDialog({ focus, rows, currentTime, onClose }: { focus: Focus; rows
   if (focus.kind === 'DIMENSION') {
     const title = dimensionLabel[focus.dimension];
     return createPortal(<div className={styles.modalLayer}><button className={styles.backdrop} aria-label="Fechar contexto" onClick={onClose} /><section role="dialog" aria-modal="true" aria-labelledby="oee-dimension-title" className={styles.modal}>
-      <header><div><small>OEE · {title.toUpperCase()} · {focus.scopeLabel}</small><h2 id="oee-dimension-title">{title} por Recurso</h2></div><Button ref={close} aria-label="Fechar contexto de OEE" onClick={onClose}>×</Button></header>
-      {focus.rows.length === 0 ? <p>Nenhum Recurso com fatos neste recorte.</p> : <div className={styles.breakdown}>{focus.rows.map((row) => <div key={row.resourceId} className={styles.breakdownRow}>
+      <header><div><small>OEE · {title.toUpperCase()} · {focus.scopeLabel}</small><h2 id="oee-dimension-title">{title} por máquina</h2></div><Button ref={close} aria-label="Fechar contexto de OEE" onClick={onClose}>×</Button></header>
+      {focus.rows.length === 0 ? <p>Nenhuma máquina com fatos neste recorte.</p> : <div className={styles.breakdown}>{focus.rows.map((row) => <div key={row.resourceId} className={styles.breakdownRow}>
         <strong>{row.resourceId}</strong>
         {focus.dimension === 'AVAILABILITY' ? <><span>Planejado {row.plannedTimeMinutes ?? '—'} min</span><span>Tempo em produção {row.runTimeMinutes ?? '—'} min</span><span>Tempo parado {row.plannedTimeMinutes !== null && row.runTimeMinutes !== null ? `${row.plannedTimeMinutes - row.runTimeMinutes} min` : '—'}</span></> : null}
         {focus.dimension === 'PERFORMANCE' ? <><span>Ciclo padrão {row.idealCycleTimeSeconds ?? '—'}s</span><span>Produzido {row.producedQuantity}</span><span>Tempo em produção {row.runTimeMinutes ?? '—'} min</span></> : null}
         {focus.dimension === 'QUALITY' ? <><span>Produzido {row.producedQuantity}</span><span>Boas {row.goodQuantity ?? '—'}</span></> : null}
         <b>{pct(focus.dimension === 'AVAILABILITY' ? row.availability : focus.dimension === 'PERFORMANCE' ? row.performance : row.quality)}</b>
       </div>)}</div>}
-      <small>Fórmula demonstrativa · BUSINESS VALIDATION REQUIRED</small>
+      <small>Fórmula demonstrativa · requer validação de negócio</small>
     </section></div>, document.body);
   }
 
@@ -100,10 +100,10 @@ export function OeePage() {
   const { rows, mainImpact: dayMainImpact } = day;
   const shiftMainImpactRow = currentShift.mainImpact ? currentShift.rows.find((row) => row.resourceId === currentShift.mainImpact!.resourceId) : undefined;
 
-  return <OperationalWorkspace perspective="OEE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>OEE</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Fórmula demonstrativa" tip="Fórmula demonstrativa · BUSINESS VALIDATION REQUIRED" /></div>}>
+  return <OperationalWorkspace perspective="OEE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>OEE</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Fórmula demonstrativa" tip="Fórmula demonstrativa · requer validação de negócio" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
-        <div><span>Capability 09 · OEE</span><h1>Como estamos performando e por quê?</h1></div>
+        <div><span>Capacidade 09 · OEE</span><h1>Como estamos performando e por quê?</h1></div>
         <aside><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} tip="Horário de referência do cenário · passado, agora e futuro" className={styles.currentTimeTip} /></aside>
       </header>
 
@@ -117,17 +117,17 @@ export function OeePage() {
             <button className={styles.dimTile} onClick={() => setFocus({ kind: 'DIMENSION', dimension: 'QUALITY', rows: currentShift.rows, scopeLabel: currentShift.shiftName.toUpperCase() })}><span className={styles.btnHead}><span aria-hidden="true">{dimensionIcon.QUALITY}</span>Qualidade</span><strong>{pct(currentShift.areaQuality)}</strong></button>
           </div>
           <div className={styles.mainImpact}>
-            {currentShift.mainImpact && shiftMainImpactRow ? <><span>Principal impacto</span><strong>{dimensionLabel[currentShift.mainImpact.dimension]} é o maior fator de redução do OEE</strong><p>{shiftMainImpactRow.resourceId} · Lote {shiftMainImpactRow.lot.lotNumber} · {impactEvidence(shiftMainImpactRow, currentShift.mainImpact.dimension)}</p></> : <span>Nenhum impacto relevante identificado neste turno.</span>}
+            {currentShift.mainImpact && shiftMainImpactRow ? <><span>Maior perda do turno</span><strong>{dimensionLabel[currentShift.mainImpact.dimension]} é o maior fator de redução do OEE</strong><p>{shiftMainImpactRow.resourceId} · Lote {shiftMainImpactRow.lot.lotNumber} · {impactEvidence(shiftMainImpactRow, currentShift.mainImpact.dimension)}</p></> : <span>Nenhuma perda relevante identificada neste turno.</span>}
           </div>
         </div>
-        <div className={styles.dayTile}><span>Acumulado do dia</span><strong>{pct(day.areaOee)}</strong><small>A {pct(day.areaAvailability)} · P {pct(day.areaPerformance)} · Q {pct(day.areaQuality)}</small><em>{dayMainImpact ? `Principal fator: ${dimensionLabel[dayMainImpact.dimension]}` : 'Sem impacto relevante'}</em></div>
+        <div className={styles.dayTile}><span>Acumulado do dia</span><strong>{pct(day.areaOee)}</strong><small>A {pct(day.areaAvailability)} · P {pct(day.areaPerformance)} · Q {pct(day.areaQuality)}</small><em>{dayMainImpact ? `Maior perda do dia: ${dimensionLabel[dayMainImpact.dimension]}` : 'Sem perda relevante'}</em></div>
       </section>
 
       <section className={styles.shiftHistory} aria-label="Turnos concluídos hoje">
         <span>Turnos concluídos hoje</span>
         <div>{completedShifts.map((shift) => { const produced = shift.rows.reduce((sum, row) => sum + row.producedQuantity, 0); return <div key={shift.shiftId} className={styles.shiftHistoryRow}>
           <b>{shift.shiftName}</b><span>{produced} peças</span>
-          {shift.areaOee === null ? <em>OEE N/A · sem execução registrada</em> : <em>OEE {pct(shift.areaOee)}{shift.mainImpact ? ` · Principal impacto: ${dimensionLabel[shift.mainImpact.dimension]}` : ''}</em>}
+          {shift.areaOee === null ? <em>OEE N/A · sem execução registrada</em> : <em>OEE {pct(shift.areaOee)}{shift.mainImpact ? ` · Maior perda: ${dimensionLabel[shift.mainImpact.dimension]}` : ''}</em>}
         </div>; })}</div>
       </section>
 

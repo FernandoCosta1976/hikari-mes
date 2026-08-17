@@ -47,7 +47,7 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
   const [reprogramWindow, setReprogramWindow] = useState<ReprogramWindow>('ATUAL');
   const [reprogramTarget, setReprogramTarget] = useState<FoundryResourceId | null>(null);
 
-  const sidebar = <div className={styles.sidebar}><strong>Workspace da Ordem</strong><a href={withBase('/demo/fundicao-dc/production-scheduling')}>← Plano Hora-Hora</a></div>;
+  const sidebar = <div className={styles.sidebar}><strong>Gestão da Ordem</strong><a href={withBase('/demo/fundicao-dc/production-scheduling')}>← Plano Hora-Hora</a></div>;
 
   if (!definition || !scenario) return <p>Preparando ordem demonstrativa…</p>;
   const lot = definition.lots.find((item) => item.id === lotId);
@@ -91,7 +91,7 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
     <div className={styles.page}>
       <nav className={styles.breadcrumb} aria-label="Origem"><a href={withBase('/demo/fundicao-dc/production-scheduling')}>Plano Hora-Hora</a><span>/</span><strong>Ordem</strong></nav>
       <header className={styles.hero}>
-        <div className={styles.heroTitle}><span className={styles.overline}>Workspace da Ordem</span><h1>Ordem / Lote {lot.lotNumber}</h1><p>O que precisa acontecer para esta Ordem avançar?</p></div>
+        <div className={styles.heroTitle}><span className={styles.overline}>Gestão da Ordem</span><h1>Ordem / Lote {lot.lotNumber}</h1><p>O que precisa acontecer para esta Ordem avançar?</p></div>
         <dl className={styles.heroFacts}>
           <div><dt>Material</dt><dd>{material.name}</dd></div>
           <div><dt>Quantidade</dt><dd>{lot.quantity} peças</dd></div>
@@ -146,7 +146,7 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
             return <div className={styles.reprogramPreview}>
               <div className={styles.beforeAfter}><div><small>ANTES</small><strong>{operationalResourceId} · {formatTime(lot.scheduledStart)}</strong></div><div><small>DEPOIS</small><strong>{reprogramTarget} · {formatTime(lot.scheduledStart)}</strong></div></div>
               <ul className={styles.impactList}>
-                <li>✓ Recurso elegível</li>
+                <li>✓ Máquina elegível</li>
                 <li>✓ Material compatível</li>
                 {impact.conflictLotIds.length || impact.conflictSetupIds.length ? <li>△ Impacto no próximo Lote da máquina de destino</li> : <li>✓ Janela sem conflito conhecido</li>}
                 {impact.netSetupDeltaMinutes !== 0 ? <li>△ Impacto de Setup: {impact.netSetupDeltaMinutes > 0 ? '+' : ''}{impact.netSetupDeltaMinutes} min</li> : <li>✓ Sem novo Setup previsto</li>}

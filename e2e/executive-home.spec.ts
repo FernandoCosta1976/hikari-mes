@@ -17,7 +17,7 @@ test('supports question disclosure, keyboard and accessibility with no red', asy
   const question = page.getByRole('button', { name: /Quanto perdi/ });
   await question.focus();
   await question.press('Enter');
-  await expect(page.getByRole('complementary', { name: 'Capabilities relacionadas à pergunta selecionada' })).toContainText('Quanto perdi?');
+  await expect(page.getByRole('complementary', { name: 'Capacidades relacionadas à pergunta selecionada' })).toContainText('Quanto perdi?');
   const violations = await new AxeBuilder({ page }).analyze();
   expect(violations.violations).toEqual([]);
   const red = await page.locator('*').evaluateAll((elements) => elements.filter((element) => {

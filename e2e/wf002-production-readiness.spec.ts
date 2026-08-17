@@ -27,7 +27,7 @@ test('hands off the selected Lot from WF-001 and restores the complete Plan cont
 
 test('keeps one Operational Workspace and one canonical Readiness meaning across perspectives', async ({ page }) => {
   await page.goto('/demo/fundicao-dc/production-scheduling');
-  await expect(page.getByRole('complementary', { name: 'Operational Workspace' })).toHaveCount(1);
+  await expect(page.getByRole('complementary', { name: 'Painel Operacional' })).toHaveCount(1);
   await expect(page.getByLabel('Contexto da aplicação')).toContainText('Fundição DC');
   const lot = page.getByRole('button', { name: /Lote 267, Material D, 70 peças.*condição impeditiva/i });
   await expect(lot).toBeVisible();
@@ -35,7 +35,7 @@ test('keeps one Operational Workspace and one canonical Readiness meaning across
   const lotContext = page.getByRole('dialog', { name: 'Lote 267' });
   await expect(lotContext).toContainText('Condição impeditiva');
   await lotContext.getByRole('button', { name: 'Analisar preparação' }).click();
-  await expect(page.getByRole('complementary', { name: 'Operational Workspace' })).toHaveCount(1);
+  await expect(page.getByRole('complementary', { name: 'Painel Operacional' })).toHaveCount(1);
   await expect(page.getByLabel('Contexto da aplicação')).toContainText('Fundição DC');
   await expect(page.getByRole('region', { name: 'Contexto do Lote 267' })).toBeVisible();
   await expect(page.getByText('Condição impeditiva', { exact: true }).first()).toBeVisible();
@@ -67,7 +67,7 @@ test('supports exception-first navigation and progressive Resource detail withou
   await page.getByText('Prontos (11)').click();
   await page.getByRole('button', { name: /Lote 252/ }).click();
   await expect(page.locator('[data-resource-id="DC02"]').first()).toContainText('Não elegível');
-  await page.getByText('Detalhes de Readiness por máquina').click();
+  await page.getByText('Detalhes de preparação por máquina').click();
   await page.getByRole('button', { name: 'Ver condições de DC03' }).click();
   await expect(page.getByRole('dialog', { name: /DC03 · Lote 252/ })).toContainText('Setup necessário; duração não calculada.');
   await expect(page.getByRole('button', { name: /Atribuir|Despachar|Liberar|Iniciar/ })).toHaveCount(0);

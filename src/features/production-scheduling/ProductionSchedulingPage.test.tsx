@@ -105,7 +105,7 @@ test('shows eligible alternatives progressively and keeps scheduled Resource dis
   renderWithFoundation(<ProductionSchedulingPage />);
   await user.click(screen.getByRole('button', { name: /Lote 251, Material A, 100 peças/ }));
   let detail = screen.getByRole('dialog', { name: 'Lote 251' });
-  await user.click(within(detail).getByRole('button', { name: 'Recursos' }));
+  await user.click(within(detail).getByRole('button', { name: 'Máquinas' }));
   expect(detail).toHaveTextContent('Com condição 1DC01Programada');
   expect(detail).toHaveTextContent('Requer atenção 2DC03');
   expect(detail).toHaveTextContent('DC05Informação insuficiente');
@@ -116,7 +116,7 @@ test('shows eligible alternatives progressively and keeps scheduled Resource dis
 
   await user.click(screen.getByRole('button', { name: /Lote 253, Material B, 100 peças/ }));
   detail = screen.getByRole('dialog', { name: 'Lote 253' });
-  await user.click(within(detail).getByRole('button', { name: 'Recursos' }));
+  await user.click(within(detail).getByRole('button', { name: 'Máquinas' }));
   expect(detail).toHaveTextContent('Requer atenção 3DC02Programada');
   expect(detail).toHaveTextContent('DC05');
   expect(detail).not.toHaveTextContent('Máquinas disponíveis');
@@ -153,7 +153,7 @@ test('evaluates a scenario end to end through the single Avaliar cenário entry 
   expect(screen.getByRole('region', { name: 'Máquina programada DC01' })).toHaveAttribute('data-resource-eligible', 'true');
   expect(screen.getByRole('region', { name: 'Máquina programada DC05' })).toHaveAttribute('data-resource-condition', 'UNKNOWN');
   expect(screen.getByRole('region', { name: 'Máquina programada DC02' })).toHaveAttribute('data-resource-eligible', 'false');
-  expect(screen.getByRole('region', { name: 'Impacto conhecido por Recurso' })).toHaveTextContent('Setup existente conhecido');
+  expect(screen.getByRole('region', { name: 'Impacto conhecido por máquina' })).toHaveTextContent('Setup existente conhecido');
   expect(container.querySelectorAll('[data-lot-id]')).toHaveLength(originalLotCount);
 
   const simulation = screen.getByRole('region', { name: 'Avaliação de cenário' });
@@ -262,7 +262,7 @@ test('renders hierarchical filters and collapses the sidebar with Escape', async
   const user = userEvent.setup();
   renderWithFoundation(<ProductionSchedulingPage />);
   expect(screen.getByLabelText('Destino')).toBeInTheDocument();
-  const sidebar = screen.getByRole('complementary', { name: 'Operational Workspace' });
+  const sidebar = screen.getByRole('complementary', { name: 'Painel Operacional' });
   expect(sidebar.parentElement).toHaveAttribute('data-sidebar-expanded', 'true');
   await user.keyboard('{Escape}');
   expect(sidebar.parentElement).toHaveAttribute('data-sidebar-expanded', 'false');

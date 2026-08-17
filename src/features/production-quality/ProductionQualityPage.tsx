@@ -47,8 +47,8 @@ function QualityDialog({ row, onClose }: { row: Row; onClose: () => void }) {
         <div><dt>Tempo em produção conhecido</dt><dd>{foundation.runTimeMinutes !== null ? `${foundation.runTimeMinutes} min` : 'Não conhecido'}</dd></div>
       </dl>
     </> : <p>Lote ainda não produzido — nenhuma confirmação de qualidade demonstrativa disponível.</p>}
-    <section aria-label="Desempenho"><h3>Desempenho</h3><p>{foundation.status === 'PREPARED' ? 'Desempenho preparado para cálculo (CAP-09)' : foundation.status === 'NOT_STARTED' ? 'Recurso ainda não iniciou produção' : 'Fatos insuficientes para preparar Desempenho'}</p></section>
-    <small>Confirmado por {confirmation?.confirmedBy ?? '—'} · {confirmation ? formatTime(confirmation.confirmedAt) : '—'} · dados demonstrativos, BUSINESS VALIDATION REQUIRED</small>
+    <section aria-label="Desempenho"><h3>Desempenho</h3><p>{foundation.status === 'PREPARED' ? 'Desempenho preparado para cálculo (CAP-09)' : foundation.status === 'NOT_STARTED' ? 'Máquina ainda não iniciou produção' : 'Fatos insuficientes para preparar Desempenho'}</p></section>
+    <small>Confirmado por {confirmation?.confirmedBy ?? '—'} · {confirmation ? formatTime(confirmation.confirmedAt) : '—'} · dados demonstrativos, requer validação de negócio</small>
   </section></div>, document.body);
 }
 
@@ -68,10 +68,10 @@ export function ProductionQualityPage() {
   const completedShifts = shifts.filter((shift) => shift.status === 'COMPLETED');
   const invariantsHold = day.rows.every((row) => !row.confirmation || isValidQualityConfirmation(row.confirmation));
 
-  return <OperationalWorkspace perspective="QUALITY" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Qualidade &amp; Desempenho</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Confirmações demonstrativas" tip={`Confirmações demonstrativas · BUSINESS VALIDATION REQUIRED${!invariantsHold ? ' · INVARIANTE VIOLADA' : ''}`} /></div>}>
+  return <OperationalWorkspace perspective="QUALITY" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Qualidade &amp; Desempenho</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Confirmações demonstrativas" tip={`Confirmações demonstrativas · requer validação de negócio${!invariantsHold ? ' · INVARIANTE VIOLADA' : ''}`} /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
-        <div><span>Capability 08 · Core + Essencial</span><h1>Quanto produzimos e quanto foi bom?</h1></div>
+        <div><span>Capacidade 08 · Núcleo + Essencial</span><h1>Quanto produzimos e quanto foi bom?</h1></div>
         <aside><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} tip="Horário de referência do cenário · passado, agora e futuro" className={styles.currentTimeTip} /></aside>
       </header>
 

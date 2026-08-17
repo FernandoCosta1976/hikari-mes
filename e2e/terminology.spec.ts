@@ -10,6 +10,10 @@ import { expect, test } from './fixtures';
 const forbiddenTerms = [
   'Current Time', 'Scheduled Start', 'Scheduled Finish', 'Actual Start', 'Actual Finish',
   'Scheduled', 'Actual', 'Performance', 'Quality', 'Resource', 'Produced', 'Good', 'Reject', 'Rework', 'Run Time',
+  'Expected Quantity', 'Resource Health', 'Lot Health', 'Downstream', 'Upstream', 'Unknown',
+  'On Track', 'At Risk', 'Late Not Started', 'Behind Plan', 'Ahead of Plan', 'Started Late',
+  'Completed', 'Released', 'Blocked', 'Workspace', 'Status', 'Baseline', 'Fixture', 'TBD',
+  'Health', 'Source', 'Capability', 'Capabilities',
 ];
 
 const routes = [
@@ -22,7 +26,7 @@ const routes = [
   ['Aderência', '/demo/fundicao-dc/production-adherence'],
   ['Qualidade', '/demo/fundicao-dc/production-quality'],
   ['OEE', '/demo/fundicao-dc/oee'],
-  ['Workspace da Ordem', '/demo/fundicao-dc/orders/lot-270'],
+  ['Gestão da Ordem', '/demo/fundicao-dc/orders/lot-270'],
 ] as const;
 
 for (const [name, path] of routes) {

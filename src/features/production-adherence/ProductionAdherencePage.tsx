@@ -67,10 +67,10 @@ export function ProductionAdherencePage() {
   const mainException = shiftExceptions[0];
   const dayException = rankedExceptions(day.rows)[0];
 
-  return <OperationalWorkspace perspective="ADHERENCE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Aderência</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Classificação demonstrativa" tip="Classificação demonstrativa · BUSINESS VALIDATION REQUIRED" /></div>}>
+  return <OperationalWorkspace perspective="ADHERENCE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Aderência</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Classificação demonstrativa" tip="Classificação demonstrativa · requer validação de negócio" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
-        <div><span>Capability 07 · Core + Essencial</span><h1>Estamos executando conforme o planejado?</h1></div>
+        <div><span>Capacidade 07 · Núcleo + Essencial</span><h1>Estamos executando conforme o planejado?</h1></div>
         <aside><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} tip="Horário de referência do cenário · passado, agora e futuro" className={styles.currentTimeTip} /></aside>
       </header>
 
@@ -110,7 +110,7 @@ export function ProductionAdherencePage() {
       <details className={styles.disclosure}>
         <summary>Planejado × Realizado <span>Ver linha do tempo</span></summary>
         <div className={monitoringStyles.timeline} data-testid="adherence-timeline">
-          <div className={monitoringStyles.axisCorner}>Recurso</div>
+          <div className={monitoringStyles.axisCorner}>Máquina</div>
           <div className={monitoringStyles.axis}>{[9,11,13,15,17,19,21].map((hour) => <span key={hour} style={{ left: `${((hour - 9) / 13) * 100}%` }}>{String(hour).padStart(2,'0')}:00</span>)}</div>
           <div className={monitoringStyles.timeLine} style={{ left: `calc(8rem + (100% - 8rem) * ${currentPosition / 100})` }}><span>{formatTime(currentTime)}</span></div>
           <div className={monitoringStyles.lanes}>{day.rows.map((row) => { const { resourceId, lot, execution, classification, deviationMinutes } = row; const actualFinish = execution.actualFinish ?? (execution.status === 'NOT_STARTED' ? execution.scheduledStart : currentTime); return <section className={monitoringStyles.lane} key={resourceId} data-state={execution.status}>

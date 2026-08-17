@@ -5,7 +5,7 @@ import styles from '../ProductionSchedulingPage.module.css';
 export function BufferCoverageSummary({ positions, materials }: { positions: readonly BufferPosition[]; materials: readonly Material[] }) {
   return (
     <details className={styles.contextSummary} id="buffer-coverage">
-      <summary className={styles.disclosureSummary}><span><span className={styles.step}>5</span><strong>Cobertura do buffer</strong><small>Atual → Após o plano</small></span><b>Consultar cobertura</b></summary>
+      <summary className={styles.disclosureSummary}><span><span className={styles.step}>5</span><strong>Cobertura de material</strong><small>Atual → Após o plano</small></span><b>Consultar cobertura</b></summary>
       <div className={styles.coverageRows}>
         {positions.map((position) => <div key={position.materialId}>
           <strong>{materials.find((item) => item.id === position.materialId)?.name}</strong>
