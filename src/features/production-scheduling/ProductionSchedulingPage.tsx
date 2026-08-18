@@ -5,7 +5,7 @@ import { useScenarioPath } from '../../app/routing/useScenarioPath';
 import { useWorkspaceSidebar } from '../../app/providers/WorkspaceSidebarContext';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcQualitySummary } from '../../demo/adapters/qualitySummaryAdapter';
-import { selectMaterialResourceEligibilities, selectOrganizationsByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionScheduling, selectScenarioDefinition, useScenarioStore, type ScheduleView, type Wf001ScenarioId } from '../../demo/scenario-engine/scenarioStore';
+import { selectMaterialResourceEligibilities, selectOrganizationsByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore, type ScheduleView, type Wf001ScenarioId } from '../../demo/scenario-engine/scenarioStore';
 import type { DemandDestination, Lot } from '../../domain/production-scheduling/models';
 import { simulateSequenceMove, type SequenceMoveResult } from '../../domain/production-scheduling/sequencing';
 import { FOUNDRY_RESOURCE_IDS, type FoundryResourceId } from '../../domain/resource/models';
@@ -35,7 +35,8 @@ export function ProductionSchedulingPage() {
   const scenarioPath = useScenarioPath();
   const definition = useScenarioStore(selectProductionScheduling);
   const scenarioDefinition = useScenarioStore(selectScenarioDefinition);
-  const liveScenarioTime = useLiveScenarioTime(scenarioDefinition?.currentScenarioTime);
+  const sessionClock = useScenarioStore(selectSessionClock);
+  const liveScenarioTime = useLiveScenarioTime(sessionClock ?? scenarioDefinition?.currentScenarioTime);
   const materialResourceEligibilities = useScenarioStore(selectMaterialResourceEligibilities);
   const readinessAssessments = useScenarioStore(selectProductionReadiness);
   const executionsByLot = useScenarioStore(selectProductionExecutions);

@@ -46,17 +46,17 @@ test('a decision on Lote 270 survives reload and reaches every downstream perspe
   await page.getByRole('button', { name: 'Iniciar produção' }).click();
   await expect(page.getByRole('region', { name: 'Próxima decisão' })).toContainText('Em produção');
 
-  // 11. Execução must show Lote 270 under DC04, not the original Lote 268.
+  // 11. Execução must show Lote 270 under DC04, not the original Lote 268. Manual quantity entry is a
+  // Capability 06 (Registrar Produção) concern, out of scope for Capability 05 — produced quantity is no
+  // longer editable here, only the Resource reassignment fact is exercised.
   await page.goto('/demo/fundicao-dc-legacy/production-execution');
   const dc04Card = page.locator('article').filter({ has: page.getByText('DC04', { exact: true }) });
   await expect(dc04Card).toContainText('Lote atualLote 270');
-  await dc04Card.getByLabel(/Quantidade produzida na DC04/).fill('12');
 
-  // 12. Reload — execution facts (Resource, produced quantity) survive.
+  // 12. Reload — execution facts (Resource) survive.
   await page.reload();
   const dc04CardAfterReload = page.locator('article').filter({ has: page.getByText('DC04', { exact: true }) });
   await expect(dc04CardAfterReload).toContainText('Lote 270');
-  await expect(dc04CardAfterReload).toContainText('12');
 
   // 13. Acompanhamento is now a bounded demonstrative capability for the
   // canonical 2026-07-10/17:23 scenario (see the HIKARI 10/07 round) — it no

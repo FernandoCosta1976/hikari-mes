@@ -4,7 +4,7 @@ import type { ProductionExecutionRecord } from '../production-execution/models';
 import type { Lot } from '../production-scheduling/models';
 
 const baseLot: Lot = { id: 'lot-x', lotNumber: '1', materialId: 'm', quantity: 100, scheduledStart: '2026-07-10T10:00:00-03:00', scheduledFinish: '2026-07-10T11:10:00-03:00', workCenterId: 'wc', destination: 'ASSEMBLY', productionOrderId: 'po', scheduledResourceId: 'DC01', materialAttention: false, state: 'SCHEDULED' };
-const baseExecution: ProductionExecutionRecord = { lotId: 'lot-x', productionOrderId: 'po', resourceId: 'DC01', scheduleVersionId: 'v1', plannedQuantity: 100, producedQuantity: 0, scheduledStart: baseLot.scheduledStart, status: 'NOT_STARTED', pauses: [], demonstrative: true };
+const baseExecution: ProductionExecutionRecord = { lotId: 'lot-x', productionOrderId: 'po', resourceId: 'DC01', scheduleVersionId: 'v1', plannedQuantity: 100, producedQuantity: 0, scheduledStart: baseLot.scheduledStart, status: 'NOT_STARTED', pauses: [], transitions: [], demonstrative: true, dataOrigin: 'SOURCE_DERIVED_PLAN', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' };
 
 describe('requirementStatus (Scheduled State != Execution State != Requirement State)', () => {
   it('COMPLETED execution is always COMPLETED regardless of clock', () => {

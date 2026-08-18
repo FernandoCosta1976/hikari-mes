@@ -43,3 +43,10 @@
 @media(max-width:1100px){.kpiStrip{grid-template-columns:repeat(3,1fr)}.endOfDay dl{grid-template-columns:repeat(3,1fr)}.page{padding:.8rem}.wip{grid-template-columns:repeat(4,1fr)}.wip p{grid-column:1/-1}.hero h1{font-size:1.45rem}.feed>div{grid-template-columns:repeat(2,1fr)}.oeeChain{flex-wrap:wrap}.timeline{min-width:58rem;overflow:hidden}.live{overflow-x:auto}}
 @media(max-width:760px){.hero{align-items:flex-start;flex-direction:column}.hero aside{min-width:0;width:100%}.wip{grid-template-columns:repeat(2,1fr)}.feed>div{grid-template-columns:1fr}.modal dl{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+.contextGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:.45rem;margin:.5rem 0}
+.contextGrid div{background:#f4f7fb;padding:.5rem;border-radius:.3rem}
+.contextGrid dt{font-size:.62rem;color:#647089;text-transform:uppercase}
+.contextGrid dd{margin:.12rem 0;font-weight:700}
+.executionControl .sectionNote{margin:.3rem 0;font-size:.72rem;color:#4a5872}
+.executionActions,.pauseReasonChoices{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem}
+.pauseReasonChoices{align-items:center}

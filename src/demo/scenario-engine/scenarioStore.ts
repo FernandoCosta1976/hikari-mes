@@ -4,10 +4,24 @@ import { adoptOrganization as buildOrganization, type LotOrganization } from '..
 import type { ResourceReassignment } from '../../domain/production-scheduling/organization';
 import type { ScenarioDefinition } from '../../domain/scenario/ScenarioDefinition';
 import { assessDemonstrativeRelease, releaseDemonstratively, revokeRelease, type ProductionReleaseRecord, type RevocationReason } from '../../domain/production-release/models';
-import { completeExecution, pauseExecution, resumeExecution, startExecution, updateProducedQuantity, type DemonstrativePauseReason, type ProductionExecutionRecord } from '../../domain/production-execution/models';
+import { canCompleteExecution, completeExecution, pauseExecution, resumeExecution, startExecution, updateProducedQuantity, type DemonstrativePauseReason, type ProductionExecutionRecord } from '../../domain/production-execution/models';
 import { resolveDemonstrativeRelease } from '../adapters/releaseResolution';
+import { demonstrativeOperatorForResource } from '../fixtures/demonstrativeOperators';
 import { fundicaoDcProductionExecutionFixture } from '../fixtures/fundicaoDcProductionExecution';
 import { fundicaoDcSourceDerivedProductionExecutionFixture } from '../fixtures/fundicaoDcSourceDerivedProductionExecution';
+
+/**
+ * Session Operational Clock (Section 9) — every Capability 05 action reads
+ * and advances THIS instead of the wall clock or the Scenario's own fixed
+ * currentScenarioTime. Baseline is always the canonical Scenario Clock
+ * (2026-07-10T09:15 for fundicao-dc); Reset restores it exactly. Advancing
+ * only happens deterministically, in fixed steps, from explicit user actions
+ * — never from real elapsed time.
+ */
+const SESSION_CLOCK_STEP_MINUTES = 15;
+function advanceClock(iso: string, minutes: number): string {
+  return new Date(Date.parse(iso) + minutes * 60_000).toISOString();
+}
 
 /**
  * Persists only decision FACTS made during the demonstration (Preparação,
@@ -32,6 +46,7 @@ interface PersistedScenarioDecisions {
   preparationConfirmedByLotId: Record<string, boolean>;
   postponedLotIds: Record<string, { targetLabel: string; postponedAt: string }>;
   scenarioModified: boolean;
+  sessionClock: string | null;
 }
 
 function isPersistedScenarioDecisions(value: unknown): value is PersistedScenarioDecisions {
@@ -42,7 +57,8 @@ function isPersistedScenarioDecisions(value: unknown): value is PersistedScenari
     && typeof record.productionExecutions === 'object' && record.productionExecutions !== null
     && typeof record.organizationsByLotId === 'object' && record.organizationsByLotId !== null
     && typeof record.preparationConfirmedByLotId === 'object' && record.preparationConfirmedByLotId !== null
-    && typeof record.postponedLotIds === 'object' && record.postponedLotIds !== null;
+    && typeof record.postponedLotIds === 'object' && record.postponedLotIds !== null
+    && (record.sessionClock === null || typeof record.sessionClock === 'string');
 }
 
 function readPersistedScenarioDecisions(scenarioId: string): PersistedScenarioDecisions | null {
@@ -76,6 +92,7 @@ function writePersistedScenarioDecisions(state: ScenarioState): void {
     preparationConfirmedByLotId: state.preparationConfirmedByLotId,
     postponedLotIds: state.postponedLotIds,
     scenarioModified: state.scenarioModified,
+    sessionClock: state.sessionClock,
   };
   try {
     window.localStorage.setItem(scenarioStorageKey(state.definition.id), JSON.stringify(payload));
@@ -107,6 +124,8 @@ interface ScenarioState {
   preparationConfirmedByLotId: Readonly<Record<string, boolean>>;
   postponedLotIds: Readonly<Record<string, { targetLabel: string; postponedAt: string }>>;
   scenarioModified: boolean;
+  /** Section 9 — Session Operational Clock, null before any Scenario has loaded. */
+  sessionClock: string | null;
 }
 
 interface ScenarioActions {
@@ -156,12 +175,13 @@ const baseline = (definition: ScenarioDefinition | null, revision: number): Scen
     // Cada requirement do dataset canônico já tem seu próprio apontamento de execução (Section 14) — pré-liberar os
     // ainda NOT_STARTED apagaria a decisão de Liberação demonstrativa (Capability 04) que essas telas existem para
     // exercitar. O cenário legado mantém o comportamento anterior (todo apontamento pré-liberado).
-    productionReleases: persisted?.productionReleases ?? Object.fromEntries((definition?.id === 'fundicao-dc' ? executionSeed.filter((execution) => execution.status !== 'NOT_STARTED') : executionSeed).map((execution) => [execution.lotId, { lotId: execution.lotId, productionOrderId: execution.productionOrderId, resourceId: execution.resourceId, scheduleVersionId: execution.scheduleVersionId, readiness: 'READY', status: 'RELEASED', reason: 'Liberação demonstrativa anterior ao estado inicial da execução.', releasedAt: execution.actualStart ?? '2025-05-15T17:00:00-03:00', releasedBy: 'Supervisor da Fundição · demonstrativo', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }])),
+    productionReleases: persisted?.productionReleases ?? Object.fromEntries((definition?.id === 'fundicao-dc' ? executionSeed.filter((execution) => execution.status !== 'NOT_STARTED') : executionSeed).map((execution) => [execution.lotId, { lotId: execution.lotId, productionOrderId: execution.productionOrderId, resourceId: execution.resourceId, scheduleVersionId: execution.scheduleVersionId, readiness: 'READY', status: 'RELEASED', reason: 'Liberação demonstrativa anterior ao estado inicial da execução.', releasedAt: execution.actualStart ?? definition?.currentScenarioTime ?? '2025-05-15T17:00:00-03:00', releasedBy: 'Supervisor da Fundição · demonstrativo', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }])),
     productionExecutions: persisted?.productionExecutions ?? Object.fromEntries(executionSeed.map((record) => [record.lotId, record])),
     organizationsByLotId: persisted?.organizationsByLotId ?? {},
     preparationConfirmedByLotId: persisted?.preparationConfirmedByLotId ?? {},
     postponedLotIds: persisted?.postponedLotIds ?? {},
     scenarioModified: persisted?.scenarioModified ?? false,
+    sessionClock: persisted?.sessionClock ?? definition?.currentScenarioTime ?? null,
   };
 };
 
@@ -192,8 +212,11 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
   startLotExecution: (lotId) => set((state) => {
     const lot = state.productionScheduling?.lots.find((item) => item.id === lotId); if (!lot) return state;
     const resourceId = state.organizationsByLotId[lotId]?.operationalResourceId ?? lot.scheduledResourceId;
-    const current = state.productionExecutions[lotId] ?? { lotId, productionOrderId: lot.productionOrderId, resourceId, scheduleVersionId: state.activeScheduleVersionId, plannedQuantity: lot.quantity, producedQuantity: 0, scheduledStart: lot.scheduledStart, status: 'NOT_STARTED', pauses: [], demonstrative: true } as ProductionExecutionRecord;
-    const next = startExecution(current, state.productionReleases[lotId]?.status === 'RELEASED', state.definition?.currentScenarioTime ?? new Date().toISOString());
+    const current = state.productionExecutions[lotId] ?? { lotId, productionOrderId: lot.productionOrderId, resourceId, scheduleVersionId: state.activeScheduleVersionId, plannedQuantity: lot.quantity, producedQuantity: 0, scheduledStart: lot.scheduledStart, status: 'NOT_STARTED', pauses: [], transitions: [], demonstrative: true, dataOrigin: 'DEMONSTRATIVE_EXECUTION', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' } as ProductionExecutionRecord;
+    const at = state.sessionClock ?? state.definition?.currentScenarioTime ?? new Date().toISOString();
+    const operator = demonstrativeOperatorForResource(resourceId);
+    const next = startExecution(current, state.productionReleases[lotId]?.status === 'RELEASED', at, operator.displayName, operator.operatorId, lot.scheduledResourceId);
+    if (next === current) return state;
     return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, scenarioModified: true };
   }),
   adoptOrganization: (impact, organizedBy) => set((state) => ({ organizationsByLotId: { ...state.organizationsByLotId, [impact.lotId]: buildOrganization(impact, state.definition?.currentScenarioTime ?? new Date().toISOString(), organizedBy) }, scenarioModified: true })),
@@ -211,10 +234,33 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
   }),
   confirmPreparation: (lotId) => set((state) => ({ preparationConfirmedByLotId: { ...state.preparationConfirmedByLotId, [lotId]: true }, scenarioModified: true })),
   postponeLot: (lotId, targetLabel) => set((state) => ({ postponedLotIds: { ...state.postponedLotIds, [lotId]: { targetLabel, postponedAt: state.definition?.currentScenarioTime ?? new Date().toISOString() } }, scenarioModified: true })),
-  pauseLotExecution: (lotId, reason) => set((state) => ({ productionExecutions: { ...state.productionExecutions, [lotId]: pauseExecution(state.productionExecutions[lotId], state.definition?.currentScenarioTime ?? new Date().toISOString(), reason) }, scenarioModified: true })),
-  resumeLotExecution: (lotId) => set((state) => ({ productionExecutions: { ...state.productionExecutions, [lotId]: resumeExecution(state.productionExecutions[lotId], state.definition?.currentScenarioTime ?? new Date().toISOString()) }, scenarioModified: true })),
+  pauseLotExecution: (lotId, reason) => set((state) => {
+    const existing = state.productionExecutions[lotId]; if (!existing) return state;
+    const at = advanceClock(state.sessionClock ?? state.definition?.currentScenarioTime ?? new Date().toISOString(), SESSION_CLOCK_STEP_MINUTES);
+    const operator = demonstrativeOperatorForResource(existing.resourceId);
+    const next = pauseExecution(existing, at, reason, operator.displayName);
+    if (next === existing) return state;
+    return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, sessionClock: at, scenarioModified: true };
+  }),
+  resumeLotExecution: (lotId) => set((state) => {
+    const existing = state.productionExecutions[lotId]; if (!existing) return state;
+    const at = advanceClock(state.sessionClock ?? state.definition?.currentScenarioTime ?? new Date().toISOString(), SESSION_CLOCK_STEP_MINUTES);
+    const operator = demonstrativeOperatorForResource(existing.resourceId);
+    const next = resumeExecution(existing, at, operator.displayName);
+    if (next === existing) return state;
+    return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, sessionClock: at, scenarioModified: true };
+  }),
   updateLotProducedQuantity: (lotId, quantity) => set((state) => ({ productionExecutions: { ...state.productionExecutions, [lotId]: updateProducedQuantity(state.productionExecutions[lotId], quantity) }, scenarioModified: true })),
-  completeLotExecution: (lotId) => set((state) => ({ productionExecutions: { ...state.productionExecutions, [lotId]: completeExecution(state.productionExecutions[lotId], state.definition?.currentScenarioTime ?? new Date().toISOString()) }, scenarioModified: true })),
+  completeLotExecution: (lotId) => set((state) => {
+    const existing = state.productionExecutions[lotId]; const lot = state.productionScheduling?.lots.find((item) => item.id === lotId);
+    if (!existing || !lot) return state;
+    const at = advanceClock(state.sessionClock ?? state.definition?.currentScenarioTime ?? new Date().toISOString(), SESSION_CLOCK_STEP_MINUTES);
+    if (!canCompleteExecution(existing, lot.scheduledFinish, at)) return state;
+    const operator = demonstrativeOperatorForResource(existing.resourceId);
+    const next = completeExecution(existing, lot.scheduledFinish, at, operator.displayName);
+    if (next === existing) return state;
+    return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, sessionClock: at, scenarioModified: true };
+  }),
 }));
 
 useScenarioStore.subscribe((state) => { if (state.initialized) writePersistedScenarioDecisions(state); });
@@ -234,6 +280,7 @@ export const selectProductionReleases = (state: ScenarioStore) => state.producti
 export const selectPreparationConfirmedByLotId = (state: ScenarioStore) => state.preparationConfirmedByLotId;
 export const selectPostponedLotIds = (state: ScenarioStore) => state.postponedLotIds;
 export const selectScenarioModified = (state: ScenarioStore) => state.scenarioModified;
+export const selectSessionClock = (state: ScenarioStore) => state.sessionClock;
 export const selectScheduleControls = (state: ScenarioStore) => ({
   selectedDateOffset: state.selectedDateOffset,
   selectedDestination: state.selectedDestination,

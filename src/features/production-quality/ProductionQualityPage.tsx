@@ -5,7 +5,7 @@ import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcShiftOeeSummaries } from '../../demo/adapters/oeeSummaryAdapter';
 import { computeFundicaoDcQualitySummary, computeFundicaoDcShiftQualitySummaries, type FundicaoDcQualityRow } from '../../demo/adapters/qualitySummaryAdapter';
 import { idealCycleTimeSecondsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { isValidQualityConfirmation, qualityRate, type QualityLossReason } from '../../domain/production-quality/models';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Bar, StackedBar } from '../../shared/ui/Bar/Bar';
@@ -58,7 +58,8 @@ export function ProductionQualityPage() {
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const [openRow, setOpenRow] = useState<Row | null>(null);
-  const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
+  const sessionClock = useScenarioStore(selectSessionClock);
+  const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
   const qualityConfirmations = qualityConfirmationsForScenario(scenario?.id);
   const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   if (!definition || !scenario) return <p>Preparando qualidade demonstrativa…</p>;

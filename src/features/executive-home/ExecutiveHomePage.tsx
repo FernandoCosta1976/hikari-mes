@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { withBase } from '../../app/routing/basePath';
 import { useScenarioPath } from '../../app/routing/useScenarioPath';
+import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { computeFundicaoDcOeeSummary } from '../../demo/adapters/oeeSummaryAdapter';
 import { downstreamHealthForScenario, idealCycleTimeSecondsForScenario, moldsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DownstreamAreaStatus } from '../../domain/downstream/models';
 import { classifyMoldLife, mostCriticalMold } from '../../domain/mold/models';
 import type { OeeDimension } from '../../domain/oee/calculations';
@@ -70,8 +71,10 @@ export function ExecutiveHomePage() {
   const definition = useScenarioStore(selectProductionScheduling);
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
+  const sessionClock = useScenarioStore(selectSessionClock);
   const resetScenario = useScenarioStore((state) => state.resetScenario);
-  const oee = definition && scenario ? computeFundicaoDcOeeSummary(definition, executionsByLot, scenario.currentScenarioTime, qualityConfirmationsForScenario(scenario.id), idealCycleTimeSecondsForScenario(scenario.id)) : null;
+  const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
+  const oee = definition && scenario ? computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime, qualityConfirmationsForScenario(scenario.id), idealCycleTimeSecondsForScenario(scenario.id)) : null;
   const usinagem = downstreamHealthForScenario(scenario?.id);
   const criticalMold = mostCriticalMold(moldsForScenario(scenario?.id));
   const nextExpectedLot = definition?.lots.find((lot) => lot.id === usinagem.nextExpectedLotId);

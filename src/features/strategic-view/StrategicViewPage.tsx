@@ -6,7 +6,7 @@ import { computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSumma
 import { computeFundicaoDcOeeSummary } from '../../demo/adapters/oeeSummaryAdapter';
 import { computeFundicaoDcQualitySummary } from '../../demo/adapters/qualitySummaryAdapter';
 import { downstreamHealthForScenario, idealCycleTimeSecondsForScenario, moldsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectProductionExecutions, selectProductionReadiness, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectProductionExecutions, selectProductionReadiness, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DownstreamAreaStatus } from '../../domain/downstream/models';
 import { mostCriticalMold } from '../../domain/mold/models';
 import { assessLotExecutionHealth, byLotHealthAttention, lotHealthIcon, lotHealthLabel, type LotHealthProjection, type LotHealthStatus } from '../../domain/production-execution/lotHealth';
@@ -52,7 +52,8 @@ export function StrategicViewPage() {
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const readinessAssessments = useScenarioStore(selectProductionReadiness);
-  const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
+  const sessionClock = useScenarioStore(selectSessionClock);
+  const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
   const qualityConfirmations = qualityConfirmationsForScenario(scenario?.id);
   const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   const downstream = downstreamHealthForScenario(scenario?.id);

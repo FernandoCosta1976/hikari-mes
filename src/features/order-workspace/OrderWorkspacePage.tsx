@@ -5,7 +5,7 @@ import { useScenarioPath } from '../../app/routing/useScenarioPath';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { resolveDemonstrativeRelease } from '../../demo/adapters/releaseResolution';
 import { fundicaoDcIdealCycleTimeSecondsFixture } from '../../demo/fixtures/fundicaoDcIdealCycleTime';
-import { selectMaterialResourceEligibilities, selectOrganizationsByLotId, selectPostponedLotIds, selectPreparationConfirmedByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectMaterialResourceEligibilities, selectOrganizationsByLotId, selectPostponedLotIds, selectPreparationConfirmedByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { assessLotExecutionHealth } from '../../domain/production-execution/lotHealth';
 import { dominantReadinessCondition } from '../../domain/production-readiness/presentation';
 import { revocationReasonLabel, type ProductionReleaseRecord, type RevocationReason } from '../../domain/production-release/models';
@@ -28,7 +28,8 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
   const scenarioPath = useScenarioPath();
   const definition = useScenarioStore(selectProductionScheduling);
   const scenario = useScenarioStore(selectScenarioDefinition);
-  const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
+  const sessionClock = useScenarioStore(selectSessionClock);
+  const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const readinessAssessments = useScenarioStore(selectProductionReadiness);
   const organizationsByLotId = useScenarioStore(selectOrganizationsByLotId);

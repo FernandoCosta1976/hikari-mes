@@ -4,7 +4,7 @@ import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSummaries, rankedExceptions, type FundicaoDcAdherenceRow } from '../../demo/adapters/adherenceSummaryAdapter';
 import { eventsForScenario, idealCycleTimeSecondsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DeviationClassification } from '../../domain/production-adherence/models';
 import { assessLotExecutionHealth } from '../../domain/production-execution/lotHealth';
 import { eventDurationMinutes, type ProductionEvent, type ProductionEventType } from '../../domain/production-monitoring/models';
@@ -52,7 +52,8 @@ export function ProductionAdherencePage() {
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const [openRow, setOpenRow] = useState<FundicaoDcAdherenceRow | null>(null);
-  const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
+  const sessionClock = useScenarioStore(selectSessionClock);
+  const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
   const events = eventsForScenario(scenario?.id);
   const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   if (!definition || !scenario) return <p>Preparando aderência demonstrativa…</p>;

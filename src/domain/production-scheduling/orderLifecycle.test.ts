@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProductionExecutionRecord } from '../production-execution/models';
 import { deriveOrderLifecycleStatus, orderLifecycleStepIndex } from './orderLifecycle';
 
-const execution = (status: ProductionExecutionRecord['status']): ProductionExecutionRecord => ({ lotId: 'lot-x', productionOrderId: 'po-x', resourceId: 'DC01', scheduleVersionId: 'v08', plannedQuantity: 10, producedQuantity: 0, scheduledStart: '2025-05-15T10:00:00-03:00', status, pauses: [], demonstrative: true });
+const execution = (status: ProductionExecutionRecord['status']): ProductionExecutionRecord => ({ lotId: 'lot-x', productionOrderId: 'po-x', resourceId: 'DC01', scheduleVersionId: 'v08', plannedQuantity: 10, producedQuantity: 0, scheduledStart: '2025-05-15T10:00:00-03:00', status, pauses: [], transitions: [], demonstrative: true, dataOrigin: 'SOURCE_DERIVED_PLAN', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' });
 
 describe('deriveOrderLifecycleStatus', () => {
   it('is BACKLOG when there is no Readiness assessment yet', () => {

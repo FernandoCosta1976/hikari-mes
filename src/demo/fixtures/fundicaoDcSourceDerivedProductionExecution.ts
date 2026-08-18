@@ -15,7 +15,9 @@ import type { ProductionExecutionRecord } from '../../domain/production-executio
 const t = (time: string) => `2026-07-10T${time}:00-03:00`;
 const po = (materialId: string) => `po-source-derived-${materialId.replace('component-', '')}`;
 
-export const fundicaoDcSourceDerivedProductionExecutionFixture: readonly ProductionExecutionRecord[] = [
+type RawExecutionFact = Omit<ProductionExecutionRecord, 'transitions' | 'dataOrigin' | 'ruleStatus'>;
+
+const rawExecutionFacts: readonly RawExecutionFact[] = [
   // DC01
   { lotId: 'lot-sd-501', productionOrderId: po('component-5lx-e5421-x0'), resourceId: 'DC01', scheduleVersionId: 'v01', plannedQuantity: 50, producedQuantity: 50, scheduledStart: t('00:30'), actualStart: t('00:30'), actualFinish: t('01:01'), status: 'COMPLETED', executedBy: 'Operador da Fundição · demonstrativo', pauses: [], demonstrative: true }, // 2min early
   { lotId: 'lot-sd-502', productionOrderId: po('component-1b2-e5411-w0'), resourceId: 'DC01', scheduleVersionId: 'v01', plannedQuantity: 50, producedQuantity: 50, scheduledStart: t('01:33'), actualStart: t('01:33'), actualFinish: t('02:16'), status: 'COMPLETED', executedBy: 'Operador da Fundição · demonstrativo', pauses: [], demonstrative: true }, // on time
@@ -45,3 +47,7 @@ export const fundicaoDcSourceDerivedProductionExecutionFixture: readonly Product
   { lotId: 'lot-sd-522', productionOrderId: po('component-1st-e1310-w0'), resourceId: 'DC05', scheduleVersionId: 'v01', plannedQuantity: 100, producedQuantity: 0, scheduledStart: t('11:08'), status: 'NOT_STARTED', pauses: [], demonstrative: true },
   { lotId: 'lot-sd-523', productionOrderId: po('component-1st-e1310-w0'), resourceId: 'DC05', scheduleVersionId: 'v01', plannedQuantity: 100, producedQuantity: 0, scheduledStart: t('13:46'), status: 'NOT_STARTED', pauses: [], demonstrative: true },
 ];
+
+/** Source-derived Plan/Execution facts — Capability 05's own interactive actions (transitions[]) start empty here and grow only from user actions in the live session, never in this static baseline. */
+export const fundicaoDcSourceDerivedProductionExecutionFixture: readonly ProductionExecutionRecord[] =
+  rawExecutionFacts.map((record) => ({ ...record, transitions: [], dataOrigin: 'SOURCE_DERIVED_PLAN', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }));

@@ -24,7 +24,15 @@ test('materializes the five-resource execution perspective and its controlled li
   await expect(page).toHaveScreenshot('CAP-05-LOT-PAUSED-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 
   await dc05.getByRole('button', { name: 'Retomar' }).click();
-  await dc05.getByLabel('Quantidade produzida na DC05').fill('70');
+  await expect(dc05).toContainText('Em produção');
+
+  // Manual quantity entry is a Capability 06 (Registrar Produção) concern, out of scope here — Concluir is
+  // time-gated instead. A second Pause/Resume cycle advances the shared Session Clock another 30min (60min
+  // total from the 17:23 baseline), reaching lot-271's own Scheduled Finish (18:00).
+  await dc05.getByLabel('Motivo da pausa na DC05').selectOption('QUALITY');
+  await dc05.getByRole('button', { name: 'Pausar' }).click();
+  await dc05.getByRole('button', { name: 'Retomar' }).click();
+  await expect(dc05.getByRole('button', { name: 'Concluir' })).toBeVisible();
   await dc05.getByRole('button', { name: 'Concluir' }).click();
   await expect(dc05).toContainText('Concluída');
   await expect(page).toHaveScreenshot('CAP-05-LOT-COMPLETED-CANDIDATE.png', { fullPage: true, animations: 'disabled' });

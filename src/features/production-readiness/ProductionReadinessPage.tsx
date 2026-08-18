@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { withBase } from '../../app/routing/basePath';
 import { useScenarioPath } from '../../app/routing/useScenarioPath';
 import { useWorkspaceSidebar } from '../../app/providers/WorkspaceSidebarContext';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { fundicaoDcMoldsFixture } from '../../demo/fixtures/fundicaoDcMolds';
-import { selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { classifyMoldLife, moldForResource } from '../../domain/mold/models';
 import type { ReadinessCondition, ReadinessStatus, ResourceReadinessAssessment } from '../../domain/production-readiness/models';
 import { dominantReadinessCondition, groupResourceReadiness } from '../../domain/production-readiness/presentation';
@@ -48,6 +49,8 @@ export function ProductionReadinessPage() {
   const scenarioDefinition = useScenarioStore(selectScenarioDefinition);
   const assessments = useScenarioStore(selectProductionReadiness);
   const productionReleases = useScenarioStore(selectProductionReleases);
+  const sessionClock = useScenarioStore(selectSessionClock);
+  const currentTime = useLiveScenarioTime(sessionClock ?? scenarioDefinition?.currentScenarioTime);
   const { expanded, setExpanded } = useWorkspaceSidebar();
   const requestedLotId = new URLSearchParams(window.location.search).get('lotId');
   const initialLotId = assessments.some((item) => item.lotId === requestedLotId) ? requestedLotId! : null;
@@ -119,7 +122,7 @@ export function ProductionReadinessPage() {
       <section className={styles.summary} aria-labelledby="readiness-summary"><div><small>Preparação do Lote</small><h2 id="readiness-summary">{assessment.summary}</h2><p>Este lote ainda precisa de validação antes da liberação.</p></div><dl><div><dt>Atendidos</dt><dd>{counts.READY}</dd></div><div><dt>Atenção</dt><dd>{counts.ATTENTION}</dd></div><div><dt>Impedimento</dt><dd>{counts.BLOCKED}</dd></div><div><dt>Desconhecida</dt><dd>{counts.UNKNOWN}</dd></div></dl></section>
       <section className={styles.primaryCause} aria-label="Motivo ou bloqueio principal"><small>Motivo/Bloqueio principal</small><strong>{dominantCondition?.label ?? assessment.summary}</strong><span>{dominantCondition?.evidence ?? 'Nenhuma restrição dominante conhecida.'}</span><em>Resultado demonstrativo; não representa liberação.</em></section>
       <ResourceConditionGroups resources={assessment.resources} programmedResourceId={lot.scheduledResourceId} />
-      <HourByHourSchedule mode="READINESS_CONTEXT" contextLabel={`Lote ${lot.lotNumber} · ${selectedShift?.name ?? 'intervalo programado'}`} resourceIds={contextualResourceIds} lots={contextualLots} setups={contextualSetups} materials={scheduling.materials} workCenter={workCenter} shifts={scheduling.shifts} businessDate={schedule.businessDate} rangeStart={contextualWindow.start} rangeFinish={contextualWindow.finish} currentScenarioTime={scenarioDefinition?.currentScenarioTime ?? null} selectedLotId={lot.id} readinessByLotId={readinessByLotId} onSelectLot={(candidate) => { setSelectedLotId(candidate.id); setDetailResourceId(null); window.history.replaceState(null, '', `?lotId=${candidate.id}`); }} />
+      <HourByHourSchedule mode="READINESS_CONTEXT" contextLabel={`Lote ${lot.lotNumber} · ${selectedShift?.name ?? 'intervalo programado'}`} resourceIds={contextualResourceIds} lots={contextualLots} setups={contextualSetups} materials={scheduling.materials} workCenter={workCenter} shifts={scheduling.shifts} businessDate={schedule.businessDate} rangeStart={contextualWindow.start} rangeFinish={contextualWindow.finish} currentScenarioTime={scenarioDefinition ? currentTime : null} selectedLotId={lot.id} readinessByLotId={readinessByLotId} onSelectLot={(candidate) => { setSelectedLotId(candidate.id); setDetailResourceId(null); window.history.replaceState(null, '', `?lotId=${candidate.id}`); }} />
       <KnownPlanImpact resources={contextualResources} lots={contextualLots} setups={contextualSetups} materials={scheduling.materials} programmedResourceId={lot.scheduledResourceId} />
       <details className={styles.readinessDetails}><summary>Detalhes de preparação por máquina</summary><section className={styles.resources} aria-labelledby="resources-title"><header><div><h2 id="resources-title">Condições conhecidas por máquina</h2><p>Compara evidências; não seleciona, recomenda ou atribui máquina.</p></div><small>Avaliado para {formatTime(lot.scheduledStart)} → {formatTime(lot.scheduledFinish)}</small></header><div className={styles.resourceGrid}>{assessment.resources.filter((resource) => resource.eligible).map((resource) => <ResourceCard key={resource.resourceId} resource={resource} scheduled={resource.resourceId === lot.scheduledResourceId} onOpen={() => setDetailResourceId(resource.resourceId)} />)}</div>{assessment.resources.some((resource) => !resource.eligible) ? <div className={styles.nonEligibleResources}><strong>Outras máquinas</strong>{assessment.resources.filter((resource) => !resource.eligible).map((resource) => <span key={resource.resourceId}><b>{resource.resourceId}</b> — Não elegível</span>)}</div> : null}</section></details>
       <section className={styles.handoff}><button onClick={() => { setExpanded(useScenarioStore.getState().journeyContext?.sidebarExpanded ?? expanded); window.history.pushState(null, '', withBase(scenarioPath(`/production-scheduling?lotId=${lot.id}`))); window.dispatchEvent(new PopStateEvent('popstate')); }}>← Voltar ao Plano Hora-Hora</button><div><strong>{assessment.summary}</strong><small>Próxima etapa: organização nas máquinas. Nenhuma máquina será atribuída ainda.</small></div><Button disabled>Organizar nas máquinas</Button></section>

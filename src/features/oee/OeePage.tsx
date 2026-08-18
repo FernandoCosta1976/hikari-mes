@@ -5,7 +5,7 @@ import { withBase } from '../../app/routing/basePath';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcOeeSummary, computeFundicaoDcShiftOeeSummaries, type FundicaoDcOeeRow } from '../../demo/adapters/oeeSummaryAdapter';
 import { eventsForScenario, idealCycleTimeSecondsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { OeeDimension } from '../../domain/oee/calculations';
 import type { ProductionEvent } from '../../domain/production-monitoring/models';
 import type { QualityConfirmation } from '../../domain/production-quality/models';
@@ -91,7 +91,8 @@ export function OeePage() {
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const [focus, setFocus] = useState<Focus | null>(null);
-  const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
+  const sessionClock = useScenarioStore(selectSessionClock);
+  const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
   const events = eventsForScenario(scenario?.id);
   const qualityConfirmations = qualityConfirmationsForScenario(scenario?.id);
   const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
