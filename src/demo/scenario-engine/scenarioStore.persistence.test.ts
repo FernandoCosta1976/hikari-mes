@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { scenarioDefinitionAdapter } from '../adapters/scenarioDefinitionAdapter';
 import { SCENARIO_STORAGE_KEY, selectScenarioModified, useScenarioStore } from './scenarioStore';
 
-// Only the official/canonical scenario ('fundicao-dc') persists decisions to
+// Only the reference scenario ('fundicao-dc') persists decisions to
 // localStorage — the legacy fixture scenario never rehydrates from storage.
 const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
 

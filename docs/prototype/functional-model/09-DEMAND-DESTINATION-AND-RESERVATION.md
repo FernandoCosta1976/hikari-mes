@@ -21,7 +21,7 @@ At minimum:
 - **Reposição**
 - **Engenharia**
 
-The canonical internal field name remains subject to terminology governance; Codex must not invent a permanent domain term without glossary approval.
+The normative internal field name remains subject to terminology governance; Codex must not invent a permanent domain term without glossary approval.
 
 ## 4. Priority
 

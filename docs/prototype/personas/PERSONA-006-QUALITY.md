@@ -1,6 +1,6 @@
 # PERSONA-006 — Quality Professional
 
-**Canonical role:** Quality Professional  
+**Role:** Quality Professional  
 **UI reference:** Qualidade  
 **Layer:** Operational / Tactical / Specialist  
 **Status:** PROTOTYPE_BASELINE

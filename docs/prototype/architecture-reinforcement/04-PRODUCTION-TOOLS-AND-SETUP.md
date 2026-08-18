@@ -3,7 +3,7 @@
 **Document ID:** HIKARI-ARCH-RF-004  
 **Status:** REQUIRED_DOMAIN_REINFORCEMENT
 
-## 1. Canonical concept
+## 1. Normative concept
 
 `Production Tool`  
 UI pt-BR: **Molde / Ferramental**
@@ -16,7 +16,7 @@ Supervisor and Production Leader deliberately organize Lots to reduce unnecessar
 
 ## 3. Setup / Changeover
 
-Canonical concepts:
+Normative concepts:
 - `Setup`;
 - `Changeover`.
 

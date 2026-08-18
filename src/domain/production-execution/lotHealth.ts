@@ -23,7 +23,7 @@ export interface LotHealthProjection {
   ruleStatus: 'BUSINESS_VALIDATION_REQUIRED';
 }
 
-/** Engineering Work Content: the canonical time base for a Lot — reused everywhere a Lot's duration or width is derived. */
+/** Engineering Work Content: the reference time base for a Lot — reused everywhere a Lot's duration or width is derived. */
 export function productionDurationSeconds(quantity: number, cycleTimeSecondsPerPiece: number): number {
   return quantity * cycleTimeSecondsPerPiece;
 }
@@ -33,7 +33,7 @@ function quantityTolerance(expected: number): number {
 }
 
 /**
- * Single canonical Lot health projection — every screen must render this
+ * Single reference Lot health projection — every screen must render this
  * result via LotHealthIndicator, never recompute the classification itself.
  * DEMONSTRATIVE / BUSINESS VALIDATION REQUIRED.
  */

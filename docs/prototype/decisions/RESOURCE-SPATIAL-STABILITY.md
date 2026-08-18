@@ -6,7 +6,7 @@ Approved UX principle for the HIKARI MES executive prototype.
 
 ## Decision
 
-Physical Resource lanes in the Foundry DC Hour-by-Hour plan always use the canonical order:
+Physical Resource lanes in the Foundry DC Hour-by-Hour plan always use the reference order:
 
 1. DC01
 2. DC02

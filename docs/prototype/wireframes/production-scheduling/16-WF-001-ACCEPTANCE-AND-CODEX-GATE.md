@@ -128,7 +128,7 @@ Codex must avoid:
 - invented domain terminology;
 - invented Yamaha rules;
 - silent assumptions;
-- duplicate representations of canonical concepts.
+- duplicate representations of reference concepts.
 
 ## 11. Validation scenarios
 

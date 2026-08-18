@@ -23,9 +23,9 @@ These files are subordinate to the prototype governance documents under:
 
 `hikari-mes/docs/prototype/governance/`
 
-and to the canonical glossary at:
+and to the normative glossary at:
 
-`docs/prototype/glossary/HIKARI-CANONICAL-GLOSSARY.md`
+`docs/prototype/glossary/HIKARI-NORMATIVE-GLOSSARY.md`
 
 Where a conflict exists, Codex must stop the affected implementation path and request/record a governed decision rather than inventing a rule.
 

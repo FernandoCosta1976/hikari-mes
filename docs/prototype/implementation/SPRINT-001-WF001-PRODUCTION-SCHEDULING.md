@@ -12,7 +12,7 @@ Production Readiness, Resource assignment, release, execution, quality, performa
 
 ## Pre-flight and Git baseline
 
-- Governed WF-001 documentation, canonical glossary, ADR-001 and Sprint 0 report were reviewed.
+- Governed WF-001 documentation, normative glossary, ADR-001 and Sprint 0 report were reviewed.
 - Approved image: `docs/prototype/assets/wireframes/production-scheduling/WF-001-PRODUCTION-SCHEDULING-V1.0-APPROVED.png`.
 - Incidental red and “next automatic update” content in the image were not reproduced because normative rules prevail.
 - Sprint 0 placeholder and route were confirmed.

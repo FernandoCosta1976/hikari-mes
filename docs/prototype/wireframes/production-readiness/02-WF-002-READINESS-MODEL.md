@@ -1,6 +1,6 @@
 # WF-002 — Readiness Model
 
-**Status:** CONCEPTUAL / NON-CANONICAL RESULT VOCABULARY
+**Status:** CONCEPTUAL / NON-NORMATIVE RESULT VOCABULARY
 
 ## Model Boundary
 
@@ -76,7 +76,7 @@ The experience must distinguish explicit restriction evidence from missing infor
 - temporary restriction;
 - information unavailable.
 
-These are explanatory categories, not a canonical productive enum. Exact vocabulary and sources require domain governance.
+These are explanatory categories, not a normative productive enum. Exact vocabulary and sources require domain governance.
 
 ## Material Availability and Staging
 
@@ -88,7 +88,7 @@ Required distinctions:
 - Staged / Floor Stock: prepared at the shop-floor/execution context;
 - Consumed: actual execution consumption, outside WF-002 decision preparation.
 
-Experience-design classification only — not Canonical MES Function Priority:
+Experience-design classification only — not Standard MES Function Priority:
 
 - **Material Availability: PRIMARY FOR WF-002**;
 - **Material Staging: PRIMARY FOR WF-002**;
@@ -138,7 +138,7 @@ The central comparison is not merely “está disponível agora?”, but “há 
 
 ## Provisional Result Model
 
-Candidate UX concepts, not canonical lifecycle states:
+Candidate UX concepts, not normative lifecycle states:
 
 | Presentation concept | Meaning |
 |---|---|

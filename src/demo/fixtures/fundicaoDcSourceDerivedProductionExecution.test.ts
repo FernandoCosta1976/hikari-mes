@@ -3,7 +3,7 @@ import { fundicaoDcSourceDerivedProductionExecutionFixture } from './fundicaoDcS
 
 const BASELINE_CLOCK = Date.parse('2026-07-10T09:15:00-03:00');
 
-describe('Capability 05 — canonical dataset temporal-consistency invariants (Section 36)', () => {
+describe('Capability 05 — reference dataset temporal-consistency invariants (Section 36)', () => {
   it('no historical COMPLETED record finishes after the 09:15 baseline snapshot', () => {
     for (const record of fundicaoDcSourceDerivedProductionExecutionFixture) {
       if (record.status !== 'COMPLETED') continue;

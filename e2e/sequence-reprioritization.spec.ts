@@ -4,7 +4,7 @@ import { expect, test } from './fixtures';
  * Avaliar Cenário — definitive fix. Moving a requirement now means
  * REPRIORITIZATION: the whole affected Resource tail recalculates
  * automatically (Setup, no overlap), never just relocating the moved
- * requirement into a conflicting slot. Exercised on the official canonical
+ * requirement into a conflicting slot. Exercised on the reference
  * dataset (`fundicao-dc`, 2026-07-10, 09:15 Scenario Clock). At 09:15,
  * lot-sd-501..507 (and 511/512, 515/516/517, 518/519, 521) are already
  * COMPLETED/IN_PROGRESS — locked; lot-sd-508/509/510, 513, 514, 520,

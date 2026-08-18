@@ -1,6 +1,6 @@
 # PERSONA-007 — Production Manager
 
-**Canonical role:** Production Manager  
+**Role:** Production Manager  
 **UI reference:** Gerente de Produção  
 **Layer:** Tactical / Managerial  
 **Status:** PROTOTYPE_BASELINE

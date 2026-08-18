@@ -61,7 +61,7 @@ None structurally. Product Owner review points may refine wording and emphasis b
 - Data Freshness SLA;
 - parallel schedule semantics;
 - Operation/Operation Activity and Lot/SFC mapping;
-- canonical MES Function Catalog.
+- Standard MES Function Catalog.
 
 ## Recommended Next Action
 

@@ -4,7 +4,7 @@ import { scheduledDurationMinutes } from '../../domain/production-scheduling/cyc
 import { requiresSetup } from '../../domain/production-scheduling/setups';
 import { FOUNDRY_RESOURCE_IDS } from '../../domain/resource/models';
 
-describe('canonical 2026-07-10 schedule — duration is mathematically quantity x Cycle Time, never a fixed block', () => {
+describe('reference 2026-07-10 schedule — duration is mathematically quantity x Cycle Time, never a fixed block', () => {
   it('every Lot duration equals scheduledDurationMinutes(component, quantity) exactly', () => {
     for (const lot of sourceDerivedLots) {
       const material = sourceDerivedMaterials.find((item) => item.id === lot.materialId)!;

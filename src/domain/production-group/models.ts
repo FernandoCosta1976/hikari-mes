@@ -1,5 +1,5 @@
 /**
- * PowerTrain domain hierarchy — Section 4 of the canonical baseline round.
+ * PowerTrain domain hierarchy — Section 4 of the operational reference baseline round.
  *
  * ProductionGroup (PowerTrain)
  *   └── ProductiveArea (Fundição DC, Fundição LP, Usinagem Ferrosos, Usinagem

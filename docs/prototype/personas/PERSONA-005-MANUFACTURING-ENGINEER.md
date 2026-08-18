@@ -1,6 +1,6 @@
 # PERSONA-005 — Manufacturing / Process Engineer
 
-**Canonical role:** Manufacturing Engineer / Process Engineer  
+**Role:** Manufacturing Engineer / Process Engineer  
 **UI reference:** Engenheiro de Manufatura / Processo  
 **Layer:** Tactical / Specialist  
 **Status:** PROTOTYPE_BASELINE

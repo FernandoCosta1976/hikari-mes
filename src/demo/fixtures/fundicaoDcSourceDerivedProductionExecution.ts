@@ -1,7 +1,7 @@
 import type { ProductionExecutionRecord } from '../../domain/production-execution/models';
 
 /**
- * Execution facts for all 23 real requirements of the canonical 2026-07-10
+ * Execution facts for all 23 real requirements of the reference 2026-07-10
  * schedule, at Scenario Clock 09:15 (Turno 1). Deliberately diverse — Real
  * must read differently from Planned: Completed Early/OnTime/Late, Running
  * OnTime/Late, one Not Started Late (no appointment), and the rest genuinely

@@ -17,17 +17,17 @@ The prototype originally used workflow identifiers as convenient implementation 
 5. **Transversal Lot Context.** Lot is a stable contextual navigation object. Its context progressively exposes identity, schedule, quantity, destination, readiness, restrictions, and Resource suitability as those semantics become governed.
 6. **Role-based access.** Scheduling and preparation personas may enter their predominant perspective directly. The architecture does not assume that one person completes the whole operational journey.
 7. **Exception-based work.** Preparation supports direct aggregate entry and exception-first investigation without requiring prior navigation through Plano or silently selecting a Lot.
-8. **Progressive disclosure.** Readiness appears as a compact Plan signal, a Lot Context summary, detailed evidence, and an exception workbench. All representations consume the same canonical Readiness projection.
+8. **Progressive disclosure.** Readiness appears as a compact Plan signal, a Lot Context summary, detailed evidence, and an exception workbench. All representations consume the same reference Readiness projection.
 9. **Scenes of evolution.** The architecture supports incremental scenes: Plan; Lot detail; Readiness signal; Readiness investigation; eligible Resource comparison; future Resource Assignment; future operational sequencing; future Dispatch/Release; future Execution/Actual. Only governed scenes are implemented.
 10. **Decision boundaries.** `Scheduled != Ready != Resource Assigned != Dispatched != Released != Actual`. `Programmed Resource != Confirmed Resource Assignment`. Eligibility and Availability also remain distinct.
 11. **Routing is not product fragmentation.** Routes provide deep links, history, restoration, testing, and sharing. Route changes preserve the same Operational Workspace and applicable Application, Scenario, and Lot context.
-12. **State semantics remain separated.** Application Context, demonstrative Scenario State, canonical domain projections, journey restoration, and local UI State retain distinct ownership. Routing does not redefine domain state.
+12. **State semantics remain separated.** Application Context, demonstrative Scenario State, reference domain projections, journey restoration, and local UI State retain distinct ownership. Routing does not redefine domain state.
 
 ## Implementation consequences
 
 - `OperationalWorkspace` is the shared visual/navigation shell for Plano and Preparação.
 - Production Scheduling and Production Readiness remain separate feature modules.
-- The canonical `production-readiness` domain model and scenario projection feed every Readiness representation.
+- The reference `production-readiness` domain model and scenario projection feed every Readiness representation.
 - Lot Context may link to specialized preparation without implementing Resource Assignment.
 - Organização is visible only as a future perspective; WF-003 behavior is not implemented.
 

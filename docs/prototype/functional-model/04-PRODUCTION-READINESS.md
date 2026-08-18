@@ -87,7 +87,7 @@ The prototype may use a compact state model such as:
 - Com restrição;
 - Informação indisponível.
 
-These are UX states, not yet canonical production-system statuses.
+These are UX states, not yet normative production-system statuses.
 
 No red color shall be used.
 

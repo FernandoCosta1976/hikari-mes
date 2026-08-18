@@ -1,4 +1,4 @@
-# ADR-002 — Canonical Foundry Baseline & PowerTrain Context
+# ADR-002 — Operational Reference Foundry Baseline & PowerTrain Context
 
 Status: Accepted
 Date: 2026-08-17
@@ -64,7 +64,7 @@ unreachable through normal use.
   cross-scenario data leak: reloading scenario A rehydrated decisions saved
   under scenario B, producing an immediate runtime crash on unrelated Lot
   ids. Fixed by `scenarioStorageKey(scenarioId)` — every scenario now reads
-  and writes its own key (`hikari:demo:<scenarioId>:v1`); the canonical
+  and writes its own key (`hikari:demo:<scenarioId>:v1`); the reference
   scenario's key is unchanged (`hikari:demo:fundicao-dc:v1`), so no existing
   persisted demo state is invalidated.
 
@@ -134,7 +134,7 @@ are conflated:
 - `ProductionSchedulingPage`'s commitment line ("Produzido X · Y% atingido")
   now reads as **absent** (hidden entirely) rather than a fabricated "0
   produced / 0% atingido" when no Quality confirmation exists yet for any
-  Resource on the active Business Date — the canonical scenario has no
+  Resource on the active Business Date — the reference scenario has no
   Quality-confirmation fixture yet (Quality/Losses/OEE are explicitly out of
   scope this round, Section 16), so its true state is "no data", not "zero
   good pieces". The legacy scenario is unaffected: it has real confirmations,
@@ -146,8 +146,8 @@ are conflated:
 
 ### 8. Buffer stays demonstrative (Section 12)
 
-Unchanged — the two canonical sources (LINHA C OFC, FUNDIÇÃO/máquina master)
-do not carry physical stock/coverage data. The canonical scenario's Buffer
+Unchanged — the two reference sources (LINHA C OFC, FUNDIÇÃO/máquina master)
+do not carry physical stock/coverage data. The reference scenario's Buffer
 block is explicitly labeled "Critério operacional demonstrativo" and was not
 recalculated from the new dataset (see ADR — Section 25 of the prior round's
 brief, unchanged).
@@ -158,7 +158,7 @@ brief, unchanged).
   real machine assignments, and real Linha C traceability end to end for
   WF-001 and WF-002.
 - Acompanhamento, Aderência, Qualidade and OEE are **not yet verified** for
-  the canonical scenario (see PENDÊNCIAS in the round's final report) — they
+  the reference'scenario (see PENDÊNCIAS in the round's final report) — they
   depend on fixtures (quality confirmations, a wider time window) that are
   explicitly out of scope this round (Section 16: no Quality/Losses/OEE
   work). Visiting those perspectives under `/demo/fundicao-dc/...` will not
@@ -171,9 +171,9 @@ brief, unchanged).
 ## Related documents
 
 - [ADR-001](ADR-001-PROTOTYPE-FRONTEND-FOUNDATION.md) — frontend foundation.
-- `docs/prototype/source-data/business-validation/foundry/` — canonical
+- `docs/prototype/source-data/business-validation/foundry/` — reference
   source spreadsheets (never read at runtime) and the derivation pipeline
   (`scripts/data-pipeline/build_foundry_dataset.py`).
-- `src/demo/reference-data/foundry/` — the derived, versioned canonical
+- `src/demo/reference-data/foundry/` — the derived, versioned reference
   dataset (components, aliases, resource mappings, model↔component
   resolution table, full requirement/exclusion set, audit counts).

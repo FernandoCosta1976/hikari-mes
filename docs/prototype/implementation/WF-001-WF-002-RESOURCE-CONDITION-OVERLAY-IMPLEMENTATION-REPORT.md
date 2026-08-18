@@ -6,7 +6,7 @@ Product Review candidate. No commit or push was performed.
 
 ## Implemented
 
-The WF-001 Hour-by-Hour plan now provides the operational **Avaliar cenários** action and the active **Avaliação de alternativas** mode. After a Lot is selected, the five fixed Resource lanes receive the same canonical WF-002 condition projection: **Com condição**, **Requer atenção** and **Sem condição**. `UNKNOWN` remains distinct, and the Scheduled Resource is marked **Programada** without status promotion. The canonical DC01–DC05 spatial order never changes.
+The WF-001 Hour-by-Hour plan now provides the operational **Avaliar cenários** action and the active **Avaliação de alternativas** mode. After a Lot is selected, the five fixed Resource lanes receive the same reference WF-002 condition projection: **Com condição**, **Requer atenção** and **Sem condição**. `UNKNOWN` remains distinct, and the Scheduled Resource is marked **Programada** without status promotion. The reference DC01–DC05 spatial order never changes.
 
 The overlay is read-only. Disabling it restores the original DC01–DC05 timeline order and leaves all Lots, Setups, planned breaks and Current Time unchanged.
 

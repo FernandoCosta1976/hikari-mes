@@ -19,7 +19,7 @@ Each Use Case must contain:
 
 A screen may support multiple Use Cases, and one Use Case may span multiple experiences.
 
-## Canonical Production Use Case IDs
+## Reference Production Use Case IDs
 
 1. `UC-PROD-001` — Review Short-Term Production Schedule
 2. `UC-PROD-002` — Reconcile Production Orders and Scheduled Lots

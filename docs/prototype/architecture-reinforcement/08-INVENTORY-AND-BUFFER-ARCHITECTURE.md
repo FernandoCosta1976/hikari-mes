@@ -3,7 +3,7 @@
 **Document ID:** HIKARI-ARCH-RF-008  
 **Status:** PROTOTYPE_ARCHITECTURE_BASELINE
 
-## 1. Canonical structure
+## 1. Normative structure
 
 Inventory contains concepts such as:
 - On-Hand;

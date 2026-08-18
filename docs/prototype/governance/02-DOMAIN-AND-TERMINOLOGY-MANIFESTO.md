@@ -6,11 +6,11 @@ This manifesto governs domain language. HIKARI must speak the language of MES an
 
 ## 2. Language policy
 
-Canonical domain terms, code identifiers, architecture documentation, and internal technical naming are defined in English.
+Normative domain terms, code identifiers, architecture documentation, and internal technical naming are defined in English.
 
-Prototype user-interface labels and explanatory microcopy are presented in Portuguese (Brazil), using controlled translations of canonical terms.
+Prototype user-interface labels and explanatory microcopy are presented in Portuguese (Brazil), using controlled translations of normative terms.
 
-A Portuguese UI label does not replace the canonical English domain term.
+A Portuguese UI label does not replace the normative English domain term.
 
 ## 3. Terminology authority
 
@@ -21,20 +21,20 @@ Terminology should be aligned, in descending order of applicability, with:
 3. ISA-95 concepts where applicable;
 4. Yamaha operational terminology when representing a real factory practice.
 
-No Codex-generated synonym becomes canonical automatically.
+No Codex-generated synonym becomes normative automatically.
 
 ## 4. Term governance states
 
 Every relevant term may be classified as:
 
-- **CANONICAL** — approved for architecture/domain use;
+- **NORMATIVE** — approved for architecture/domain use;
 - **PROVISIONAL** — appropriate working term pending formal validation;
-- **TBD** — concept known but canonical terminology not yet approved;
+- **TBD** — concept known but normative terminology not yet approved;
 - **PROHIBITED** — term that must not be used.
 
-## 5. Core canonical terms
+## 5. Core normative terms
 
-The following terms are canonical unless superseded by an approved decision:
+The following terms are normative unless superseded by an approved decision:
 
 ### Production Order
 Formal production order received from PyMAC/MRP. It may represent a consolidated daily requirement.
@@ -57,7 +57,7 @@ A real production grouping with its own identifier. In the Yamaha context, each 
 UI: **Lote**.
 
 ### Material
-The material/part/product being planned or produced. UI translation may use **Material** or **Peça** according to context, without changing the canonical term.
+The material/part/product being planned or produced. UI translation may use **Material** or **Peça** according to context, without changing the normative term.
 
 ### Work Center
 Organizational/production-center context at which work is planned before assignment to a specific Resource.
@@ -203,7 +203,7 @@ UI: **Meta de Cobertura**.
 
 ## 9. Demand destination terms
 
-The concept of demand destination is confirmed, but the final canonical SAP-aligned field name remains **PROVISIONAL/TBD** until formal terminology validation.
+The concept of demand destination is confirmed, but the final normative SAP-aligned field name remains **PROVISIONAL/TBD** until formal terminology validation.
 
 Required business values in the prototype are:
 
@@ -268,9 +268,9 @@ Codex MUST NOT:
 - collapse Produced Quantity and Available Quantity;
 - collapse On-Hand and Available quantities;
 - collapse scheduled, dispatched, and actual sequences;
-- use “buffer health” as the canonical architectural concept when `Buffer Coverage` is intended;
+- use “buffer health” as the normative architectural concept when `Buffer Coverage` is intended;
 - invent optimization terminology that implies capabilities not validated.
 
 ## 14. Glossary change rule
 
-Any new domain term required by implementation must first be added to the canonical glossary with status and rationale. If the term is not confirmed, Codex must mark it PROVISIONAL or TBD rather than silently treating it as canonical.
+Any new domain term required by implementation must first be added to the normative glossary with status and rationale. If the term is not confirmed, Codex must mark it PROVISIONAL or TBD rather than silently treating it as normative.

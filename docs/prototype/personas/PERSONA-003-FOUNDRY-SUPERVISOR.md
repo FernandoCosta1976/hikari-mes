@@ -1,6 +1,6 @@
 # PERSONA-003 — Foundry Supervisor
 
-**Canonical role:** Foundry Supervisor  
+**Role:** Foundry Supervisor  
 **UI reference:** Supervisor da Fundição  
 **Layer:** Tactical / Operational  
 **Status:** PROTOTYPE_BASELINE

@@ -24,7 +24,7 @@ export const resourceRoleLabel: Record<ResourceRole, string> = {
 export type StandardStatus = 'CONFIRMED' | 'NOT_CONFIRMED' | 'UNKNOWN';
 
 export interface FoundryComponent {
-  canonicalCode: string;
+  referenceCode: string;
   family: FoundryFamily;
   productiveArea: FoundryProductiveArea;
 }
@@ -39,7 +39,7 @@ export interface ComponentResourceMapping {
 }
 
 export interface ComponentAlias {
-  canonicalComponentCode: string;
+  referenceComponentCode: string;
   sourceCode: string;
   source: string;
   matchMethod: 'DASHLESS_PREFIX';

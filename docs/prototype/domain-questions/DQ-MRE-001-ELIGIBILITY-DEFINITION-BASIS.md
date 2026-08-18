@@ -50,7 +50,7 @@ The question does not block a simplified demonstrative `Material → Eligible Re
 - read-only;
 - explicitly demonstrative;
 - isolated from production master data;
-- treated as a projection rather than canonical persistence;
+- treated as a projection rather than normative persistence;
 - free of availability, readiness, recommendation, Assignment and Dispatch semantics;
 - replaceable by the validated richer model.
 

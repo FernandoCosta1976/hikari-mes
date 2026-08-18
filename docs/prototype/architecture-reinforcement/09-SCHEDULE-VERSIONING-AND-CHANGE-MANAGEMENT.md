@@ -7,7 +7,7 @@
 
 Data Freshness answers when data arrived. Versioning answers which planning baseline is active and what changed.
 
-## 2. Canonical concepts
+## 2. Normative concepts
 
 - Schedule Version;
 - Effective From;

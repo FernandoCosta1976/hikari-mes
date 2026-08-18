@@ -1,13 +1,13 @@
 # Resource Orchestration
 
 **Document ID:** HIKARI-ARCH-RF-003  
-**Status:** CANONICAL_CAPABILITY
+**Status:** NORMATIVE_CAPABILITY
 
 ## 1. Purpose
 
 Consolidate Readiness, operational Rescheduling and Dispatching under a market-aligned MES capability.
 
-## 2. Canonical concept
+## 2. Normative concept
 
 `Resource Orchestration`
 
@@ -35,7 +35,7 @@ Balancing provides the short-term baseline at Work Center/line level. HIKARI ada
 
 For Fundição DC, the confirmed physical Resources are **DC01, DC02, DC03, DC04 and DC05**. Balancing does not assign these Resources to Lots in the currently known scenario. Foundry Supervisor and Production Leader later transform the Scheduled Requirement into an Operational Resource Assignment and Dispatched Sequence.
 
-The possible existence and business meaning of parallel planned sequences remains [TBD](../domain-questions/DQ-WF001-001-PARALLEL-SCHEDULE.md). “Schedule Stream” is only a provisional discussion label and is not introduced as a canonical capability or term.
+The possible existence and business meaning of parallel planned sequences remains [TBD](../domain-questions/DQ-WF001-001-PARALLEL-SCHEDULE.md). “Schedule Stream” is only a provisional discussion label and is not introduced as a normative capability or term.
 
 ## 6. Decision sequence
 

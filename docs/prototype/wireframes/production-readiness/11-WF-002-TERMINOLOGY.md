@@ -2,7 +2,7 @@
 
 **Status:** WIREFRAME TERMINOLOGY CANDIDATE
 
-Internal concepts remain canonical English. UI labels use governed pt-BR where available. These labels do not create Canonical MES Function Priorities.
+Internal concepts remain standard English. UI labels use governed pt-BR where available. These labels do not create Standard MES Function Priorities.
 
 | Internal Concept | UI Label pt-BR | Meaning in WF-002 |
 |---|---|---|
@@ -30,4 +30,4 @@ Internal concepts remain canonical English. UI labels use governed pt-BR where a
 
 `PRIMARY FOR WF-002`, `SECONDARY FOR WF-002`, `LATER` and `TBD` are **Experience Design Priority** labels only.
 
-They are not `Canonical MES Function Priority`. Until the canonical MES Function Catalog is available, WF-002 documentation must not claim official `CORE`, `ESSENTIAL`, priority, theme or capability classification.
+They are not `Standard MES Function Priority`. Until the Standard MES Function Catalog is available, WF-002 documentation must not claim official `CORE`, `ESSENTIAL`, priority, theme or capability classification.

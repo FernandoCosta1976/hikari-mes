@@ -29,13 +29,13 @@ Resource Eligibility
 
 An eligible Resource is a candidate for further assessment. It is not necessarily available, prepared, recommended, selected or authorized for execution.
 
-## Canonical Terminology
+## Normative Terminology
 
-- Canonical architectural term: **Resource Eligibility**.
+- Normative architectural term: **Resource Eligibility**.
 - Relationship wording: **Material → Eligible Resources**, only as a simplified projection.
 - Recommended pt-BR UX term: **Máquinas elegíveis**.
 
-“Máquinas elegíveis” is preferred over “Máquinas compatíveis” because eligibility is already present in the governed functional and architectural documentation and conveys a controlled candidate set. “Compatível” may be used only as explanatory language for a particular technical criterion; it is not the replacement canonical term.
+“Máquinas elegíveis” is preferred over “Máquinas compatíveis” because eligibility is already present in the governed functional and architectural documentation and conveys a controlled candidate set. “Compatível” may be used only as explanatory language for a particular technical criterion; it is not the replacement normative term.
 
 ## Ownership
 
@@ -100,11 +100,11 @@ Current condition may depend on:
 
 A current constraint does not automatically remove structural eligibility. A structurally eligible Resource does not automatically satisfy current readiness.
 
-## Canonical Data Structure
+## Normative Data Structure
 
 ### Future-ready eligibility rule
 
-The canonical structure should be capable of representing:
+The normative structure should be capable of representing:
 
 | Field | Requirement | Rule |
 |---|---|---|
@@ -230,11 +230,11 @@ Eligibility belongs to the selected Material/Lot context. Current Resource State
 
 | Concept | Classification | Rationale |
 |---|---|---|
-| Material | EXISTING | Canonical core object and current scheduling model. |
-| Resource | EXISTING CONCEPT / IMPLEMENTATION MODEL INCOMPLETE | Canonical core object; current WF-001 uses confirmed Resource references. |
+| Material | EXISTING | Normative core object and current scheduling model. |
+| Resource | EXISTING CONCEPT / IMPLEMENTATION MODEL INCOMPLETE | Normative core object; current WF-001 uses confirmed Resource references. |
 | Routing | EXISTING CONCEPT / IMPLEMENTATION MODEL DEFERRED | Required architectural layer, intentionally hidden from WF-001. |
 | Operation / Operation Activity | EXISTING CONCEPT / IMPLEMENTATION MODEL DEFERRED | Required future eligibility context; Yamaha mapping remains TBD. |
-| Resource Eligibility | EXISTING CANONICAL CONCEPT | Already present in Production Readiness and Resource Orchestration documentation. |
+| Resource Eligibility | EXISTING NORMATIVE CONCEPT | Already present in Production Readiness and Resource Orchestration documentation. |
 | Eligibility rule/master record | NEW MODEL CANDIDATE | Needed for governed production definition and effectivity. |
 | Material eligible-Resources projection | NEW MODEL CANDIDATE | Simplified read-only prototype projection. |
 | Resource Assignment | NOT REQUIRED | Belongs to WF-003 and is explicitly excluded here. |
@@ -257,9 +257,9 @@ The Lot Detail summary is supporting read-only context. It does not change UC-PR
 
 ## Traceability Gap
 
-The canonical MES Function Catalog remains **NOT AVAILABLE IN REPOSITORY**. No MES Function ID, priority, capability ID or nonexistent traceability is introduced.
+The Standard MES Function Catalog remains **NOT AVAILABLE IN REPOSITORY**. No MES Function ID, priority, capability ID or nonexistent traceability is introduced.
 
-This gap does not block the governed demonstrative projection, but it blocks claiming canonical function-level traceability or a production contract.
+This gap does not block the governed demonstrative projection, but it blocks claiming standard function-level traceability or a production contract.
 
 ## Prototype Boundary
 

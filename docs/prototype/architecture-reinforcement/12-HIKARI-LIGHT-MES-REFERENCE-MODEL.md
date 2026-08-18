@@ -1,7 +1,7 @@
 # HIKARI Light MES Reference Model
 
 **Document ID:** HIKARI-ARCH-RF-012  
-**Status:** CANONICAL_PROTOTYPE_REFERENCE
+**Status:** NORMATIVE_PROTOTYPE_REFERENCE
 
 ## 1. Planning inputs
 

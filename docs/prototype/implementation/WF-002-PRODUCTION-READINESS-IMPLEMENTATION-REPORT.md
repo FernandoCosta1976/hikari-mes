@@ -9,7 +9,7 @@ Implemented a navigable Readiness Workbench at `/demo/fundicao-dc/production-rea
 
 ## 2. Functional traceability
 
-The repository explicitly states that the canonical MES Function Catalog is unavailable. Consequently, no Function ID or official CORE/ESSENTIAL priority is invented.
+The repository explicitly states that the Standard MES Function Catalog is unavailable. Consequently, no Function ID or official CORE/ESSENTIAL priority is invented.
 
 | Capability | MES Function | Priority | User Use Case | WF-002 Element | Source |
 | --- | --- | --- | --- | --- | --- |
@@ -65,11 +65,11 @@ The future handoff is visible but disabled and explicitly says no Resource is as
 
 ## 10. Domain questions / TBDs
 
-- Canonical MES Function Catalog, Function IDs, and CORE/ESSENTIAL priorities are unavailable.
-- Productive Readiness aggregation, mandatory dimensions, canonical vocabulary, and lifecycle remain TBD.
+- Standard MES Function Catalog, Function IDs, and CORE/ESSENTIAL priorities are unavailable.
+- Productive Readiness aggregation, mandatory dimensions, normative vocabulary, and lifecycle remain TBD.
 - Resource Availability authoritative source, forecast rule, confidence, and vocabulary remain TBD.
 - Productive tooling identifiers, compatibility source, Setup matrix, and duration rules remain TBD.
-- Maintenance/restriction authoritative source and canonical vocabulary remain TBD.
+- Maintenance/restriction authoritative source and normative vocabulary remain TBD.
 - Material sufficiency/conversion and staging authoritative sources remain TBD.
 - The origin of Scheduled Resource remains BUSINESS VALIDATION REQUIRED.
 - WF-003 route and final handoff label remain outside this implementation.
@@ -177,7 +177,7 @@ All four artifacts are **CANDIDATE — NOT APPROVED**.
 1. **How WF stopped representing Screen:** workflow IDs now identify governed operational decision capabilities. Plano and Preparação are perspectives of one product workspace, while their feature modules and state meanings remain separate.
 2. **Perspectives:** Plano answers “O que precisamos produzir?”; Preparação answers “Temos condições de produzir?”; Organização is visible only as the future perspective for “Onde e como vamos produzir?”. They are directly accessible and are not wizard steps.
 3. **Transversal Lot Context:** selecting a Lot opens progressive context in Plano without forced navigation. The same Lot ID can then anchor specialized Readiness investigation and return to the original timeline, selection, focus, filters, scroll, and sidebar state.
-4. **Readiness reuse:** the canonical `production-readiness` domain projection and Scenario selector feed the Plan signal, Lot Context summary, preparation detail, and aggregate exception workbench. Components do not independently calculate a Readiness status.
+4. **Readiness reuse:** the reference `production-readiness` domain projection and Scenario selector feed the Plan signal, Lot Context summary, preparation detail, and aggregate exception workbench. Components do not independently calculate a Readiness status.
 5. **Persona access:** a scheduling persona may investigate from Plano; a preparation persona may open Preparação directly. Neither path requires completing the other perspective.
 6. **Contextual work:** `PLAN → LOT CONTEXT → READINESS CONDITION → INVESTIGATE` progressively adds evidence while preserving the scheduling context and semantic origin of each fact.
 7. **Exception work:** direct Preparação entry opens the aggregate period view, orders explicit exception states first, and never silently chooses a Lot or calls that ordering an operational priority.
@@ -192,6 +192,6 @@ All four artifacts are **CANDIDATE — NOT APPROVED**.
 - **Decision created:** `docs/prototype/decisions/OPERATIONAL-WORKSPACE-AND-DECISION-BOUNDARIES.md`.
 - **Shared implementation created:** `src/app/workspace/OperationalWorkspace.tsx`, `OperationalWorkspace.module.css`, and `src/shared/presentation/productionFormatting.ts`.
 - **Files modified for the boundary:** Production Scheduling page/styles, Production Readiness page, WF-002 E2E coverage, and this report.
-- **WF-001 impact:** its timeline and Lot Context remain intact, but now render inside the shared workspace and consume the same canonical Readiness projection as Preparação.
+- **WF-001 impact:** its timeline and Lot Context remain intact, but now render inside the shared workspace and consume the same reference Readiness projection as Preparação.
 - **WF-002 impact:** its contextual and exception modes now share the same shell and Application Context as Plano; the capability remains a separate feature.
 - **Future WF-003 impact:** Organização has a reserved perspective and modular extension point only. No route, domain behavior, Resource Assignment, or orchestration UI was created.

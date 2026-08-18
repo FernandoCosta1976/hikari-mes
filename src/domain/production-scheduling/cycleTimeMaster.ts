@@ -1,6 +1,6 @@
 /**
  * Demonstrative Component Cycle Time Master — one Ideal Cycle Time per real
- * Component Code used in the canonical 2026-07-10 Fundição DC plan.
+ * Component Code used in the reference 2026-07-10 Fundição DC plan.
  * Deterministic, centralized, never random at runtime. Assumption: 1 peça
  * por ciclo. Values are plausible casting cycle times (35-95 s/peça) but
  * are demonstrative — BUSINESS VALIDATION REQUIRED before they represent a

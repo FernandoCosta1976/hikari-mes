@@ -40,3 +40,35 @@ for (const [name, path] of routes) {
     }
   });
 }
+
+/**
+ * Terminology refinement — "canonical"/"canônico"/"canônica" is an internal
+ * architecture word, never operator-facing vocabulary. Case-insensitive,
+ * covers every governed route plus the Plano Lot Context modal and Avaliar
+ * Cenário (where the retired "Versão canônica" schedule-version label used
+ * to leak through).
+ */
+const canonicalPattern = /canonical|canônic/i;
+
+for (const [name, path] of routes) {
+  test(`terminology scan: ${name} shows no "canonical" UI text`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(path);
+    const text = await page.locator('body').innerText();
+    expect(canonicalPattern.test(text), `Found "canonical"/"canônico" on ${name} (${path})`).toBe(false);
+  });
+}
+
+test('terminology scan: Plano Lot Context modal and Avaliar Cenário show no "canonical" UI text', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/demo/fundicao-dc/production-scheduling');
+  await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
+  await page.locator('[data-lot-id="lot-sd-501"]').click();
+  const modalText = await page.getByRole('dialog').innerText();
+  expect(canonicalPattern.test(modalText), 'Found "canonical"/"canônico" in the Lot Context modal').toBe(false);
+  await page.getByRole('button', { name: 'Fechar contexto do Lote' }).click();
+
+  await page.getByRole('button', { name: /Avaliar cenário/ }).click();
+  const simulationText = await page.getByRole('region', { name: 'Avaliação de cenário' }).innerText();
+  expect(canonicalPattern.test(simulationText), 'Found "canonical"/"canônico" in Avaliar Cenário').toBe(false);
+});

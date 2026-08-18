@@ -2,7 +2,7 @@ import type { ProductionExecutionStatus } from '../production-execution/models';
 
 /**
  * Capability 06 — Registrar Produção. A Production Confirmation is the fact
- * that a quantity was produced against a Canonical Production Requirement —
+ * that a quantity was produced against a Production Requirement —
  * distinct from Execution Control (Capability 05, Start/Pause/Resume/
  * Complete) and from Quality Disposition (Good/Reject/Rework classification,
  * which stays a separate concern this round — Section 21). Each confirmation
@@ -15,7 +15,7 @@ export type ConfirmationDataOrigin = 'DEMONSTRATIVE_CONFIRMATION' | 'USER_SIMULA
 
 export interface ProductionConfirmation {
   id: string;
-  /** The Canonical Production Requirement (Lot) this confirmation belongs to. */
+  /** The Production Requirement (Lot) this confirmation belongs to. */
   requirementId: string;
   /** Same key as requirementId in this demonstrative model — Execution and Confirmation are 1:1 per Requirement. */
   executionId: string;
@@ -41,7 +41,7 @@ export function accumulatedProducedQuantity(confirmations: readonly ProductionCo
   return confirmations.reduce((sum, confirmation) => sum + confirmation.producedQuantity, 0);
 }
 
-/** SUM(confirmations) per Requirement — the single canonical Total Count source (Section 19/20), never execution.producedQuantity. */
+/** SUM(confirmations) per Requirement — the single reference Total Count source (Section 19/20), never execution.producedQuantity. */
 export function confirmedQuantityByLot(confirmationsByLot: Readonly<Record<string, readonly ProductionConfirmation[]>>): Readonly<Record<string, number>> {
   return Object.fromEntries(Object.entries(confirmationsByLot).map(([lotId, confirmations]) => [lotId, accumulatedProducedQuantity(confirmations)]));
 }

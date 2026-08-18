@@ -1,6 +1,6 @@
 # PERSONA-001 — Operator
 
-**Canonical role:** Operator  
+**Role:** Operator  
 **UI reference:** Operador  
 **Layer:** Operational  
 **Status:** PROTOTYPE_BASELINE

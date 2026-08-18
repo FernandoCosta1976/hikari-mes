@@ -8,7 +8,7 @@ function projection(overrides: Partial<LotHealthProjection>): LotHealthProjectio
 }
 
 describe('LotHealthIndicator', () => {
-  it('renders the canonical icon, tone and label for BEHIND_PLAN identically regardless of caller', () => {
+  it('renders the reference icon, tone and label for BEHIND_PLAN identically regardless of caller', () => {
     const health = projection({ status: 'BEHIND_PLAN' });
     const { unmount } = render(<LotHealthIndicator health={health} />);
     expect(screen.getByRole('group', { name: /Saúde de execução: Abaixo do plano/ })).toHaveTextContent('⚠');

@@ -4,7 +4,7 @@ import { rawExecutionFacts } from './fundicaoDcSourceDerivedProductionExecution'
 import { sourceDerivedTraceabilityByLotId } from '../scenarios/fundicaoDcSourceDerivedScenario';
 
 /**
- * Capability 06 migration (Section 19): the canonical dataset's historical
+ * Capability 06 migration (Section 19): the reference dataset's historical
  * producedQuantity facts become seed Production Confirmations — ONE per
  * Requirement that already had a produced quantity at the 09:15 baseline —
  * so Total Count has a single source (SUM(confirmations)) from the moment

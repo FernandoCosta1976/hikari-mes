@@ -15,7 +15,7 @@ UI pt-BR name:
 
 **Plano Hora-Hora**
 
-The canonical architectural concept remains `Production Schedule`.
+The normative architectural concept remains `Production Schedule`.
 
 ## 3. Continuous timeline
 

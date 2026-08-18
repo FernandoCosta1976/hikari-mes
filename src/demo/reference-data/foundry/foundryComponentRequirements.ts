@@ -6,7 +6,7 @@ import type {
 import raw from './foundryComponentRequirements.json';
 
 /**
- * Dataset canônico completo derivado de LINHA C OFC (Quadro HH 2026 Linha C) ×
+ * Dataset de referência completo derivado de LINHA C OFC (Quadro HH 2026 Linha C) ×
  * FUNDIÇÃO × máquina titular e reserva (PecasPorModelo.xlsx). Cada linha da
  * LINHA C OFC é preservada sem deduplicação; cada família aplicável (AB–AG ≠ NA)
  * gera uma necessidade independente. Somente correspondências determinísticas

@@ -3,8 +3,8 @@
 **Document ID:** HIKARI-FM-FOUND-000  
 **Status:** PROTOTYPE_BASELINE  
 **Scope:** Executive navigable prototype — Foundry reference scenario  
-**Canonical language:** English for domain/architecture; pt-BR for prototype UI  
-**Normative dependencies:** Prototype Governance Manifestos, Canonical Glossary, Decision Governance
+**Normative language:** English for domain/architecture; pt-BR for prototype UI  
+**Normative dependencies:** Prototype Governance Manifestos, Normative Glossary, Decision Governance
 
 ---
 

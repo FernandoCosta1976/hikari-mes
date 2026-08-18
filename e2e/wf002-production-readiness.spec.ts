@@ -25,7 +25,7 @@ test('hands off the selected Lot from WF-001 and restores the complete Plan cont
   await expect(page.getByLabel('Destino', { exact: true })).toHaveValue('ASSEMBLY');
 });
 
-test('keeps one Operational Workspace and one canonical Readiness meaning across perspectives', async ({ page }) => {
+test('keeps one Operational Workspace and one consistent Readiness meaning across perspectives', async ({ page }) => {
   await page.goto('/demo/fundicao-dc-legacy/production-scheduling');
   await expect(page.getByRole('complementary', { name: 'Painel Operacional' })).toHaveCount(1);
   await expect(page.getByLabel('Contexto da aplicação')).toContainText('Fundição DC');

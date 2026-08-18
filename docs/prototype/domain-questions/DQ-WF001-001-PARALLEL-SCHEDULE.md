@@ -38,7 +38,7 @@ Balancing supplies one temporal sequence for Fundição DC. WF-001 retains one p
 
 ### Model B — Parallel Schedule Streams
 
-Balancing supplies two or more simultaneous planned sequences without identifying specific Resources. WF-001 could require multiple planning lanes whose meaning must be validated. “Schedule Stream” is a **PROVISIONAL discussion label**, not a canonical glossary term, and these lanes must not be named `DC01`–`DC05` by inference.
+Balancing supplies two or more simultaneous planned sequences without identifying specific Resources. WF-001 could require multiple planning lanes whose meaning must be validated. “Schedule Stream” is a **PROVISIONAL discussion label**, not a normative glossary term, and these lanes must not be named `DC01`–`DC05` by inference.
 
 ### Model C — Other
 
@@ -80,4 +80,4 @@ This question does not block the demonstrative WF-001 because parallel machine-l
 - `../architecture-reinforcement/03-RESOURCE-ORCHESTRATION.md`
 - `../wireframes/production-scheduling/03-WF-001-HOUR-BY-HOUR-TIMELINE.md`
 - `../traceability/BUSINESS-QUESTION-CATALOG.md`
-- `../glossary/HIKARI-CANONICAL-GLOSSARY.md`
+- `../glossary/HIKARI-NORMATIVE-GLOSSARY.md`

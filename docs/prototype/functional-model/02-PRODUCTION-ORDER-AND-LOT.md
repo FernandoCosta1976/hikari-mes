@@ -9,7 +9,7 @@ Define the conceptual relationship between Production Order and Lot in the Found
 
 ## 2. Production Order
 
-`Production Order` is the canonical internal term.
+`Production Order` is the normative internal term.
 
 UI pt-BR: **Ordem de Produção**.
 
@@ -99,7 +99,7 @@ Prototype categories:
 - Reposição;
 - Engenharia.
 
-These are user-facing labels. Canonical internal naming for the classification field shall remain governed by the glossary and may be PROVISIONAL until validated against the chosen SAP/MES terminology.
+These are user-facing labels. Normative internal naming for the classification field shall remain governed by the glossary and may be PROVISIONAL until validated against the chosen SAP/MES terminology.
 
 ## 9. Prohibited simplifications
 

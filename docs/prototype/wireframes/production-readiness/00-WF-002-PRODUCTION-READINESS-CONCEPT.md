@@ -74,7 +74,7 @@ These are inherited facts or contextual projections. WF-002 must not reinterpret
 
 ## Experience Design Priority
 
-The following labels prioritize information inside WF-002 only. They are **not Canonical MES Function Priorities**. The canonical MES Function Catalog is unavailable, so this package makes no official `CORE`, `ESSENTIAL` or equivalent catalog claim.
+The following labels prioritize information inside WF-002 only. They are **not Standard MES Function Priorities**. The Standard MES Function Catalog is unavailable, so this package makes no official `CORE`, `ESSENTIAL` or equivalent catalog claim.
 
 ## Readiness Dimensions
 

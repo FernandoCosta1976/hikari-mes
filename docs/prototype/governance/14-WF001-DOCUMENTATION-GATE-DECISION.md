@@ -3,7 +3,7 @@
 **Decision ID:** HIKARI-GOV-WF001-014  
 **Status:** CONFIRMED  
 **Scope:** WF-001 — Production Scheduling / Programação da Produção / Plano Hora-Hora  
-**Canonical repository:** `/Users/fe/Documents/Hikari-mes`
+**Reference repository:** `/Users/fe/Documents/Hikari-mes`
 
 ## 1. Purpose
 
@@ -39,11 +39,11 @@ Numbers in the approved image are not official production measurements.
 
 ## 5. Terminology
 
-Internal domain naming uses canonical MES English. User-facing content uses controlled pt-BR from:
+Internal domain naming uses standard MES English. User-facing content uses controlled pt-BR from:
 
-`docs/prototype/glossary/HIKARI-CANONICAL-GLOSSARY.md`
+`docs/prototype/glossary/HIKARI-NORMATIVE-GLOSSARY.md`
 
-Non-canonical or English labels visible in the approved image must be translated or normalized during implementation without changing its approved composition.
+Non-normative or English labels visible in the approved image must be translated or normalized during implementation without changing its approved composition.
 
 ## 6. Data Freshness
 
@@ -77,7 +77,7 @@ WF-001 answers only:
 
 It does not answer which machine should produce, whether work can be released or started, operational efficiency, losses or OEE. Resource remains unassigned in this experience.
 
-## 10. UC-PROD canonical registry
+## 10. UC-PROD normative registry
 
 - `UC-PROD-001` — Review Short-Term Production Schedule;
 - `UC-PROD-002` — Reconcile Production Orders and Scheduled Lots;

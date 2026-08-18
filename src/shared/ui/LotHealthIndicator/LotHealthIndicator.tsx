@@ -11,7 +11,7 @@ export interface LotHealthContext {
 }
 
 /**
- * Single canonical rendering of Lot Execution Health: same icon/tone/label/tooltip
+ * Single reference rendering of Lot Execution Health: same icon/tone/label/tooltip
  * everywhere it appears. All classification happens in assessLotExecutionHealth —
  * this component only renders the already-computed projection.
  */

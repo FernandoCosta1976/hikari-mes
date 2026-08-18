@@ -1,7 +1,7 @@
 # APS–MES Boundary
 
 **Document ID:** HIKARI-ARCH-RF-011  
-**Status:** CANONICAL_BOUNDARY
+**Status:** NORMATIVE_BOUNDARY
 
 ## 1. Purpose
 

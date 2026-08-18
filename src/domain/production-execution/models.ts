@@ -2,7 +2,7 @@ export type ProductionExecutionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'PAUSED'
 export type DemonstrativePauseReason = 'MATERIAL_SHORTAGE' | 'MACHINE_ADJUSTMENT' | 'TOOLING' | 'QUALITY' | 'OTHER';
 
 /**
- * Capability 05 granularity is the Canonical Production Requirement, the same
+ * Capability 05 granularity is the Production Requirement, the same
  * subject already used across Plano/Preparação/Liberação/Acompanhamento — not
  * an SFC and not a governed Execution Control Unit. EXECUTION GRANULARITY:
  * DEMONSTRATIVE · BUSINESS_VALIDATION_REQUIRED.

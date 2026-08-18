@@ -85,7 +85,7 @@ const productionOrders = materials.map((material) => {
 /**
  * Cenário legado (Material A/B/C sintéticos) — preservado apenas como fixture
  * de teste histórico. Não é mais o cenário oficial da Fundição DC; ver ADR-002
- * (docs/prototype/decisions/ADR-002-CANONICAL-FOUNDRY-BASELINE.md) para a
+ * (docs/prototype/decisions/ADR-002-OPERATIONAL-REFERENCE-FOUNDRY-BASELINE.md) para a
  * decisão de promoção do dataset derivado das fontes reais a `fundicao-dc`.
  */
 export const fundicaoDcScenario = {

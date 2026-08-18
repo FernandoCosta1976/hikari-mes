@@ -1,6 +1,6 @@
 # PERSONA-004 — Technician
 
-**Canonical role:** Technician  
+**Role:** Technician  
 **UI reference:** Técnico  
 **Layer:** Operational / Specialist  
 **Status:** PROTOTYPE_BASELINE

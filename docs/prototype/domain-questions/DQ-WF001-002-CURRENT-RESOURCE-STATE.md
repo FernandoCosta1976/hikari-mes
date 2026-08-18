@@ -15,7 +15,7 @@ This decision does not transfer Execution, Monitoring, Production Confirmation, 
 
 **NOT FOUND — TRACEABILITY SOURCE NOT AVAILABLE.**
 
-A repository-wide search covered `docs/`, source, fixtures, reports, data/reference/catalog candidates and other non-generated project directories. The repository contains a Business Question Catalog and traceability matrices, but no structured canonical MES Function Catalog containing MES Function ID, Name, Priority, Capability, Theme, Discipline, MES Stage and Business Question.
+A repository-wide search covered `docs/`, source, fixtures, reports, data/reference/catalog candidates and other non-generated project directories. The repository contains a Business Question Catalog and traceability matrices, but no structured Standard MES Function Catalog containing MES Function ID, Name, Priority, Capability, Theme, Discipline, MES Stage and Business Question.
 
 No MES Function identifier, priority or classification may be inferred from the available documents. The missing catalog is a traceability gap, but does not block a deliberately demonstrative projection that stays inside this document's boundary.
 
@@ -250,11 +250,11 @@ The current-state section has no future timeline and must remain subordinate to 
 
 **DOES NOT BLOCK PROTOTYPE IF GOVERNED AS DEMONSTRATIVE PROJECTION.**
 
-The gap blocks claiming canonical MES Function traceability and blocks treating the projection as a production contract. It does not block a read-only, clearly demonstrative and narrowly governed contextual projection because the capability boundary, use-case relationship, approved fields, prohibited behavior and data classification are explicit here.
+The gap blocks claiming standard MES Function traceability and blocks treating the projection as a production contract. It does not block a read-only, clearly demonstrative and narrowly governed contextual projection because the capability boundary, use-case relationship, approved fields, prohibited behavior and data classification are explicit here.
 
 ## Open Questions
 
-1. Where is the canonical MES Function Catalog and which functions trace to this projection?
+1. Where is the Standard MES Function Catalog and which functions trace to this projection?
 2. Should UC-EXEC-001 be extended to explicitly cover current execution by Resource and read-only consumers?
 3. What is the authoritative source for Resource identity and name?
 4. What is the authoritative source for Current Lot, Machine State, Produced Quantity and Execution Status?
@@ -307,4 +307,4 @@ Only the following could be implemented after explicit authorization:
 
 ## Next Governance Action
 
-Chief Architect and Product Owner may decide whether to authorize the narrowly bounded provisional demo implementation. In parallel, domain governance should locate/provide the canonical MES Function Catalog, extend or supersede UC-EXEC-001 as appropriate, validate operational sources and vocabulary, and resolve execution-control and quantity semantics before any production-grade model is designed.
+Chief Architect and Product Owner may decide whether to authorize the narrowly bounded provisional demo implementation. In parallel, domain governance should locate/provide the Standard MES Function Catalog, extend or supersede UC-EXEC-001 as appropriate, validate operational sources and vocabulary, and resolve execution-control and quantity semantics before any production-grade model is designed.

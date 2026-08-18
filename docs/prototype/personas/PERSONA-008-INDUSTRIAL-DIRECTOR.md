@@ -1,6 +1,6 @@
 # PERSONA-008 — Industrial Director
 
-**Canonical role:** Industrial Director  
+**Role:** Industrial Director  
 **UI reference:** Diretor Industrial  
 **Layer:** Executive  
 **Status:** PROTOTYPE_BASELINE

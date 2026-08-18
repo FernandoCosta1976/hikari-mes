@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures';
 
 /**
- * HIKARI MES — Capability 06 · Registrar Produção. Canonical 2026-07-10,
+ * HIKARI MES — Capability 06 · Registrar Produção. Reference 2026-07-10,
  * Scenario Clock 09:15. Production Confirmation (quantity reporting) is
  * materialized through Acompanhamento's own Context Modal, preserving the
  * distinction between Execution Control (Capability 05) and Production

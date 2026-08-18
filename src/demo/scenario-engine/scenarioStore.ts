@@ -17,7 +17,7 @@ import { sourceDerivedTraceabilityByLotId } from '../scenarios/fundicaoDcSourceD
 /**
  * Session Operational Clock (Section 9) — every Capability 05 action reads
  * and advances THIS instead of the wall clock or the Scenario's own fixed
- * currentScenarioTime. Baseline is always the canonical Scenario Clock
+ * currentScenarioTime. Baseline is always the reference Scenario Clock
  * (2026-07-10T09:15 for fundicao-dc); Reset restores it exactly. Advancing
  * only happens deterministically, in fixed steps, from explicit user actions
  * — never from real elapsed time.
@@ -39,7 +39,7 @@ export function scenarioStorageKey(scenarioId: string): string {
   return `hikari:demo:${scenarioId}:v1`;
 }
 export const SCENARIO_STORAGE_KEY = scenarioStorageKey('fundicao-dc');
-/** Bumped for the 2026-07-10/09:15 canonical dataset rewrite (lot-sd-401..421 -> lot-sd-501..523) — any persisted decisions from the previous lot-id range must fall back to the fixture baseline instead of crashing on a now-nonexistent lotId. */
+/** Bumped for the 2026-07-10/09:15 operational reference dataset rewrite (lot-sd-401..421 -> lot-sd-501..523) — any persisted decisions from the previous lot-id range must fall back to the fixture baseline instead of crashing on a now-nonexistent lotId. */
 const SCENARIO_SCHEMA_VERSION = 2;
 
 interface PersistedScenarioDecisions {
@@ -183,7 +183,7 @@ const baseline = (definition: ScenarioDefinition | null, revision: number): Scen
     activeWf001ScenarioId: 'SCN-WF001-01',
     resetRevision: revision,
     journeyContext: null,
-    // Cada requirement do dataset canônico já tem seu próprio apontamento de execução (Section 14) — pré-liberar os
+    // Cada requirement do dataset de referência já tem seu próprio apontamento de execução (Section 14) — pré-liberar os
     // ainda NOT_STARTED apagaria a decisão de Liberação demonstrativa (Capability 04) que essas telas existem para
     // exercitar. O cenário legado mantém o comportamento anterior (todo apontamento pré-liberado).
     productionReleases: persisted?.productionReleases ?? Object.fromEntries((definition?.id === 'fundicao-dc' ? executionSeed.filter((execution) => execution.status !== 'NOT_STARTED') : executionSeed).map((execution) => [execution.lotId, { lotId: execution.lotId, productionOrderId: execution.productionOrderId, resourceId: execution.resourceId, scheduleVersionId: execution.scheduleVersionId, readiness: 'READY', status: 'RELEASED', reason: 'Liberação demonstrativa anterior ao estado inicial da execução.', releasedAt: execution.actualStart ?? definition?.currentScenarioTime ?? '2025-05-15T17:00:00-03:00', releasedBy: 'Supervisor da Fundição · demonstrativo', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }])),
@@ -320,7 +320,7 @@ export const selectProductionExecutions = (state: ScenarioStore) => state.produc
 export const selectProductionConfirmations = (state: ScenarioStore) => state.productionConfirmations;
 /**
  * Total Count per Requirement, derived live from the Scenario Store — the
- * single canonical source (Section 19/20). Memoized on the `productionConfirmations`
+ * single reference source (Section 19/20). Memoized on the `productionConfirmations`
  * reference itself (which Zustand only ever replaces via `set`, never mutates
  * in place) — recomputing a fresh object on every read would give React a
  * "changed" reference on every render and loop forever.

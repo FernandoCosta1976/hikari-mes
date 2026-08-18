@@ -8,7 +8,7 @@ import { fundicaoDcSourceDerivedScenario, sourceDerivedLots, sourceDerivedMateri
 import { FOUNDRY_RESOURCE_IDS } from '../../../domain/resource/models';
 import { deriveScheduledSetups } from '../../../domain/production-scheduling/setups';
 
-describe('canonical foundry dataset — LINHA C OFC × FUNDIÇÃO × máquina titular e reserva', () => {
+describe('reference foundry dataset — LINHA C OFC × FUNDIÇÃO × máquina titular e reserva', () => {
   it('computes modelPrefix as the first three uppercase characters of the source model', () => {
     for (const requirement of foundryComponentRequirements) {
       expect(requirement.modelPrefix).toBe(requirement.sourceModel.toUpperCase().slice(0, 3));
@@ -61,7 +61,7 @@ describe('canonical foundry dataset — LINHA C OFC × FUNDIÇÃO × máquina ti
   it('resolves component aliases only through an exact dashless-prefix match (never fuzzy)', () => {
     expect(componentAliases.length).toBeGreaterThan(0);
     for (const alias of componentAliases) {
-      const dashless = alias.canonicalComponentCode.replace(/-/g, '').toUpperCase();
+      const dashless = alias.referenceComponentCode.replace(/-/g, '').toUpperCase();
       expect(alias.sourceCode.startsWith(dashless)).toBe(true);
       expect(alias.matchMethod).toBe('DASHLESS_PREFIX');
     }
@@ -86,7 +86,7 @@ describe('canonical foundry dataset — LINHA C OFC × FUNDIÇÃO × máquina ti
     expect(sourceDerivedMaterials.some((material) => material.code.includes('CABECOTE'))).toBe(false);
     for (const lot of sourceDerivedLots) {
       const material = sourceDerivedMaterials.find((item) => item.id === lot.materialId)!;
-      const component = foundryComponents.find((item) => item.canonicalCode === material.code);
+      const component = foundryComponents.find((item) => item.referenceCode === material.code);
       expect(component?.productiveArea).toBe('FOUNDRY_DC');
     }
   });

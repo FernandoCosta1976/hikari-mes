@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures';
 
 /**
- * HIKARI MES — Capability 05 · Executar Ordens de Produção. Canonical
+ * HIKARI MES — Capability 05 · Executar Ordens de Produção. Reference
  * 2026-07-10, Scenario Clock 09:15. Materialized through Acompanhamento's
  * own Context Modal (Section 2/20) — Start/Pause/Resume/Complete all read
  * and write the SAME Scenario store as Plano/Preparação/Liberação/OEE, never
@@ -18,7 +18,7 @@ function openContext(page: import('@playwright/test').Page, lotId: string) {
 
 test('completes the governed cross-screen journey: Start → Pause → Resume → Reset (Section 35)', async ({ page }) => {
   // Release is Capability 04's own decision — lot-sd-509 is genuinely NOT_STARTED and unreleased in the
-  // canonical baseline, so the journey exercises the real precondition chain via Plano before Acompanhamento.
+  // reference baseline, so the journey exercises the real precondition chain via Plano before Acompanhamento.
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
   await page.locator('[data-lot-id="lot-sd-509"]').click();
@@ -123,9 +123,9 @@ test('What-if isolation — Avaliar Cenário never applies to the Execution base
 test('captures Capability 05 screenshots', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
 
-  // lot-sd-509 is genuinely NOT_STARTED and unreleased in the canonical baseline — release it for real via
+  // lot-sd-509 is genuinely NOT_STARTED and unreleased in the reference baseline — release it for real via
   // Plano (Capability 04) so the WAITING-START scene shows a Requirement that has actually satisfied the
-  // Start precondition, without altering the canonical Liberação KPI count.
+  // Start precondition, without altering the reference Liberação KPI count.
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
   await page.locator('[data-lot-id="lot-sd-509"]').click();

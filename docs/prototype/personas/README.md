@@ -7,7 +7,7 @@ This directory defines the human roles that interact with or consume information
 
 Personas are not screen-access profiles and do not define authorization. They define operational context, decisions, questions, information needs and interaction moments.
 
-## Canonical personas
+## Reference personas
 
 1. Operator
 2. Production Leader

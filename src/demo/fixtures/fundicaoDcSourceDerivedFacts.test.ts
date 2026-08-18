@@ -7,7 +7,7 @@ import { sourceDerivedLots } from '../scenarios/fundicaoDcSourceDerivedScenario'
 import { accumulatedProducedQuantity, confirmedQuantityByLot, groupConfirmationsByRequirement } from '../../domain/production-confirmation/models';
 import { isValidQualityConfirmation } from '../../domain/production-quality/models';
 
-describe('canonical 2026-07-10 execution/quality/event facts', () => {
+describe('reference 2026-07-10 execution/quality/event facts', () => {
   it('one execution fact per real requirement (23), none invented, none missing', () => {
     expect(fundicaoDcSourceDerivedProductionExecutionFixture).toHaveLength(23);
     const lotIds = new Set(sourceDerivedLots.map((lot) => lot.id));

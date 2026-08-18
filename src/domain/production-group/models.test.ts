@@ -6,7 +6,7 @@ import { fundicaoDcSourceDerivedProductionReadinessFixture } from '../../demo/fi
 import { componentResourceMappingByCode } from '../../demo/reference-data/foundry/componentResourceMappings';
 import { foundryComponentRequirements } from '../../demo/reference-data/foundry/foundryComponentRequirements';
 
-/** Section 19 invariants for the canonical baseline & PowerTrain round. */
+/** Section 19 invariants for the operational reference baseline & PowerTrain round. */
 describe('PowerTrain domain hierarchy (Section 19.1–19.3)', () => {
   it('1. PowerTrain governs exactly the five Áreas Produtivas', () => {
     expect(powertrainProductiveAreas).toHaveLength(5);
@@ -28,7 +28,7 @@ describe('PowerTrain domain hierarchy (Section 19.1–19.3)', () => {
   });
 });
 
-describe('Canonical Fundição DC baseline (Section 19.5–19.13)', () => {
+describe('Operational Reference Fundição DC baseline (Section 19.5–19.13)', () => {
   it('5. only RESOLVED requirements (with a real component + resource mapping) enter the Plano', () => {
     for (const lot of sourceDerivedLots) {
       const material = sourceDerivedMaterials.find((item) => item.id === lot.materialId)!;
@@ -45,13 +45,13 @@ describe('Canonical Fundição DC baseline (Section 19.5–19.13)', () => {
     expect(lot502.scheduledResourceId).toBe(mapping.primaryResource);
   });
 
-  it('11. Plano and Preparação consume the exact same canonical Lot set', () => {
+  it('11. Plano and Preparação consume the exact same reference Lot set', () => {
     const planLotIds = new Set(sourceDerivedLots.map((lot) => lot.id));
     for (const readiness of fundicaoDcSourceDerivedProductionReadinessFixture) expect(planLotIds.has(readiness.lotId)).toBe(true);
     expect(fundicaoDcSourceDerivedProductionReadinessFixture).toHaveLength(sourceDerivedLots.length);
   });
 
-  it('12. Business Date filters the canonical dataset to exactly the scheduled Fundição DC requirements', () => {
+  it('12. Business Date filters the reference dataset to exactly the scheduled Fundição DC requirements', () => {
     const businessDate = fundicaoDcSourceDerivedScenario.productionScheduling.schedules[0].businessDate;
     expect(businessDate).toBe('2026-07-10');
     const dcRequirementsOnDate = foundryComponentRequirements.filter((requirement) => requirement.sourceBusinessDate === businessDate && requirement.productiveArea === 'FOUNDRY_DC');

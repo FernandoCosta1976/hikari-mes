@@ -3,7 +3,7 @@ import type { QualityConfirmation } from '../../domain/production-quality/models
 const t = (time: string) => `2026-07-10T${time}:00-03:00`;
 
 /**
- * Quality facts for the Completed requirements of the canonical 2026-07-10
+ * Quality facts for the Completed requirements of the reference 2026-07-10
  * schedule, reconciled with Execution (producedQuantity here always equals
  * the matching ProductionExecutionRecord.producedQuantity). Running
  * requirements have no confirmation yet — a partial produced count is a

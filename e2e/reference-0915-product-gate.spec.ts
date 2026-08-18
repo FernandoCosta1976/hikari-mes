@@ -1,21 +1,21 @@
 import { expect, test } from './fixtures';
 
 /**
- * HIKARI MES — canonical operational day 2026-07-10, Scenario Clock 09:15.
+ * HIKARI MES — reference operational day 2026-07-10, Scenario Clock 09:15.
  * Product Gate screenshot set: one full-page capture per governed screen,
  * plus the three Avaliar Cenário what-if scenes, all against the SAME
- * canonical Scenario store (Section 14 — single source of operational truth).
+ * reference Scenario store (Section 14 — single source of operational truth).
  */
 
-test('captures CANONICAL-0915-PLAN', async ({ page }) => {
+test('captures REFERENCE-0915-PLAN', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await expect(page.getByRole('heading', { name: 'O que precisamos produzir?' })).toBeVisible();
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
-  await expect(page).toHaveScreenshot('CANONICAL-0915-PLAN-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
+  await expect(page).toHaveScreenshot('REFERENCE-0915-PLAN-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 
-test('captures CANONICAL-0915-CYCLE-TIME-VARIATION — different Cycle Times produce genuinely different block widths', async ({ page }) => {
+test('captures REFERENCE-0915-CYCLE-TIME-VARIATION — different Cycle Times produce genuinely different block widths', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
@@ -23,42 +23,42 @@ test('captures CANONICAL-0915-CYCLE-TIME-VARIATION — different Cycle Times pro
   // longest (1ST-E5421-W0, 100pc · 97min) — real, different Cycle Times, never a fixed block duration.
   await expect(page.getByText('5LX-E5421-X0').first()).toBeVisible();
   await expect(page.getByText('1ST-E5421-W0').first()).toBeVisible();
-  await expect(page).toHaveScreenshot('CANONICAL-0915-CYCLE-TIME-VARIATION-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
+  await expect(page).toHaveScreenshot('REFERENCE-0915-CYCLE-TIME-VARIATION-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 
-test('captures CANONICAL-0915-MONITORING', async ({ page }) => {
+test('captures REFERENCE-0915-MONITORING', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-monitoring');
   await expect(page.getByRole('heading', { name: 'O que está acontecendo em relação ao plano?' })).toBeVisible();
-  await expect(page).toHaveScreenshot('CANONICAL-0915-MONITORING-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
+  await expect(page).toHaveScreenshot('REFERENCE-0915-MONITORING-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 
-test('captures CANONICAL-0915-ADHERENCE', async ({ page }) => {
+test('captures REFERENCE-0915-ADHERENCE', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-adherence');
   await expect(page.getByRole('heading', { name: 'Estamos executando conforme o planejado?' })).toBeVisible();
-  await expect(page).toHaveScreenshot('CANONICAL-0915-ADHERENCE-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
+  await expect(page).toHaveScreenshot('REFERENCE-0915-ADHERENCE-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 
-test('captures CANONICAL-0915-QUALITY-PERFORMANCE', async ({ page }) => {
+test('captures REFERENCE-0915-QUALITY-PERFORMANCE', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-quality');
   await expect(page.getByRole('heading', { name: 'Quanto produzimos e quanto foi bom?' })).toBeVisible();
-  await expect(page).toHaveScreenshot('CANONICAL-0915-QUALITY-PERFORMANCE-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
+  await expect(page).toHaveScreenshot('REFERENCE-0915-QUALITY-PERFORMANCE-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 
-test('captures CANONICAL-0915-OEE', async ({ page }) => {
+test('captures REFERENCE-0915-OEE', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/oee');
   await expect(page.getByRole('heading', { name: 'Como estamos performando e por quê?' })).toBeVisible();
-  await expect(page).toHaveScreenshot('CANONICAL-0915-OEE-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
+  await expect(page).toHaveScreenshot('REFERENCE-0915-OEE-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 
-test('captures CANONICAL-0915-STRATEGIC', async ({ page }) => {
+test('captures REFERENCE-0915-STRATEGIC', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/strategic');
   await expect(page.getByRole('heading', { name: 'Como está a saúde da Fundição DC?' })).toBeVisible();
-  await expect(page).toHaveScreenshot('CANONICAL-0915-STRATEGIC-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
+  await expect(page).toHaveScreenshot('REFERENCE-0915-STRATEGIC-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 
 test('captures SCENARIO-SAME-MACHINE-0915 — moving lot-sd-508 after lot-sd-509 on its own Resource', async ({ page }) => {

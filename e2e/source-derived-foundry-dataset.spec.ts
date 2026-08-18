@@ -2,7 +2,7 @@ import { expect, test } from './fixtures';
 
 /**
  * Candidatos de revisão para o cenário oficial `fundicao-dc` — dataset
- * canônico derivado de LINHA C OFC × FUNDIÇÃO × máquina titular e reserva
+ * de referência derivado de LINHA C OFC × FUNDIÇÃO × máquina titular e reserva
  * (ver docs/prototype/source-data/business-validation/foundry). Promovido a
  * baseline demonstrativo oficial da Fundição DC — ver ADR-002. O cenário
  * sintético anterior (Material A/B/C) é preservado só como fixture de teste
@@ -56,9 +56,9 @@ test('captures source-derived Preparação flagging the component with no confir
 });
 
 /**
- * Capability 04 — Liberar Produção, on the canonical dataset. Ready → Released
+ * Capability 04 — Liberar Produção, on the reference dataset. Ready → Released
  * is exercised end to end; Attention shows the explicit "Revisar condições"
- * action (Section 7). The canonical dataset has no naturally BLOCKED Lot (every
+ * action (Section 7). The reference dataset has no naturally BLOCKED Lot (every
  * scheduled Lot is, by construction, a RESOLVED requirement) — the Blocked
  * scene (CAP-04-BLOCKED-FOR-RELEASE-CANDIDATE) is covered on the legacy
  * scenario in wf001-production-scheduling.spec.ts, which does have one.

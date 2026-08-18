@@ -119,12 +119,12 @@ describe('moving a Lot back to its own current position is a coherent no-op', ()
   });
 });
 
-/** Real canonical dataset (2026-07-10, fundicao-dc, 09:15 Scenario Clock) — DC01 has 10 requirements; lot-sd-510 (last on DC01) is the "locked, immutable at 09:15" seed, one per Resource ([510, 513, 514, 517, 523] are each the last requirement of their Resource). */
-const lockedCanonicalLotIds = new Set(['lot-sd-510', 'lot-sd-513', 'lot-sd-514', 'lot-sd-517', 'lot-sd-523']);
+/** Real reference dataset (2026-07-10, fundicao-dc, 09:15 Scenario Clock) — DC01 has 10 requirements; lot-sd-510 (last on DC01) is the "locked, immutable at 09:15" seed, one per Resource ([510, 513, 514, 517, 523] are each the last requirement of their Resource). */
+const lockedReferenceLotIds = new Set(['lot-sd-510', 'lot-sd-513', 'lot-sd-514', 'lot-sd-517', 'lot-sd-523']);
 
-describe('real canonical dataset — DC01 same-machine reprioritization', () => {
+describe('real reference dataset — DC01 same-machine reprioritization', () => {
   it('moving lot-sd-503 right after lot-sd-501 cascades the DC01 tail, no overlaps, locked lot-sd-510 untouched', () => {
-    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-503', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-501' }, lockedCanonicalLotIds, 30));
+    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-503', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-501' }, lockedReferenceLotIds, 30));
     expect(result.scheduleByLotId['lot-sd-510']).toBeUndefined(); // locked, never rewritten
     expect(result.affectedLotIds).toContain('lot-sd-502');
     expect(result.affectedLotIds).not.toContain('lot-sd-503'); // the moved Lot itself is never listed as "affected"
@@ -141,22 +141,22 @@ describe('real canonical dataset — DC01 same-machine reprioritization', () => 
   });
 
   it('rejects moving the locked lot-sd-510 itself', () => {
-    const result = simulateSequenceMove(sourceDerivedLots, 'lot-sd-510', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-501' }, lockedCanonicalLotIds, 30);
+    const result = simulateSequenceMove(sourceDerivedLots, 'lot-sd-510', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-501' }, lockedReferenceLotIds, 30);
     expect(result.feasible).toBe(false);
   });
 });
 
 describe('Section 13 — removing the original first Lot must not leave a permanent artificial gap', () => {
   it('moving lot-sd-501 (originally first on DC01) later lets lot-sd-502 advance into the vacated 00:30 slot, not keep its own original 01:33 start', () => {
-    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-501', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-505' }, lockedCanonicalLotIds, 30));
+    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-501', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-505' }, lockedReferenceLotIds, 30));
     // lot-sd-502 is now first on DC01, so it advances straight to the Resource's earliest known start (no predecessor, so no Setup gate).
     expect(sameInstant(result.scheduleByLotId['lot-sd-502'].scheduledStart, '2026-07-10T00:30:00-03:00')).toBe(true);
   });
 });
 
-describe('real canonical dataset — cross-machine move onto an eligible Reserve Resource', () => {
+describe('real reference dataset — cross-machine move onto an eligible Reserve Resource', () => {
   it('moving lot-sd-502 (1B2-E5411-W0, Reserve DC03) onto DC03 after its locked lot-sd-514 recalculates both DC01 (compacted) and DC03 (extended)', () => {
-    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-502', { kind: 'CROSS_RESOURCE', resourceId: 'DC03', anchorLotId: 'lot-sd-514' }, lockedCanonicalLotIds, 30));
+    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-502', { kind: 'CROSS_RESOURCE', resourceId: 'DC03', anchorLotId: 'lot-sd-514' }, lockedReferenceLotIds, 30));
     expect(result.originResourceId).toBe('DC01');
     expect(result.destinationResourceId).toBe('DC03');
     expect(result.scheduleByLotId['lot-sd-502'].scheduledResourceId).toBe('DC03');
@@ -180,7 +180,7 @@ describe('real canonical dataset — cross-machine move onto an eligible Reserve
     // the feature layer); it still must reject anything that would violate a locked checkpoint's real chronology.
     // lot-sd-507's own original start (08:19) sits after lot-sd-514's original start (08:00), so the destination
     // anchor collapses onto 08:00 — colliding head-on with locked lot-sd-514's own fixed 08:00 start.
-    const result = simulateSequenceMove(sourceDerivedLots, 'lot-sd-507', { kind: 'CROSS_RESOURCE', resourceId: 'DC03', anchorLotId: null }, lockedCanonicalLotIds, 30);
+    const result = simulateSequenceMove(sourceDerivedLots, 'lot-sd-507', { kind: 'CROSS_RESOURCE', resourceId: 'DC03', anchorLotId: null }, lockedReferenceLotIds, 30);
     expect(result.feasible).toBe(false);
     expect((result as { reason: string }).reason).toBe('OVERLAP');
   });
@@ -193,13 +193,13 @@ describe('real canonical dataset — cross-machine move onto an eligible Reserve
  * PUBLISHED REPORT, not the engine: moving an originally-first Lot later on
  * its own Resource also compacts every Lot between the old and new position
  * — including the anchor itself — earlier. Re-verified end to end against
- * the current canonical (2026-07-10, 09:15) dataset with the same
+ * the current reference (2026-07-10, 09:15) dataset with the same
  * moved-Lot-after-anchor shape (lot-sd-501 moved after lot-sd-505), so this
  * would fail under the pre-fix `simulateResourceMove` behavior (which never
  * moved the anchor at all), or under any regression that reintroduces that bug.
  */
 describe('regression — the exact published "predecessor keeps its stale baseline time" case, independently verified end to end', () => {
-  const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-501', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-505' }, lockedCanonicalLotIds, 30));
+  const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-501', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-505' }, lockedReferenceLotIds, 30));
 
   it('lot-sd-505 itself compacts from its baseline 05:02 to a new 03:59 start — it is NOT still at its stale baseline time in the simulation', () => {
     expect(sameInstant(result.scheduleByLotId['lot-sd-505'].scheduledStart, '2026-07-10T03:59:00-03:00')).toBe(true);
@@ -242,8 +242,8 @@ describe('regression — the exact published "predecessor keeps its stale baseli
   });
 });
 
-describe('property test — every feasible move on the real canonical dataset satisfies the full no-overlap/Setup invariant', () => {
-  const movableLotIds = sourceDerivedLots.filter((lot) => !lockedCanonicalLotIds.has(lot.id)).map((lot) => lot.id);
+describe('property test — every feasible move on the real reference dataset satisfies the full no-overlap/Setup invariant', () => {
+  const movableLotIds = sourceDerivedLots.filter((lot) => !lockedReferenceLotIds.has(lot.id)).map((lot) => lot.id);
   const anchorsPerResource = FOUNDRY_RESOURCE_IDS.map((resourceId) => [resourceId, [null, ...sourceDerivedLots.filter((lot) => lot.scheduledResourceId === resourceId).map((lot) => lot.id)]] as const);
 
   for (const movedLotId of movableLotIds) {
@@ -251,7 +251,7 @@ describe('property test — every feasible move on the real canonical dataset sa
       for (const anchorLotId of anchors) {
         if (anchorLotId === movedLotId) continue;
         it(`${movedLotId} -> ${resourceId} after ${anchorLotId ?? '(start)'}: feasible implies zero overlap and Setup honored across every Resource`, () => {
-          const result = simulateSequenceMove(sourceDerivedLots, movedLotId, { kind: 'CROSS_RESOURCE', resourceId, anchorLotId }, lockedCanonicalLotIds, 30);
+          const result = simulateSequenceMove(sourceDerivedLots, movedLotId, { kind: 'CROSS_RESOURCE', resourceId, anchorLotId }, lockedReferenceLotIds, 30);
           if (!result.feasible) return; // infeasible moves are covered by the dedicated rejection tests above
           assertNoOverlapAndSetupHonored(sourceDerivedLots, result, 30);
         });

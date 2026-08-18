@@ -270,10 +270,10 @@ test('renders hierarchical filters and collapses the sidebar with Escape', async
 });
 
 /** Section 19.9 — absence of a real Quality confirmation must read as "no data", never a fabricated 0. */
-test('hides Produzido instead of showing a fabricated 0 when the canonical scenario has no Quality confirmation yet', () => {
-  const canonical = scenarioDefinitionAdapter.findById('fundicao-dc')!;
+test('hides Produzido instead of showing a fabricated 0 when the reference scenario has no Quality confirmation yet', () => {
+  const referenceScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
   useScenarioStore.setState({ definition: null, productionScheduling: null, initialized: false });
-  useScenarioStore.getState().initializeScenario(canonical);
+  useScenarioStore.getState().initializeScenario(referenceScenario);
   useScenarioStore.getState().resetScenario();
   renderWithFoundation(<ProductionSchedulingPage />);
   const commitment = screen.getByRole('region', { name: 'Compromisso do período' });

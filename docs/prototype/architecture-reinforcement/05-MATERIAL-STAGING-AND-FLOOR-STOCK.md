@@ -7,7 +7,7 @@
 
 “Material available” is too coarse for a mature MES model.
 
-## 2. Canonical concepts
+## 2. Normative concepts
 
 - Material Availability;
 - Material Staging;

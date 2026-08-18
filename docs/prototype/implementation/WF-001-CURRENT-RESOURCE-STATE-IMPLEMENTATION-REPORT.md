@@ -14,7 +14,7 @@ The Plano Hora-Hora remains the dominant object. The new section has no timeline
 
 - Governance source: `../domain-questions/DQ-WF001-002-CURRENT-RESOURCE-STATE.md`.
 - MES Function Catalog: **NOT AVAILABLE IN REPOSITORY**.
-- Canonical MES Function IDs, priorities and capability IDs: not claimed.
+- Standard MES Function IDs, priorities and capability IDs: not claimed.
 - UC-EXEC-001: provisional traceability reference, classified **SUFFICIENT WITH EXTENSION**; the use case was not modified.
 - Projection owner: **Production Monitoring — conceptual**.
 - Consumer: **WF-001**.
@@ -198,7 +198,7 @@ The moderate page-height increase is an accepted trade-off for contextual useful
 
 ## Open Questions
 
-- Canonical MES Function Catalog location and function traceability.
+- Standard MES Function Catalog location and function traceability.
 - Formal UC-EXEC-001 extension.
 - Authoritative sources for Resource identity, Current Lot, Machine State, Produced Quantity and Execution Status.
 - Yamaha Lot × SFC/execution-control-unit relation.

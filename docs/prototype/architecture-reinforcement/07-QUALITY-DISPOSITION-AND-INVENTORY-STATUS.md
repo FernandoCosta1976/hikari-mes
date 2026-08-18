@@ -9,7 +9,7 @@ Explain why Produced Quantity is not automatically Available Quantity.
 
 ## 2. Quality Disposition
 
-Canonical concept: `Quality Disposition`.
+Normative concept: `Quality Disposition`.
 
 Possible conceptual outcomes:
 - accepted/released;

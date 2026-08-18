@@ -5,7 +5,7 @@ import { demonstrativeComponentCycleTimeSecondsMaster } from '../../domain/produ
 import { fundicaoDcShifts } from './fundicaoDcScenario';
 
 /**
- * Cenário demonstrativo derivado do dataset canônico de Fundição
+ * Cenário demonstrativo derivado do dataset de referência de Fundição
  * (ver src/demo/reference-data/foundry). Substitui os materiais artificiais
  * (Material A/B/C) por códigos de peça reais resolvidos a partir de
  * LINHA C OFC × FUNDIÇÃO × máquina titular e reserva.
@@ -46,7 +46,7 @@ export const sourceDerivedMaterials = [
 
 /**
  * As 23 requirements FOUNDRY_DC reais resolvidos para 2026-07-10 no dataset
- * canônico (foundryComponentRequirements.json) — nenhum inventado. Horários
+ * de referência (foundryComponentRequirements.json) — nenhum inventado. Horários
  * abaixo = sequência por máquina titular, blocos com duração
  * quantity × idealCycleTime (Cycle Time Master), Setup de 30 min só quando o
  * Componente muda. Verificado por teste (fundicaoDcSourceDerivedScenario.test.ts).
@@ -136,7 +136,7 @@ const productionOrders = sourceDerivedMaterials.map((material) => {
   };
 });
 
-/** Cobertura de material demonstrativa — as duas fontes usadas (LINHA C OFC, FUNDIÇÃO/máquinas) não fornecem estoque físico; ver seção 25 do briefing de dados canônicos. */
+/** Cobertura de material demonstrativa — as duas fontes usadas (LINHA C OFC, FUNDIÇÃO/máquinas) não fornecem estoque físico; ver seção 25 do briefing de dados de referência. */
 const bufferPositions = sourceDerivedMaterials.map((material, index) => ({
   materialId: material.id,
   onHandQuantity: 200 + index * 10,
@@ -173,7 +173,7 @@ export const fundicaoDcSourceDerivedScenario = {
       { id: 'schedule-source-derived-2026-07-10-v01', source: 'Balancing', businessDate, versionId: 'v01', receivedAt: `${businessDate}T05:42:00-03:00`, workCenterId: workCenter.id, lotIds: sourceDerivedLots.map((lot) => lot.id), demonstrative: true },
     ],
     scheduleVersions: [
-      { id: 'v01', label: 'Versão canônica 01 (fonte real)', demonstrative: true },
+      { id: 'v01', label: 'Versão de referência 01 (fonte real)', demonstrative: true },
     ],
     bufferPositions,
     freshness: [

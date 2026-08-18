@@ -36,7 +36,7 @@ Production Order contextualization, Lot control, Routing/Operation context, Read
 ### Shop-Floor / Automation Layer
 Machines, controls, signals and equipment state. Technical implementation remains outside the executive prototype.
 
-## 4. Minimal canonical chain
+## 4. Minimal normative chain
 
 **Production Order → Lot → Routing → Operation / Operation Activity → Production Readiness → Resource Orchestration → Release → Execution Control Unit → Execution → Production Confirmation → Quality Disposition → Inventory State → Finished Goods Buffer → Performance / OEE / Predictability**
 

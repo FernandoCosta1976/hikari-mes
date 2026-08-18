@@ -2,8 +2,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures';
 
 /**
- * HIKARI Acompanhamento — canonical 2026-07-10, Scenario Clock 09:15. Reads
- * the SAME canonical Scenario as Plano/Preparação/Liberação (Section 14 —
+ * HIKARI Acompanhamento — reference 2026-07-10, Scenario Clock 09:15. Reads
+ * the SAME reference Scenario as Plano/Preparação/Liberação (Section 14 —
  * single source of operational truth, no dataset of its own): the 23
  * requirements, their component codes/families/quantities/Source Lots and
  * their Execution facts/Events come straight from the Scenario store.

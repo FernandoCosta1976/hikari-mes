@@ -207,7 +207,7 @@ test('captures deterministic Capability 04 ready, released and blocked scenes', 
   await expect(page).toHaveScreenshot('CAP-04-BLOCKED-FOR-RELEASE-CANDIDATE.png', { fullPage: true, animations: 'disabled', maxDiffPixelRatio: 0.005 });
 });
 
-test('shows canonical Resource conditions as a read-only overlay through Avaliar cenário and restores the original plan', async ({ page }) => {
+test('shows reference Resource conditions as a read-only overlay through Avaliar cenário and restores the original plan', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Mostrar condições' })).toHaveCount(0);
   const activate = page.getByRole('button', { name: /Avaliar cenário/ });
   await expect(activate).toBeVisible();

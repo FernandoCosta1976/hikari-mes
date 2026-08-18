@@ -4,7 +4,7 @@
 
 The demonstrative Fundição DC schedule now contains exactly 21 Lots and 1,600 pieces across a continuous 24-hour timeline, three shifts and five Scheduled Resource lanes. Lots may cross planned Café/Refeição bands without being split or temporally recalculated.
 
-Material changes on the same Resource generate a distinct Scheduled Setup block. The centralized 30-minute duration is a **DEMONSTRATIVE ASSUMPTION / TBD**, not a canonical MES rule. Setup is not a Lot, Production Order, planned break, Downtime, Maintenance or Actual Stop and contributes no quantity.
+Material changes on the same Resource generate a distinct Scheduled Setup block. The centralized 30-minute duration is a **DEMONSTRATIVE ASSUMPTION / TBD**, not a standard MES rule. Setup is not a Lot, Production Order, planned break, Downtime, Maintenance or Actual Stop and contributes no quantity.
 
 ## Reconciled commitment
 

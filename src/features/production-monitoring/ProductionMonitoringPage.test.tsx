@@ -18,7 +18,7 @@ test('shows the 2026-07-10 Scenario Clock 09:15 context and all five Resources w
   expect(within(timeline).getByText('Não iniciado')).toBeInTheDocument();
 });
 
-test('KPI strip reflects the real 23-requirement canonical dataset totals at 09:15', () => {
+test('KPI strip reflects the real 23-requirement reference dataset totals at 09:15', () => {
   renderWithFoundation(<ProductionMonitoringPage />);
   const strip = screen.getByRole('region', { name: 'Resumo operacional do dia' });
   expect(strip).toHaveTextContent('Planejado até agora1.500');

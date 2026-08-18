@@ -16,7 +16,7 @@ import type { ProductionEvent } from '../../domain/production-monitoring/models'
 /**
  * Every consuming screen (Aderência, Qualidade & Desempenho, OEE, Visão
  * Estratégica) reads the SAME per-Scenario facts here instead of importing a
- * fixture directly — never a dataset of its own (Section 14). The canonical
+ * fixture directly — never a dataset of its own (Section 14). The reference
  * `fundicao-dc` Scenario has its own real Events/Quality/Cycle-Time facts
  * (2026-07-10 · 09:15); `fundicao-dc-legacy` keeps its original fixtures.
  */

@@ -39,7 +39,7 @@ The project needs a frontend foundation that provides visual control, navigable 
 - dense timelines, charts, heatmaps, contextual panels and progressive disclosure;
 - coherent state across a simulated end-to-end journey;
 - deterministic, selectable and resettable demo scenarios;
-- canonical MES semantics and traceability of identities between experiences;
+- standard MES semantics and traceability of identities between experiences;
 - isolation between application context, scenario facts and transient UI presentation;
 - accessibility by construction;
 - unit, interaction, browser and visual-regression testability;
@@ -49,10 +49,10 @@ The project needs a frontend foundation that provides visual control, navigable 
 
 ## 7. Constraints
 
-- The canonical repository is `/Users/fe/Documents/Hikari-mes`.
+- The reference repository is `/Users/fe/Documents/Hikari-mes`.
 - The initial application is a client-side SPA.
 - No backend, production database or external integration is part of the initial foundation.
-- Internal domain naming uses canonical MES English; user-facing content uses governed pt-BR.
+- Internal domain naming uses standard MES English; user-facing content uses governed pt-BR.
 - Production Order is not Lot; Work Center is not Resource.
 - Scheduled Sequence, Dispatched Sequence and Actual Sequence remain distinct.
 - Produced, On-Hand, Reserved and Available Quantity remain distinct.
@@ -136,7 +136,7 @@ Zustand is approved exclusively for transversal demonstrative narrative state. I
 - a universal replacement for React state;
 - storage for trivial UI State;
 - a repository for the whole domain model;
-- a substitute for ports, adapters or canonical domain modules.
+- a substitute for ports, adapters or reference domain modules.
 
 The conceptual model is:
 
@@ -161,7 +161,7 @@ Examples include drawer, modal, tab, zoom, expanded/collapsed, hover and purely 
 
 ## 14. Domain Organization
 
-Domain models are pure TypeScript modules organized around canonical MES domains. They do not depend on:
+Domain models are pure TypeScript modules organized around standard MES domains. They do not depend on:
 
 - React;
 - Zustand;
@@ -177,7 +177,7 @@ Domain modules preserve MES identities, value distinctions and invariants. They 
 
 Features represent governed experiences or capabilities, such as Production Scheduling, Production Readiness, Resource Orchestration and Dispatching. They are not arbitrary page folders.
 
-Features may compose domain models/components and shared UI. Only features authorized by their functional gate should be materialized. A feature owns its experience-specific composition, UI state, interactions and view models without redefining canonical domain entities.
+Features may compose domain models/components and shared UI. Only features authorized by their functional gate should be materialized. A feature owns its experience-specific composition, UI state, interactions and view models without redefining reference domain entities.
 
 ## 16. Shared UI Strategy
 
@@ -195,7 +195,7 @@ Generic presentation and interaction components without MES meaning.
 
 ### Domain Components
 
-Reusable visual representations of canonical MES concepts, such as Lot summary, Production Order reference, Data Freshness or Buffer Coverage. They consume canonical domain types or explicitly defined view models, never transport payloads.
+Reusable visual representations of standard MES concepts, such as Lot summary, Production Order reference, Data Freshness or Buffer Coverage. They consume reference domain types or explicitly defined view models, never transport payloads.
 
 ### Feature Components
 
@@ -281,7 +281,7 @@ Demonstrative fixtures are typed TypeScript and organized by scenario, not by sc
 Rules:
 
 - identify data as demonstrative;
-- preserve canonical Lot, Production Order and Material identities across experiences;
+- preserve reference Lot, Production Order and Material identities across experiences;
 - maintain mathematical and temporal coherence;
 - use a deterministic demonstrative clock;
 - separate base facts from derived selectors;
@@ -300,7 +300,7 @@ Future direction:
 
 `Feature → Domain-oriented Port → Service Adapter → Real API`
 
-Components do not call sources directly. Adapters translate source formats into canonical models or view inputs. Ports are introduced only where a genuinely replaceable boundary exists. Do not invent external contracts or construct ceremonial Clean Architecture layers.
+Components do not call sources directly. Adapters translate source formats into reference models or view inputs. Ports are introduced only where a genuinely replaceable boundary exists. Do not invent external contracts or construct ceremonial Clean Architecture layers.
 
 ## 24. Testing Strategy
 
@@ -308,7 +308,7 @@ Components do not call sources directly. Adapters translate source formats into 
 - **React Testing Library + user-event:** component behavior, keyboard interaction, drawers, filters, freshness, empty states and demonstrative labeling;
 - **Playwright:** routed journeys, context continuity, scenario reset, browser behavior, responsive viewports and critical accessibility structure.
 
-Tests should favor observable behavior and canonical invariants over internal component implementation.
+Tests should favor observable behavior and reference invariants over internal component implementation.
 
 ## 25. Visual Regression Strategy
 
@@ -378,7 +378,7 @@ Migration follows:
 
 `fixtures → demo adapters → service adapters → real APIs`
 
-Features retain their business-question composition, canonical models, actions, selectors and view models. Source-specific DTOs remain inside adapters. Migration occurs incrementally by capability rather than through a duplicated “real application” or a big-bang rewrite.
+Features retain their business-question composition, reference models, actions, selectors and view models. Source-specific DTOs remain inside adapters. Migration occurs incrementally by capability rather than through a duplicated “real application” or a big-bang rewrite.
 
 Remote state libraries, request caching and service lifecycle behavior will be decided only when real remote sources exist.
 
@@ -478,10 +478,10 @@ Only authorized features and necessary boundaries are materialized. The tree is 
 | Risk | Probability | Impact | Mitigation |
 |---|---|---|---|
 | Demo Scenario State becomes a monolithic universal store | Medium–High | High | Capability slices, semantic actions, selectors and restricted raw-state access. |
-| Unapproved MES TBDs become encoded as final frontend states | Medium | Critical | Feature gates, pure canonical models and prohibition on premature lifecycle/actions. |
+| Unapproved MES TBDs become encoded as final frontend states | Medium | Critical | Feature gates, pure reference models and prohibition on premature lifecycle/actions. |
 | Custom Hour-by-Hour timeline accumulates accessibility or performance debt | High | High | Separate temporal math, rendering, interaction and accessibility; test each layer; virtualize only with evidence. |
 | Light design system becomes inconsistent or overbuilt | Medium | High | Governed tokens, demand-driven primitives and evidence-based promotion to Shared. |
-| Fixtures diverge across experiences or contaminate domain models | Medium | High | Scenario-level fixtures, canonical IDs, invariant tests and adapter-only source access. |
+| Fixtures diverge across experiences or contaminate domain models | Medium | High | Scenario-level fixtures, reference IDs, invariant tests and adapter-only source access. |
 | Screenshot baselines become unstable | Medium | Medium–High | Fixed viewport, fonts, clock, scenarios and motion behavior; reviewed golden updates. |
 
 ## 35. Rejected Alternatives
@@ -568,7 +568,7 @@ These MES domain TBDs do not block WF-001.
 
 ## 37. Relationship with MES Domain Architecture
 
-This ADR defines frontend boundaries and technology choices; it does not redefine MES architecture. Pure domain modules must preserve canonical distinctions and defer unresolved semantics to their respective domain gates.
+This ADR defines frontend boundaries and technology choices; it does not redefine MES architecture. Pure domain modules must preserve reference distinctions and defer unresolved semantics to their respective domain gates.
 
 The foundation allows Routing, Operation, Operation Activity, Resource Orchestration, Release, Execution, Quality, Inventory, Events, Performance and Traceability to be represented later without forcing their implementation now. It must not imply that Lot equals SFC, Dispatching equals Release, Produced equals Available or Work Center equals Resource.
 
@@ -580,7 +580,7 @@ The foundation immediately supports WF-001 under the dominant question **“O qu
 - global Productive Area context;
 - a deterministic scenario;
 - a custom continuous Hour-by-Hour timeline;
-- canonical Lot and Production Order identities;
+- reference Lot and Production Order identities;
 - Data Freshness and Schedule Version extensibility;
 - contextual details and progressive disclosure;
 - visual-regression testing against the approved reference.

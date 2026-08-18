@@ -99,7 +99,7 @@ UC-EXEC-001 remains a provisional traceability reference and requires later gove
 
 ## Material × Resource Eligibility Approval
 
-- Canonical architectural concept: Resource Eligibility.
+- Normative architectural concept: Resource Eligibility.
 - UX: Máquinas elegíveis.
 - Current projection: `Material → Eligible Resources`.
 - Classification: `DEMO_SIMULATED`.
@@ -159,7 +159,7 @@ No open question is resolved by this approval.
 
 ## Traceability Gap
 
-**Canonical MES Function Catalog:** NOT AVAILABLE IN REPOSITORY.
+**Standard MES Function Catalog:** NOT AVAILABLE IN REPOSITORY.
 
 WF-001 does not claim definitive MES Function IDs, priorities, capability IDs or production-grade function traceability. The gap does not block the approved demonstrative baseline.
 

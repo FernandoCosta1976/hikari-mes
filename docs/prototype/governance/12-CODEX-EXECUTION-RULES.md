@@ -2,7 +2,7 @@
 
 ## 1. Mandatory preflight
 
-Before modifying prototype code, Codex MUST read all files under the prototype-governance package and the canonical glossary. It must identify applicable personas, use cases, confirmed decisions, hypotheses, and TBDs.
+Before modifying prototype code, Codex MUST read all files under the prototype-governance package and the normative glossary. It must identify applicable personas, use cases, confirmed decisions, hypotheses, and TBDs.
 
 ## 2. No silent product decisions
 
@@ -18,7 +18,7 @@ Codex MUST NOT invent domain rules, MES terminology, approval workflows, optimiz
 
 ## 4. Domain terminology gate
 
-Codex MUST use canonical English terms in code/domain identifiers and controlled pt-BR labels in the UI.
+Codex MUST use standard MES English terms in code/domain identifiers and controlled pt-BR labels in the UI.
 
 No new domain term may be introduced without adding it to the glossary with a governance status.
 

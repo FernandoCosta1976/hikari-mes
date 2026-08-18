@@ -51,7 +51,7 @@ No approval authority is inferred.
 ### Gaps requiring later governance
 
 - productive Readiness derivation and mandatory dimensions;
-- canonical result vocabulary;
+- normative result vocabulary;
 - authoritative sources;
 - acknowledgement/override authority, if required;
 - reassessment/version behavior.
@@ -91,7 +91,7 @@ WF-002 may pass candidate evidence but may not select, recommend, rank, assign o
 
 ## Traceability Gap
 
-The canonical MES Function Catalog is not available in the repository. No MES Function ID, priority, capability ID or production contract is invented.
+The Standard MES Function Catalog is not available in the repository. No MES Function ID, priority, capability ID or production contract is invented.
 
 This blocks definitive function-level traceability and productive model claims. It does not block Product Owner review of this conceptual experience because business questions, personas, use cases, domain foundations and capability boundaries are traceable.
 

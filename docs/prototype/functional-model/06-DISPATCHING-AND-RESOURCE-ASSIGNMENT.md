@@ -65,7 +65,7 @@ The prototype may simulate states such as:
 - Concluído;
 - Em espera.
 
-Before these labels become production-system statuses, they must be reconciled with the canonical SAP/MES terminology.
+Before these labels become production-system statuses, they must be reconciled with the standard SAP/MES terminology.
 
 ## 7. Separation from Scheduling
 

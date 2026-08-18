@@ -21,7 +21,7 @@ test('preserves the selected Lot and exposes readiness without assignment semant
   expect(screen.queryByRole('button', { name: /Atribuir|Despachar|Liberar/ })).not.toBeInTheDocument();
 });
 
-test('groups Resources canonically and keeps the programmed Resource in its actual condition', () => {
+test('groups Resources consistently and keeps the programmed Resource in its actual condition', () => {
   window.history.replaceState(null, '', '/demo/fundicao-dc/production-readiness?lotId=lot-257');
   const { container } = renderWithFoundation(<ProductionReadinessPage />);
   const groups = [...container.querySelectorAll('[data-resource-group]')];

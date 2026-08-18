@@ -65,7 +65,7 @@ function buildCurrentRows(definition: ProductionSchedulingDefinition, executions
 
 /**
  * One row per Lot already due (Scheduled Start <= current time) — feeds the day/Shift OEE
- * totals. A Resource with several requirements across the day (the canonical dataset has up
+ * totals. A Resource with several requirements across the day (the reference dataset has up
  * to 10 on one Resource) must have every one of them counted, not just its current Lot —
  * otherwise already-COMPLETED requirements silently vanish from the accumulated total.
  */

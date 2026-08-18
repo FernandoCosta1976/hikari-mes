@@ -142,7 +142,7 @@ The implementation does not infer whether productive eligibility is owned direct
 
 ## Traceability Gap
 
-The canonical MES Function Catalog remains **NOT AVAILABLE IN REPOSITORY**. The implementation does not claim MES Function IDs, priorities, capability IDs or canonical function-level traceability.
+The Standard MES Function Catalog remains **NOT AVAILABLE IN REPOSITORY**. The implementation does not claim MES Function IDs, priorities, capability IDs or standard function-level traceability.
 
 UC-PROD-003 and UC-PROD-005 remain governed consumers of Resource Eligibility. Neither use case was changed.
 

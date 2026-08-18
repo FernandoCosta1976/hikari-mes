@@ -1,6 +1,6 @@
 # PERSONA-002 — Production Leader
 
-**Canonical role:** Production Leader  
+**Role:** Production Leader  
 **UI reference:** Líder de Produção  
 **Layer:** Operational / Tactical  
 **Status:** PROTOTYPE_BASELINE

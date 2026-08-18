@@ -50,14 +50,14 @@ These must be defined before creating demonstrative WF-002 values or behavior:
 10. Resource-capacity model, calendars, rates and quantity × time semantics.
 11. Downstream capacity/consumption ownership and time model.
 12. Productive Readiness aggregation, mandatory dimensions and exception rules.
-13. Canonical Readiness status/lifecycle and relationship to Release.
+13. Normative Readiness status/lifecycle and relationship to Release.
 14. Source-specific Data Freshness SLA and validity policy.
 15. DQ-WF001-001: parallel schedule meaning and identifier.
 16. Lot × SFC / Execution Control Unit relationship before execution engineering.
 17. Operation/Operation Activity mapping and applicability to eligibility/readiness.
 18. Organizational authority for acknowledgement, override or exception, if any.
 19. Auditability, versioning and reassessment behavior after Schedule Version changes.
-20. Canonical MES Function Catalog and definitive function-level traceability.
+20. Standard MES Function Catalog and definitive function-level traceability.
 
 ## Questions That Must Not Be Resolved by WF-002
 

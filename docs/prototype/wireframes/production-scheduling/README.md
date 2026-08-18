@@ -33,4 +33,4 @@ Reading order:
 
 No file in this group authorizes production backend, integration, persistence, APIs, schemas, event contracts or infrastructure.
 
-The approved image remains the visual baseline, subordinate to normative rules. Incidental red, non-canonical UI terminology and any claim of a next automatic update shown in the image must not be reproduced.
+The approved image remains the visual baseline, subordinate to normative rules. Incidental red, non-normative UI terminology and any claim of a next automatic update shown in the image must not be reproduced.

@@ -118,7 +118,7 @@ export function ProductionSchedulingPage() {
   const releaseByLotId = Object.fromEntries(Object.values(productionReleases).map((item) => [item.lotId, item.status]));
   const readinessCounts = readinessAssessments.reduce((counts, item) => ({ ...counts, [item.status]: counts[item.status] + 1 }), { READY: 0, ATTENTION: 0, BLOCKED: 0, UNKNOWN: 0 });
   const compromissoAttentionCount = readinessCounts.ATTENTION + readinessCounts.BLOCKED + readinessCounts.UNKNOWN;
-  // Section 15 (canonical baseline round): Produced Quantity must read as "no data"
+  // Section 15 (operational reference baseline round): Produced Quantity must read as "no data"
   // (null → hidden), not a fabricated "0 produced", when no Quality confirmation exists
   // for any Resource yet — 0 is only shown once at least one real confirmation exists.
   const qualitySummary = selectedDateOffset === 0 ? computeFundicaoDcQualitySummary(definition, executionsByLot, liveScenarioTime, undefined, undefined, Object.values(productionConfirmationsByLot).flat()) : null;
