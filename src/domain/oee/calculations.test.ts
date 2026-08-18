@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { fundicaoDcIdealCycleTimeSecondsFixture } from '../../demo/fixtures/fundicaoDcIdealCycleTime';
+import { fundicaoDcProductionConfirmationsFixture } from '../../demo/fixtures/fundicaoDcProductionConfirmations';
 import { fundicaoDcProductionExecutionFixture } from '../../demo/fixtures/fundicaoDcProductionExecution';
 import { fundicaoDcQualityConfirmationsFixture } from '../../demo/fixtures/fundicaoDcQualityConfirmations';
 import { fundicaoDcScenario } from '../../demo/scenarios/fundicaoDcScenario';
+import { confirmedQuantityByLot, groupConfirmationsByRequirement } from '../production-confirmation/models';
 import { knownRunTimeMinutes } from '../production-quality/models';
 import { aggregateAvailability, aggregatePerformance, aggregateQuality, assessAvailability, assessOee, assessPerformance, plannedProductionTimeMinutes, topOeeImpacts, type ResourceOeeRow } from './calculations';
 
@@ -11,6 +13,7 @@ const shifts = fundicaoDcScenario.productionScheduling.shifts;
 const lots = fundicaoDcScenario.productionScheduling.lots;
 const executionByLot = Object.fromEntries(fundicaoDcProductionExecutionFixture.map((execution) => [execution.lotId, execution]));
 const confirmationsByLot = Object.fromEntries(fundicaoDcQualityConfirmationsFixture.map((confirmation) => [confirmation.lotId, confirmation]));
+const producedQuantityByLotId = confirmedQuantityByLot(groupConfirmationsByRequirement(fundicaoDcProductionConfirmationsFixture));
 const lot = (id: string) => lots.find((item) => item.id === id)!;
 
 function rowFor(lotId: string): ResourceOeeRow {
@@ -20,11 +23,12 @@ function rowFor(lotId: string): ResourceOeeRow {
   const plannedTimeMinutes = plannedProductionTimeMinutes(l, execution, shifts, currentTime);
   const idealCycleTimeSeconds = fundicaoDcIdealCycleTimeSecondsFixture[l.materialId] ?? null;
   const confirmation = confirmationsByLot[lotId];
+  const producedQuantity = producedQuantityByLotId[lotId] ?? 0;
   const goodQuantity = confirmation?.goodQuantity ?? null;
   const availability = assessAvailability(runTimeMinutes, plannedTimeMinutes);
-  const performance = assessPerformance(idealCycleTimeSeconds, execution.producedQuantity, runTimeMinutes);
+  const performance = assessPerformance(idealCycleTimeSeconds, producedQuantity, runTimeMinutes);
   const quality = confirmation ? confirmation.goodQuantity / confirmation.producedQuantity : null;
-  return { resourceId: execution.resourceId, runTimeMinutes, plannedTimeMinutes, idealCycleTimeSeconds, producedQuantity: execution.producedQuantity, goodQuantity, availability, performance, quality, oee: assessOee(availability, performance, quality) };
+  return { resourceId: execution.resourceId, runTimeMinutes, plannedTimeMinutes, idealCycleTimeSeconds, producedQuantity, goodQuantity, availability, performance, quality, oee: assessOee(availability, performance, quality) };
 }
 
 const rows = ['lot-265', 'lot-264', 'lot-266', 'lot-268', 'lot-271'].map(rowFor);

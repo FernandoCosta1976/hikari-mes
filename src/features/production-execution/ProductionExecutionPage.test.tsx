@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { scenarioDefinitionAdapter } from '../../demo/adapters/scenarioDefinitionAdapter';
-import { useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectConfirmedQuantityByLotId, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { renderWithFoundation } from '../../test/renderWithFoundation';
 import { ProductionExecutionPage } from './ProductionExecutionPage';
 
@@ -26,22 +26,25 @@ test('shows the installed Mold and the Apontamento da Produção (Automatic and 
   expect(within(history).getAllByText(/Automação/).length).toBeGreaterThan(0);
   expect(within(history).getByText(/Operador/)).toBeInTheDocument();
 });
-test('starts, pauses, resumes and completes explicitly once the Session Clock reaches Scheduled Finish', async () => {
+test('starts, pauses, resumes, registers production incrementally and completes once confirmed quantity reaches Planned Quantity', async () => {
   const user = userEvent.setup(); renderWithFoundation(<ProductionExecutionPage />);
   await user.click(screen.getByRole('button', { name: 'Iniciar produção' }));
   const board = screen.getByRole('region', { name: 'Situação das cinco máquinas' });
   const dc05Card = () => within(board).getByText('DC05').closest('article')!;
   await user.selectOptions(screen.getByLabelText('Motivo da pausa na DC05'), 'QUALITY'); await user.click(within(dc05Card()).getByRole('button', { name: 'Pausar' }));
   expect(useScenarioStore.getState().productionExecutions['lot-271']).toMatchObject({ status: 'PAUSED', pauses: [{ reason: 'QUALITY' }] });
-  // Concluir stays hidden on DC05 until the Session Clock reaches lot-271's own Scheduled Finish (18:00) — no
-  // manual quantity entry exists this round, so two Pause/Resume cycles (each a fixed +15min step) get there.
-  // (The Session Clock is shared across every Resource, so another Resource may show Concluir sooner — that's
-  // an intentional consequence of one Session Operational Clock, not scoped per-lot.)
+  await user.click(within(dc05Card()).getByRole('button', { name: 'Retomar' }));
+  // Concluir stays hidden until the confirmed Production total reaches Planned Quantity (Capability 06) — no
+  // longer a Session Clock/Scheduled Finish convention.
   expect(within(dc05Card()).queryAllByRole('button', { name: 'Concluir' })).toHaveLength(0);
-  await user.click(within(dc05Card()).getByRole('button', { name: 'Retomar' }));
-  await user.click(within(dc05Card()).getByRole('button', { name: 'Pausar' }));
-  await user.click(within(dc05Card()).getByRole('button', { name: 'Retomar' }));
+  await user.type(within(dc05Card()).getByLabelText('Quantidade produzida na DC05'), '30');
+  await user.click(within(dc05Card()).getByRole('button', { name: 'Registrar produção' }));
+  expect(selectConfirmedQuantityByLotId(useScenarioStore.getState())['lot-271']).toBe(30);
+  expect(within(dc05Card()).queryAllByRole('button', { name: 'Concluir' })).toHaveLength(0);
+  await user.type(within(dc05Card()).getByLabelText('Quantidade produzida na DC05'), '40');
+  await user.click(within(dc05Card()).getByRole('button', { name: 'Registrar produção' }));
+  expect(selectConfirmedQuantityByLotId(useScenarioStore.getState())['lot-271']).toBe(70);
   await user.click(within(dc05Card()).getByRole('button', { name: 'Concluir' }));
   expect(within(dc05Card()).getByText('Concluída')).toBeInTheDocument();
-  expect(useScenarioStore.getState().productionExecutions['lot-271']).toMatchObject({ status: 'COMPLETED', producedQuantity: 70, plannedQuantity: 70 });
+  expect(useScenarioStore.getState().productionExecutions['lot-271']).toMatchObject({ status: 'COMPLETED', plannedQuantity: 70 });
 });

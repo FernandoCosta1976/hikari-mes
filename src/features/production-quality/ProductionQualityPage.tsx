@@ -5,7 +5,7 @@ import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcShiftOeeSummaries } from '../../demo/adapters/oeeSummaryAdapter';
 import { computeFundicaoDcQualitySummary, computeFundicaoDcShiftQualitySummaries, type FundicaoDcQualityRow } from '../../demo/adapters/qualitySummaryAdapter';
 import { idealCycleTimeSecondsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectProductionConfirmations, selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { isValidQualityConfirmation, qualityRate, type QualityLossReason } from '../../domain/production-quality/models';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Bar, StackedBar } from '../../shared/ui/Bar/Bar';
@@ -57,6 +57,7 @@ export function ProductionQualityPage() {
   const definition = useScenarioStore(selectProductionScheduling);
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
+  const productionConfirmationsByLot = useScenarioStore(selectProductionConfirmations);
   const [openRow, setOpenRow] = useState<Row | null>(null);
   const sessionClock = useScenarioStore(selectSessionClock);
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
@@ -64,10 +65,11 @@ export function ProductionQualityPage() {
   const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   if (!definition || !scenario) return <p>Preparando qualidade demonstrativa…</p>;
   const businessDate = currentTime.slice(0, 10);
+  const productionConfirmations = Object.values(productionConfirmationsByLot).flat();
 
-  const day = computeFundicaoDcQualitySummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
-  const shifts = computeFundicaoDcShiftQualitySummaries(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
-  const oeeShifts = computeFundicaoDcShiftOeeSummaries(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
+  const day = computeFundicaoDcQualitySummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations);
+  const shifts = computeFundicaoDcShiftQualitySummaries(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations);
+  const oeeShifts = computeFundicaoDcShiftOeeSummaries(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations);
   const currentShift = shifts.find((shift) => shift.status === 'IN_PROGRESS') ?? shifts[shifts.length - 1];
   const currentShiftPerformance = oeeShifts.find((shift) => shift.shiftId === currentShift.shiftId)?.areaPerformance ?? null;
   const completedShifts = shifts.filter((shift) => shift.status === 'COMPLETED');

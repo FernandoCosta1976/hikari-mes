@@ -40,6 +40,8 @@ export function projectionSignal(status: RequirementStatus, projectedFinish: str
 export interface RequirementSnapshot {
   lot: Lot;
   execution: ProductionExecutionRecord;
+  /** Confirmed produced quantity — SUM(Production Confirmations) for this Requirement, the single Total Count source (Capability 06). */
+  producedQuantity: number;
   status: RequirementStatus;
   projectedFinish?: string;
   projection: ProjectionSignal;
@@ -61,6 +63,7 @@ export interface RequirementSnapshot {
 export function buildRequirementSnapshots(
   lots: readonly Lot[],
   executionsByLotId: Readonly<Record<string, ProductionExecutionRecord>>,
+  confirmedQuantityByLotId: Readonly<Record<string, number>>,
   currentTime: string,
   downtimeMinutesByLotId: Readonly<Record<string, number>> = {},
 ): readonly RequirementSnapshot[] {
@@ -93,7 +96,8 @@ export function buildRequirementSnapshots(
       const varianceMinutes = execution.actualFinish
         ? Math.round((Date.parse(execution.actualFinish) - Date.parse(lot.scheduledFinish)) / 60_000)
         : projectedFinish ? Math.round((Date.parse(projectedFinish) - Date.parse(lot.scheduledFinish)) / 60_000) : undefined;
-      snapshots.set(lot.id, { lot, execution, status, projectedFinish, projection, varianceMinutes });
+      const producedQuantity = confirmedQuantityByLotId[lot.id] ?? 0;
+      snapshots.set(lot.id, { lot, execution, producedQuantity, status, projectedFinish, projection, varianceMinutes });
     }
   }
   return lots.map((lot) => snapshots.get(lot.id)).filter((snapshot): snapshot is RequirementSnapshot => snapshot !== undefined);
@@ -119,8 +123,8 @@ export function summarizeDay(snapshots: readonly RequirementSnapshot[]): DaySnap
   const atRiskLotIds: string[] = [];
   for (const snapshot of snapshots) {
     plannedQuantity += snapshot.lot.quantity;
-    if (snapshot.status === 'COMPLETED') actualQuantity += snapshot.execution.producedQuantity;
-    if (snapshot.status === 'RUNNING' || snapshot.status === 'DELAYED') runningQuantity += snapshot.execution.producedQuantity;
+    if (snapshot.status === 'COMPLETED') actualQuantity += snapshot.producedQuantity;
+    if (snapshot.status === 'RUNNING' || snapshot.status === 'DELAYED') runningQuantity += snapshot.producedQuantity;
     if (snapshot.status === 'DELAYED' || snapshot.status === 'NOT_STARTED') delayedOrNotStartedCount += 1;
     if (snapshot.status === 'SCHEDULED') scheduledCount += 1;
     if (snapshot.projection === 'AT_RISK') atRiskLotIds.push(snapshot.lot.id);

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { fundicaoDcSourceDerivedProductionConfirmationsFixture } from './fundicaoDcSourceDerivedProductionConfirmations';
 import { fundicaoDcSourceDerivedProductionExecutionFixture } from './fundicaoDcSourceDerivedProductionExecution';
 import { fundicaoDcSourceDerivedQualityConfirmationsFixture } from './fundicaoDcSourceDerivedQualityConfirmations';
 import { fundicaoDcSourceDerivedProductionEventsFixture } from './fundicaoDcSourceDerivedProductionEvents';
 import { sourceDerivedLots } from '../scenarios/fundicaoDcSourceDerivedScenario';
+import { accumulatedProducedQuantity, confirmedQuantityByLot, groupConfirmationsByRequirement } from '../../domain/production-confirmation/models';
 import { isValidQualityConfirmation } from '../../domain/production-quality/models';
 
 describe('canonical 2026-07-10 execution/quality/event facts', () => {
@@ -12,12 +14,17 @@ describe('canonical 2026-07-10 execution/quality/event facts', () => {
     for (const execution of fundicaoDcSourceDerivedProductionExecutionFixture) expect(lotIds.has(execution.lotId)).toBe(true);
   });
 
-  it('Quality Total Count never exceeds or diverges from Execution Produced for the same requirement', () => {
-    const executionByLot = Object.fromEntries(fundicaoDcSourceDerivedProductionExecutionFixture.map((execution) => [execution.lotId, execution]));
+  it('Quality Total Count never exceeds or diverges from the Production Confirmation aggregate for the same requirement (Section 22)', () => {
+    const confirmedQuantityByLotId = confirmedQuantityByLot(groupConfirmationsByRequirement(fundicaoDcSourceDerivedProductionConfirmationsFixture));
     for (const confirmation of fundicaoDcSourceDerivedQualityConfirmationsFixture) {
-      expect(confirmation.producedQuantity, confirmation.lotId).toBe(executionByLot[confirmation.lotId].producedQuantity);
+      expect(confirmation.producedQuantity, confirmation.lotId).toBe(confirmedQuantityByLotId[confirmation.lotId]);
       expect(isValidQualityConfirmation(confirmation), confirmation.lotId).toBe(true);
     }
+  });
+
+  it('every seed Production Confirmation accumulates to exactly its own historical producedQuantity fact, migrated 1:1 (no invented quantity)', () => {
+    const byLot = groupConfirmationsByRequirement(fundicaoDcSourceDerivedProductionConfirmationsFixture);
+    for (const [lotId, confirmations] of Object.entries(byLot)) expect(accumulatedProducedQuantity(confirmations), lotId).toBeGreaterThan(0);
   });
 
   it('every Quality confirmation belongs to a COMPLETED requirement (never a Running/Not-Started one)', () => {

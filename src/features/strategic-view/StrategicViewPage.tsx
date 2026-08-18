@@ -6,7 +6,7 @@ import { computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSumma
 import { computeFundicaoDcOeeSummary } from '../../demo/adapters/oeeSummaryAdapter';
 import { computeFundicaoDcQualitySummary } from '../../demo/adapters/qualitySummaryAdapter';
 import { downstreamHealthForScenario, idealCycleTimeSecondsForScenario, moldsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectProductionExecutions, selectProductionReadiness, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectConfirmedQuantityByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReadiness, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DownstreamAreaStatus } from '../../domain/downstream/models';
 import { mostCriticalMold } from '../../domain/mold/models';
 import { assessLotExecutionHealth, byLotHealthAttention, lotHealthIcon, lotHealthLabel, type LotHealthProjection, type LotHealthStatus } from '../../domain/production-execution/lotHealth';
@@ -51,6 +51,8 @@ export function StrategicViewPage() {
   const definition = useScenarioStore(selectProductionScheduling);
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
+  const confirmedQuantityByLotId = useScenarioStore(selectConfirmedQuantityByLotId);
+  const productionConfirmationsByLot = useScenarioStore(selectProductionConfirmations);
   const readinessAssessments = useScenarioStore(selectProductionReadiness);
   const sessionClock = useScenarioStore(selectSessionClock);
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
@@ -60,12 +62,13 @@ export function StrategicViewPage() {
   const criticalMold = mostCriticalMold(moldsForScenario(scenario?.id));
   if (!definition || !scenario) return <p>Preparando visão estratégica…</p>;
   const businessDate = currentTime.slice(0, 10);
+  const productionConfirmations = Object.values(productionConfirmationsByLot).flat();
 
-  const oeeDay = computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
+  const oeeDay = computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations);
   const adherenceDay = computeFundicaoDcAdherenceSummary(definition, executionsByLot, currentTime);
   const adherenceShifts = computeFundicaoDcShiftAdherenceSummaries(definition, executionsByLot, currentTime);
   const currentShift = adherenceShifts.find((shift) => shift.status === 'IN_PROGRESS') ?? adherenceShifts[adherenceShifts.length - 1];
-  const qualityDay = computeFundicaoDcQualitySummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
+  const qualityDay = computeFundicaoDcQualitySummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations);
 
   const todaySchedule = definition.schedules[0];
   const todayLots = todaySchedule.lotIds.map((id) => definition.lots.find((lot) => lot.id === id)!).filter(Boolean);
@@ -79,7 +82,7 @@ export function StrategicViewPage() {
     const execution = currentExecutionForResource(Object.values(executionsByLot), resourceId)!;
     const lot = definition.lots.find((item) => item.id === execution.lotId)!;
     const cycleTimeSeconds = idealCycleTimeSecondsByMaterialId[lot.materialId];
-    const health = assessLotExecutionHealth(execution, lot.scheduledStart, lot.scheduledFinish, cycleTimeSeconds, currentTime);
+    const health = assessLotExecutionHealth(execution, confirmedQuantityByLotId[execution.lotId] ?? 0, lot.scheduledStart, lot.scheduledFinish, cycleTimeSeconds, currentTime);
     return [resourceId, { health, lot }] as const;
   })) as Record<FoundryResourceId, { health: LotHealthProjection; lot: Lot }>;
 

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { fundicaoDcIdealCycleTimeSecondsFixture } from '../../demo/fixtures/fundicaoDcIdealCycleTime';
+import { fundicaoDcProductionConfirmationsFixture } from '../../demo/fixtures/fundicaoDcProductionConfirmations';
 import { fundicaoDcProductionExecutionFixture } from '../../demo/fixtures/fundicaoDcProductionExecution';
 import { fundicaoDcScenario } from '../../demo/scenarios/fundicaoDcScenario';
+import { confirmedQuantityByLot, groupConfirmationsByRequirement } from '../production-confirmation/models';
 import { assessPerformance } from '../oee/calculations';
 import { knownRunTimeMinutes } from '../production-quality/models';
 import { assessLotExecutionHealth, byLotHealthAttention, productionDurationSeconds, type LotHealthStatus } from './lotHealth';
@@ -9,8 +11,9 @@ import { assessLotExecutionHealth, byLotHealthAttention, productionDurationSecon
 const lots = fundicaoDcScenario.productionScheduling.lots;
 const currentTime = fundicaoDcScenario.currentScenarioTime;
 const executionByLot = Object.fromEntries(fundicaoDcProductionExecutionFixture.map((execution) => [execution.lotId, execution]));
+const producedQuantityByLotId = confirmedQuantityByLot(groupConfirmationsByRequirement(fundicaoDcProductionConfirmationsFixture));
 const lot = (id: string) => lots.find((item) => item.id === id)!;
-const health = (lotId: string) => { const l = lot(lotId); return assessLotExecutionHealth(executionByLot[lotId], l.scheduledStart, l.scheduledFinish, fundicaoDcIdealCycleTimeSecondsFixture[l.materialId], currentTime); };
+const health = (lotId: string) => { const l = lot(lotId); return assessLotExecutionHealth(executionByLot[lotId], producedQuantityByLotId[lotId] ?? 0, l.scheduledStart, l.scheduledFinish, fundicaoDcIdealCycleTimeSecondsFixture[l.materialId], currentTime); };
 
 describe('productionDurationSeconds', () => {
   it('is quantity times the Engineering Cycle Time, so different Materials produce different durations for the same quantity', () => {
@@ -52,23 +55,24 @@ describe('OEE / Lot Health Cycle Time invariance', () => {
     for (const lotId of ['lot-265', 'lot-264', 'lot-266', 'lot-268']) {
       const l = lot(lotId);
       const execution = executionByLot[lotId];
+      const producedQuantity = producedQuantityByLotId[lotId] ?? 0;
       const idealCycleTimeSeconds = fundicaoDcIdealCycleTimeSecondsFixture[l.materialId];
       const runTimeMinutes = knownRunTimeMinutes(execution, currentTime);
-      const oeePerformance = assessPerformance(idealCycleTimeSeconds, execution.producedQuantity, runTimeMinutes);
+      const oeePerformance = assessPerformance(idealCycleTimeSeconds, producedQuantity, runTimeMinutes);
       const lotHealthCycleTime = health(lotId).cycleTimeSecondsPerPiece;
       expect(lotHealthCycleTime).toBe(idealCycleTimeSeconds);
-      if (oeePerformance !== null) expect(oeePerformance).toBeCloseTo((execution.producedQuantity * idealCycleTimeSeconds) / 60 / runTimeMinutes!, 6);
+      if (oeePerformance !== null) expect(oeePerformance).toBeCloseTo((producedQuantity * idealCycleTimeSeconds) / 60 / runTimeMinutes!, 6);
     }
   });
 });
 
 describe('assessLotExecutionHealth — no simulated execution', () => {
   it('reports NOT_MONITORED (not LATE_NOT_STARTED) when Scheduled Start has passed but there is no execution record at all', () => {
-    const result = assessLotExecutionHealth(null, '2025-05-15T00:30:00-03:00', '2025-05-15T02:00:00-03:00', 72, currentTime);
+    const result = assessLotExecutionHealth(null, 0, '2025-05-15T00:30:00-03:00', '2025-05-15T02:00:00-03:00', 72, currentTime);
     expect(result.status).toBe<LotHealthStatus>('NOT_MONITORED');
   });
   it('still reports NOT_DUE for a future Scheduled Start with no execution record', () => {
-    const result = assessLotExecutionHealth(null, '2025-05-15T23:00:00-03:00', '2025-05-16T00:00:00-03:00', 72, currentTime);
+    const result = assessLotExecutionHealth(null, 0, '2025-05-15T23:00:00-03:00', '2025-05-16T00:00:00-03:00', 72, currentTime);
     expect(result.status).toBe<LotHealthStatus>('NOT_DUE');
   });
 });

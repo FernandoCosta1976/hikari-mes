@@ -33,7 +33,7 @@ export interface ProductionExecutionRecord {
   plannedResourceId?: string;
   scheduleVersionId: string;
   plannedQuantity: number;
-  producedQuantity: number;
+  /** Produced quantity lives in Production Confirmation (Capability 06) — SUM(confirmations), never a field here. */
   scheduledStart: string;
   status: ProductionExecutionStatus;
   actualStart?: string;
@@ -61,25 +61,20 @@ export function resumeExecution(record: ProductionExecutionRecord, at: string, a
   if (record.status !== 'PAUSED') return record;
   return { ...record, status: 'IN_PROGRESS' as const, pauses: record.pauses.map((pause, index) => index === record.pauses.length - 1 ? { ...pause, resumedAt: at } : pause), transitions: [...record.transitions, transition('RESUMED', at, actor)] };
 }
-export function updateProducedQuantity(record: ProductionExecutionRecord, quantity: number) {
-  if (record.status !== 'IN_PROGRESS' && record.status !== 'PAUSED') return record;
-  return { ...record, producedQuantity: Math.max(0, Math.round(quantity)) };
-}
-
 /**
- * Completion requires the Requirement to have genuinely reached its Scheduled
- * Finish — the same signal every other COMPLETED Requirement in the canonical
- * dataset already reflects — rather than a manual quantity entry (Capability
- * 06 territory, out of scope here). A historical Requirement (already
- * COMPLETED before the session clock) is never eligible again.
+ * Completion now requires the Requirement's own confirmed produced quantity
+ * (Capability 06 — Production Confirmation, SUM(confirmations), never
+ * execution's own field) to have reached Planned Quantity — replacing the
+ * earlier time-based convention entirely (Section 18). A historical
+ * Requirement (already COMPLETED) is never eligible again.
  */
-export function canCompleteExecution(record: ProductionExecutionRecord, scheduledFinish: string, currentTime: string): boolean {
-  return record.status === 'IN_PROGRESS' && Date.parse(currentTime) >= Date.parse(scheduledFinish);
+export function canCompleteExecution(record: ProductionExecutionRecord, confirmedProducedQuantity: number): boolean {
+  return record.status === 'IN_PROGRESS' && confirmedProducedQuantity >= record.plannedQuantity;
 }
 
-export function completeExecution(record: ProductionExecutionRecord, scheduledFinish: string, at: string, actor: string) {
-  if (!canCompleteExecution(record, scheduledFinish, at)) return record;
-  return { ...record, status: 'COMPLETED' as const, actualFinish: at, producedQuantity: record.plannedQuantity, transitions: [...record.transitions, transition('COMPLETED', at, actor)] };
+export function completeExecution(record: ProductionExecutionRecord, confirmedProducedQuantity: number, at: string, actor: string) {
+  if (!canCompleteExecution(record, confirmedProducedQuantity)) return record;
+  return { ...record, status: 'COMPLETED' as const, actualFinish: at, transitions: [...record.transitions, transition('COMPLETED', at, actor)] };
 }
 
 /**

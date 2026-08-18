@@ -108,6 +108,6 @@ describe('scenario persistence — derived data never persisted', () => {
       expect(raw).not.toContain(forbidden);
     }
     const parsed = JSON.parse(raw);
-    expect(Object.keys(parsed).sort()).toEqual(['organizationsByLotId', 'postponedLotIds', 'preparationConfirmedByLotId', 'productionExecutions', 'productionReleases', 'schemaVersion', 'scenarioModified', 'sessionClock'].sort());
+    expect(Object.keys(parsed).sort()).toEqual(['organizationsByLotId', 'postponedLotIds', 'preparationConfirmedByLotId', 'productionConfirmations', 'productionExecutions', 'productionReleases', 'schemaVersion', 'scenarioModified', 'sessionClock'].sort());
   });
 });

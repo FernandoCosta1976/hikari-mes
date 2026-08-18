@@ -1,6 +1,8 @@
 import { fundicaoDcIdealCycleTimeSecondsFixture } from '../fixtures/fundicaoDcIdealCycleTime';
+import { fundicaoDcProductionConfirmationsFixture } from '../fixtures/fundicaoDcProductionConfirmations';
 import { fundicaoDcQualityConfirmationsFixture } from '../fixtures/fundicaoDcQualityConfirmations';
 import { classifyShiftStatus, resolveShift, type ShiftStatus } from '../../domain/oee/calculations';
+import { confirmedQuantityByLot, groupConfirmationsByRequirement, type ProductionConfirmation } from '../../domain/production-confirmation/models';
 import { currentExecutionForResource, type ProductionExecutionRecord } from '../../domain/production-execution/models';
 import { assessPerformanceFoundation, mainLosses, qualityRate, qualitySummary, type PerformanceFoundation, type QualityConfirmation } from '../../domain/production-quality/models';
 import type { Lot, ProductionSchedulingDefinition, Shift } from '../../domain/production-scheduling/models';
@@ -67,28 +69,40 @@ function buildAllDueRows(definition: ProductionSchedulingDefinition, executionsB
     .filter((row): row is FundicaoDcQualityRow => row !== null);
 }
 
-function aggregate(rows: readonly FundicaoDcQualityRow[]): FundicaoDcQualityAggregate {
+/**
+ * "Produzido" (headline Total Count, Section 24) sums the full confirmed
+ * aggregate across the due rows — including Running Requirements that have
+ * a confirmed quantity but no Quality classification yet. "Taxa de
+ * qualidade" deliberately keeps its existing formula, computed only over
+ * rows that already carry a Quality Confirmation (Section 23: a Requirement
+ * pending classification neither helps nor hurts the rate — it is not
+ * assumed to be good or bad).
+ */
+function aggregate(rows: readonly FundicaoDcQualityRow[], confirmedQuantityByLotId: Readonly<Record<string, number>>): FundicaoDcQualityAggregate {
   const confirmations = rows.map((row) => row.confirmation).filter((confirmation): confirmation is QualityConfirmation => confirmation !== undefined);
-  const totals = qualitySummary(confirmations);
-  return { ...totals, qualityRate: qualityRate({ producedQuantity: totals.produced, goodQuantity: totals.good }), losses: mainLosses(confirmations) };
+  const classified = qualitySummary(confirmations);
+  const produced = rows.reduce((sum, row) => sum + (confirmedQuantityByLotId[row.lot.id] ?? 0), 0);
+  return { produced, good: classified.good, reject: classified.reject, rework: classified.rework, qualityRate: qualityRate({ producedQuantity: classified.produced, goodQuantity: classified.good }), losses: mainLosses(confirmations) };
 }
 
 /** Single source of truth for the Fundição DC Quality figures — reused by the day summary and the per-Shift breakdown so both never drift apart. */
-export function computeFundicaoDcQualitySummary(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, qualityConfirmations: readonly QualityConfirmation[] = fundicaoDcQualityConfirmationsFixture, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>> = fundicaoDcIdealCycleTimeSecondsFixture): FundicaoDcQualitySummary {
+export function computeFundicaoDcQualitySummary(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, qualityConfirmations: readonly QualityConfirmation[] = fundicaoDcQualityConfirmationsFixture, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>> = fundicaoDcIdealCycleTimeSecondsFixture, productionConfirmations: readonly ProductionConfirmation[] = fundicaoDcProductionConfirmationsFixture): FundicaoDcQualitySummary {
   const confirmationsByLot = Object.fromEntries(qualityConfirmations.map((confirmation) => [confirmation.lotId, confirmation]));
+  const confirmedQuantityByLotId = confirmedQuantityByLot(groupConfirmationsByRequirement(productionConfirmations));
   const rows = buildCurrentRows(definition, executionsByLot, currentTime, confirmationsByLot, idealCycleTimeSecondsByMaterialId);
   const allRows = buildAllDueRows(definition, executionsByLot, currentTime, confirmationsByLot, idealCycleTimeSecondsByMaterialId);
   const preparedCount = rows.filter((row) => row.foundation.status === 'PREPARED').length;
-  return { rows, preparedCount, ...aggregate(allRows) };
+  return { rows, preparedCount, ...aggregate(allRows, confirmedQuantityByLotId) };
 }
 
-export function computeFundicaoDcShiftQualitySummaries(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, qualityConfirmations: readonly QualityConfirmation[] = fundicaoDcQualityConfirmationsFixture, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>> = fundicaoDcIdealCycleTimeSecondsFixture): readonly FundicaoDcShiftQualitySummary[] {
+export function computeFundicaoDcShiftQualitySummaries(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, qualityConfirmations: readonly QualityConfirmation[] = fundicaoDcQualityConfirmationsFixture, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>> = fundicaoDcIdealCycleTimeSecondsFixture, productionConfirmations: readonly ProductionConfirmation[] = fundicaoDcProductionConfirmationsFixture): readonly FundicaoDcShiftQualitySummary[] {
   const confirmationsByLot = Object.fromEntries(qualityConfirmations.map((confirmation) => [confirmation.lotId, confirmation]));
+  const confirmedQuantityByLotId = confirmedQuantityByLot(groupConfirmationsByRequirement(productionConfirmations));
   const rows = buildCurrentRows(definition, executionsByLot, currentTime, confirmationsByLot, idealCycleTimeSecondsByMaterialId);
   const allRows = buildAllDueRows(definition, executionsByLot, currentTime, confirmationsByLot, idealCycleTimeSecondsByMaterialId);
   return definition.shifts.map((shift) => {
     const shiftRows = rows.filter((row) => resolveShift(definition.shifts, row.lot.scheduledStart)?.id === shift.id);
     const shiftAllRows = allRows.filter((row) => resolveShift(definition.shifts, row.lot.scheduledStart)?.id === shift.id);
-    return { shiftId: shift.id, shiftName: shift.name, status: classifyShiftStatus(shift, currentTime), rows: shiftRows, ...aggregate(shiftAllRows) };
+    return { shiftId: shift.id, shiftName: shift.name, status: classifyShiftStatus(shift, currentTime), rows: shiftRows, ...aggregate(shiftAllRows, confirmedQuantityByLotId) };
   });
 }

@@ -5,10 +5,11 @@ import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { sourceDerivedTraceabilityByLotId } from '../../demo/scenarios/fundicaoDcSourceDerivedScenario';
 import { componentResourceMappingByCode } from '../../demo/reference-data/foundry/componentResourceMappings';
 import { eventsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectProductionExecutions, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectConfirmedQuantityByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { buildRequirementSnapshots, summarizeDay, type RequirementSnapshot, type RequirementStatus } from '../../domain/production-monitoring/executionStatus';
 import { eventDurationMinutes, eventsNewestFirst, type ProductionEvent } from '../../domain/production-monitoring/models';
 import { canCompleteExecution, type DemonstrativePauseReason } from '../../domain/production-execution/models';
+import { validateConfirmationIncrement, type ProductionConfirmation } from '../../domain/production-confirmation/models';
 import type { ProductionReleaseRecord } from '../../domain/production-release/models';
 import type { Material } from '../../domain/production-scheduling/models';
 import { timelinePosition, timelineWidth } from '../../domain/production-scheduling/temporalMath';
@@ -24,18 +25,29 @@ const eventTypeLabel: Record<ProductionEvent['eventType'], string> = { MATERIAL:
 /** Section 13 — a simple, demonstrative reason set for the interactive Pause action, reusing three of the existing five OEE-linked reasons rather than inventing a new taxonomy. */
 const pauseReasonChoices: readonly [DemonstrativePauseReason, string][] = [['MACHINE_ADJUSTMENT', 'Parada operacional'], ['MATERIAL_SHORTAGE', 'Aguardando condição'], ['OTHER', 'Interrupção demonstrativa']];
 
-function ContextDialog({ snapshot, events, material, release, currentTime, onClose, onStart, onPause, onResume, onComplete }: { snapshot: RequirementSnapshot; events: readonly ProductionEvent[]; material: Material; release?: ProductionReleaseRecord; currentTime: string; onClose: () => void; onStart: () => void; onPause: (reason: DemonstrativePauseReason) => void; onResume: () => void; onComplete: () => void }) {
+function ContextDialog({ snapshot, events, confirmations, material, release, currentTime, onClose, onStart, onPause, onResume, onConfirmProduction, onComplete }: { snapshot: RequirementSnapshot; events: readonly ProductionEvent[]; confirmations: readonly ProductionConfirmation[]; material: Material; release?: ProductionReleaseRecord; currentTime: string; onClose: () => void; onStart: () => void; onPause: (reason: DemonstrativePauseReason) => void; onResume: () => void; onConfirmProduction: (increment: number) => void; onComplete: () => void }) {
   const close = useRef<HTMLButtonElement>(null);
   const [choosingPauseReason, setChoosingPauseReason] = useState(false);
+  const [registeringProduction, setRegisteringProduction] = useState(false);
+  const [incrementInput, setIncrementInput] = useState('');
   useEffect(() => { close.current?.focus(); const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [onClose]);
-  useEffect(() => { setChoosingPauseReason(false); }, [snapshot.lot.id]);
+  useEffect(() => { setChoosingPauseReason(false); setRegisteringProduction(false); setIncrementInput(''); }, [snapshot.lot.id]);
   const traceability = sourceDerivedTraceabilityByLotId[snapshot.lot.id];
   const resourceRole = componentResourceMappingByCode[material.code];
   const relevantEvents = events.filter((event) => event.lotId === snapshot.lot.id);
   const { execution } = snapshot;
   const isReleased = release?.status === 'RELEASED';
-  const canComplete = canCompleteExecution(execution, snapshot.lot.scheduledFinish, currentTime);
+  const canComplete = canCompleteExecution(execution, snapshot.producedQuantity);
   const lastPause = execution.pauses.at(-1);
+  const incrementValue = Number(incrementInput);
+  const incrementIsNumeric = incrementInput.trim() !== '' && Number.isFinite(incrementValue);
+  const rejection = incrementIsNumeric ? validateConfirmationIncrement({ executionStatus: execution.status, increment: incrementValue, plannedQuantity: execution.plannedQuantity, accumulated: snapshot.producedQuantity }) : null;
+  const rejectionMessage = rejection?.kind === 'EXCEEDS_PLANNED' ? `Quantidade excede o saldo planejado de ${rejection.remaining} peças.`
+    : rejection?.kind === 'MUST_BE_INTEGER' ? 'Quantidade deve ser um número inteiro.'
+    : rejection?.kind === 'MUST_BE_POSITIVE' ? 'Quantidade deve ser maior que zero.'
+    : null;
+  const previewAccumulated = incrementIsNumeric && !rejection ? snapshot.producedQuantity + incrementValue : snapshot.producedQuantity;
+  const confirmProduction = () => { if (!incrementIsNumeric || rejection) return; onConfirmProduction(incrementValue); setIncrementInput(''); setRegisteringProduction(false); };
   return createPortal(<div className={styles.modalLayer}><button className={styles.backdrop} aria-label="Fechar contexto" onClick={onClose} /><section role="dialog" aria-modal="true" aria-labelledby="monitoring-context-title" className={styles.modal}>
     <header><div><small>ACOMPANHAMENTO DO REQUIREMENT</small><h2 id="monitoring-context-title">{material.code}</h2></div><Button ref={close} aria-label="Fechar contexto de acompanhamento" onClick={onClose}>×</Button></header>
     <dl>
@@ -46,7 +58,7 @@ function ContextDialog({ snapshot, events, material, release, currentTime, onClo
       <div><dt>Planejado</dt><dd>{formatTime(snapshot.lot.scheduledStart)}–{formatTime(snapshot.lot.scheduledFinish)}</dd></div>
       <div><dt>Realizado</dt><dd>{snapshot.execution.actualStart ? `${formatTime(snapshot.execution.actualStart)}${snapshot.execution.actualFinish ? `–${formatTime(snapshot.execution.actualFinish)}` : ' (em curso)'}` : '—'}<small>{snapshot.execution.actualStart ? '' : 'Ausência de apontamento não significa zero produzido.'}</small></dd></div>
       <div><dt>Situação</dt><dd>{statusLabel[snapshot.status]}</dd></div>
-      <div><dt>Quantidade</dt><dd>{snapshot.status === 'NOT_STARTED' || snapshot.status === 'SCHEDULED' ? `— / ${snapshot.lot.quantity}` : `${snapshot.execution.producedQuantity} / ${snapshot.lot.quantity}`}</dd></div>
+      <div><dt>Quantidade</dt><dd>{snapshot.status === 'NOT_STARTED' || snapshot.status === 'SCHEDULED' ? `— / ${snapshot.lot.quantity}` : `${snapshot.producedQuantity} / ${snapshot.lot.quantity}`}</dd></div>
       <div><dt>Projeção</dt><dd>{snapshot.projection === 'AT_RISK' ? 'Em risco' : 'No horário'}{snapshot.projectedFinish ? <small>Conclusão projetada {formatTime(snapshot.projectedFinish)}{snapshot.varianceMinutes ? ` · ${snapshot.varianceMinutes > 0 ? '+' : ''}${snapshot.varianceMinutes} min` : ''}</small> : null}</dd></div>
     </dl>
     <section aria-label="Detalhe da execução"><h3>Execução</h3><dl>
@@ -66,9 +78,17 @@ function ContextDialog({ snapshot, events, material, release, currentTime, onClo
           <div><dt>Início</dt><dd>{execution.actualStart ? formatTime(execution.actualStart) : '—'}</dd></div>
           <div><dt>Operador</dt><dd>{execution.executedBy ?? '—'}</dd></div>
           <div><dt>Aderência</dt><dd>{snapshot.projection === 'AT_RISK' ? `Atrasado${snapshot.varianceMinutes ? ` +${snapshot.varianceMinutes} min` : ''}` : 'No horário'}</dd></div>
+          <div><dt>Planejado</dt><dd>{execution.plannedQuantity} peças</dd></div>
+          <div><dt>Produzido</dt><dd>{snapshot.producedQuantity} peças</dd></div>
+          <div><dt>Restante</dt><dd>{Math.max(0, execution.plannedQuantity - snapshot.producedQuantity)} peças</dd></div>
         </dl>
-        {choosingPauseReason ? <div className={styles.pauseReasonChoices}><p className={styles.sectionNote}>Motivo da pausa</p>{pauseReasonChoices.map(([value, label]) => <Button key={value} onClick={() => { onPause(value); setChoosingPauseReason(false); }}>{label}</Button>)}</div>
-          : <div className={styles.executionActions}><Button onClick={() => setChoosingPauseReason(true)}>Pausar produção</Button>{canComplete ? <Button onClick={onComplete}>Finalizar execução</Button> : null}</div>}
+        {registeringProduction ? <div className={styles.confirmationForm}>
+          <label>Quantidade produzida nesta confirmação<input type="number" step="1" min="1" value={incrementInput} onChange={(event) => setIncrementInput(event.target.value)} aria-label={`Quantidade produzida na ${snapshot.lot.scheduledResourceId}`} autoFocus /></label>
+          {rejectionMessage ? <p className={styles.confirmationError} role="alert">{rejectionMessage}</p> : <p className={styles.sectionNote}>Produção acumulada após confirmação: {previewAccumulated} / {execution.plannedQuantity}</p>}
+          <div className={styles.executionActions}><Button onClick={confirmProduction} disabled={!incrementIsNumeric || Boolean(rejection)}>Confirmar apontamento</Button><Button onClick={() => { setRegisteringProduction(false); setIncrementInput(''); }}>Cancelar</Button></div>
+        </div> : choosingPauseReason ? <div className={styles.pauseReasonChoices}><p className={styles.sectionNote}>Motivo da pausa</p>{pauseReasonChoices.map(([value, label]) => <Button key={value} onClick={() => { onPause(value); setChoosingPauseReason(false); }}>{label}</Button>)}</div>
+          : <div className={styles.executionActions}><Button onClick={() => setRegisteringProduction(true)}>Registrar produção</Button><Button onClick={() => setChoosingPauseReason(true)}>Pausar produção</Button>{canComplete ? <Button onClick={onComplete}>Finalizar execução</Button> : null}</div>}
+        {confirmations.length ? <details className={styles.confirmationHistory}><summary>Histórico de apontamentos</summary><ul>{[...confirmations].reverse().map((confirmation) => <li key={confirmation.id}>{formatTime(confirmation.confirmedAt)} · +{confirmation.producedQuantity}</li>)}</ul></details> : null}
       </> : null}
       {execution.status === 'PAUSED' ? <>
         <dl className={styles.contextGrid}>
@@ -80,7 +100,7 @@ function ContextDialog({ snapshot, events, material, release, currentTime, onClo
       {execution.status === 'COMPLETED' ? <dl className={styles.contextGrid}>
         <div><dt>Início</dt><dd>{execution.actualStart ? formatTime(execution.actualStart) : '—'}</dd></div>
         <div><dt>Fim</dt><dd>{execution.actualFinish ? formatTime(execution.actualFinish) : '—'}</dd></div>
-        <div><dt>Quantidade executada</dt><dd>{execution.producedQuantity} peças</dd></div>
+        <div><dt>Quantidade executada</dt><dd>{snapshot.producedQuantity} peças</dd></div>
       </dl> : null}
       <small>Execução demonstrativa · EXECUTION GRANULARITY: DEMONSTRATIVE · requer validação de negócio.</small>
     </section>
@@ -94,11 +114,14 @@ export function ProductionMonitoringPage() {
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const releasesByLot = useScenarioStore(selectProductionReleases);
+  const confirmedQuantityByLotId = useScenarioStore(selectConfirmedQuantityByLotId);
+  const confirmationsByLot = useScenarioStore(selectProductionConfirmations);
   const sessionClock = useScenarioStore(selectSessionClock);
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
   const startExecution = useScenarioStore((state) => state.startLotExecution);
   const pauseExecution = useScenarioStore((state) => state.pauseLotExecution);
   const resumeExecution = useScenarioStore((state) => state.resumeLotExecution);
+  const confirmProduction = useScenarioStore((state) => state.confirmProduction);
   const completeExecution = useScenarioStore((state) => state.completeLotExecution);
   const [openLotId, setOpenLotId] = useState<string | null>(null);
 
@@ -121,7 +144,7 @@ export function ProductionMonitoringPage() {
   const rangeStart = `${businessDate}T00:00:00-03:00`;
   const rangeFinish = `${businessDate}T23:59:59-03:00`;
 
-  const snapshots = useMemo(() => definition ? buildRequirementSnapshots(lots, executionsByLot, currentTime, downtimeMinutesByLotId) : [], [definition, lots, executionsByLot, currentTime, downtimeMinutesByLotId]);
+  const snapshots = useMemo(() => definition ? buildRequirementSnapshots(lots, executionsByLot, confirmedQuantityByLotId, currentTime, downtimeMinutesByLotId) : [], [definition, lots, executionsByLot, confirmedQuantityByLotId, currentTime, downtimeMinutesByLotId]);
   const totals = useMemo(() => summarizeDay(snapshots), [snapshots]);
   const plannedUntilNow = snapshots.filter((snapshot) => snapshot.status !== 'SCHEDULED').reduce((sum, snapshot) => sum + snapshot.lot.quantity, 0);
   const runningCount = snapshots.filter((snapshot) => snapshot.status === 'RUNNING' || snapshot.status === 'DELAYED').length;
@@ -167,7 +190,7 @@ export function ProductionMonitoringPage() {
               return <section className={styles.lane} key={resourceId} data-status={dominant?.status}>
                 <button className={styles.resource} onClick={() => dominant && setOpenLotId(dominant.lot.id)}>
                   <span className={styles.resourceHead}><strong>{resourceId}</strong><span data-status={dominant?.status}>{dominant ? statusLabel[dominant.status] : '—'}</span></span>
-                  <small>{dominantMaterial ? `${dominantMaterial.code} · ${dominant!.execution.producedQuantity}/${dominant!.lot.quantity}` : 'Sem requirement ativo'}</small>
+                  <small>{dominantMaterial ? `${dominantMaterial.code} · ${dominant!.producedQuantity}/${dominant!.lot.quantity}` : 'Sem requirement ativo'}</small>
                 </button>
                 <div className={styles.tracks}>
                   <div><span>PLANEJADO</span>{laneSnapshots.map((snapshot) => <button key={snapshot.lot.id} className={styles.scheduled} data-status={snapshot.status} data-lot-id={snapshot.lot.id} title={`${materialOf(snapshot.lot.materialId).code} · ${formatTime(snapshot.lot.scheduledStart)}–${formatTime(snapshot.lot.scheduledFinish)}`} style={{ left: `${timelinePosition(snapshot.lot.scheduledStart, rangeStart, rangeFinish)}%`, width: `${timelineWidth(snapshot.lot.scheduledStart, snapshot.lot.scheduledFinish, rangeStart, rangeFinish)}%` }} onClick={() => setOpenLotId(snapshot.lot.id)}>{materialOf(snapshot.lot.materialId).code}</button>)}</div>
@@ -176,7 +199,7 @@ export function ProductionMonitoringPage() {
                     if (snapshot.status === 'NOT_STARTED') return <span key={snapshot.lot.id} className={styles.notStarted} data-lot-id={snapshot.lot.id} style={{ left: `${timelinePosition(snapshot.lot.scheduledStart, rangeStart, rangeFinish)}%` }} onClick={() => setOpenLotId(snapshot.lot.id)}>Ainda não iniciado</span>;
                     const actualFinish = snapshot.execution.actualFinish ?? currentTime;
                     return <span key={snapshot.lot.id} className={styles.actualWrap}>
-                      <button className={styles.actual} data-status={snapshot.status} data-lot-id={snapshot.lot.id} title={`${materialOf(snapshot.lot.materialId).code} · ${statusLabel[snapshot.status]} · ${snapshot.execution.producedQuantity}/${snapshot.lot.quantity}`} style={{ left: `${timelinePosition(snapshot.execution.actualStart!, rangeStart, rangeFinish)}%`, width: `${timelineWidth(snapshot.execution.actualStart!, actualFinish, rangeStart, rangeFinish)}%` }} onClick={() => setOpenLotId(snapshot.lot.id)}>{materialOf(snapshot.lot.materialId).code} · {snapshot.execution.producedQuantity}/{snapshot.lot.quantity}</button>
+                      <button className={styles.actual} data-status={snapshot.status} data-lot-id={snapshot.lot.id} title={`${materialOf(snapshot.lot.materialId).code} · ${statusLabel[snapshot.status]} · ${snapshot.producedQuantity}/${snapshot.lot.quantity}`} style={{ left: `${timelinePosition(snapshot.execution.actualStart!, rangeStart, rangeFinish)}%`, width: `${timelineWidth(snapshot.execution.actualStart!, actualFinish, rangeStart, rangeFinish)}%` }} onClick={() => setOpenLotId(snapshot.lot.id)}>{materialOf(snapshot.lot.materialId).code} · {snapshot.producedQuantity}/{snapshot.lot.quantity}</button>
                       {snapshot.projectedFinish && snapshot.status !== 'COMPLETED' ? <span className={styles.projected} style={{ left: `${timelinePosition(actualFinish, rangeStart, rangeFinish)}%`, width: `${timelineWidth(actualFinish, snapshot.projectedFinish, rangeStart, rangeFinish)}%` }} /> : null}
                     </span>;
                   })}{events.filter((event) => event.resourceId === resourceId).map((event) => <button key={event.eventId} className={styles.eventBlock} aria-label={`Evento na ${resourceId}: ${eventTypeLabel[event.eventType]}`} style={{ left: `${timelinePosition(event.startedAt, rangeStart, rangeFinish)}%`, width: `${timelineWidth(event.startedAt, event.endedAt ?? currentTime, rangeStart, rangeFinish)}%` }} onClick={() => setOpenLotId(event.lotId)}>Evento</button>)}</div>
@@ -208,6 +231,6 @@ export function ProductionMonitoringPage() {
 
       <details className={styles.disclosure}><summary>Como esses fatos preparam o OEE? <span>Ver detalhes</span></summary><div className={styles.oeeChain}><strong>Fatos de execução + Eventos + Tempo</strong><span>→ Tempo de Produção Planejado / Tempo em Operação / Tempo Parado</span><strong>Produzido (Quantidade Total)</strong><span>→ Quantidade Boa permanece desconhecida até haver dado de qualidade governado</span><strong>OEE</strong><span>não calculado nesta capacidade</span></div></details>
     </div>
-    {openSnapshot ? <ContextDialog snapshot={openSnapshot} events={events} material={materialOf(openSnapshot.lot.materialId)} release={releasesByLot[openSnapshot.lot.id]} currentTime={currentTime} onClose={() => setOpenLotId(null)} onStart={() => startExecution(openSnapshot.lot.id)} onPause={(reason) => pauseExecution(openSnapshot.lot.id, reason)} onResume={() => resumeExecution(openSnapshot.lot.id)} onComplete={() => completeExecution(openSnapshot.lot.id)} /> : null}
+    {openSnapshot ? <ContextDialog snapshot={openSnapshot} events={events} confirmations={confirmationsByLot[openSnapshot.lot.id] ?? []} material={materialOf(openSnapshot.lot.materialId)} release={releasesByLot[openSnapshot.lot.id]} currentTime={currentTime} onClose={() => setOpenLotId(null)} onStart={() => startExecution(openSnapshot.lot.id)} onPause={(reason) => pauseExecution(openSnapshot.lot.id, reason)} onResume={() => resumeExecution(openSnapshot.lot.id)} onConfirmProduction={(increment) => confirmProduction(openSnapshot.lot.id, increment)} onComplete={() => completeExecution(openSnapshot.lot.id)} /> : null}
   </OperationalWorkspace>;
 }

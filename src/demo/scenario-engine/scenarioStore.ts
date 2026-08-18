@@ -4,11 +4,15 @@ import { adoptOrganization as buildOrganization, type LotOrganization } from '..
 import type { ResourceReassignment } from '../../domain/production-scheduling/organization';
 import type { ScenarioDefinition } from '../../domain/scenario/ScenarioDefinition';
 import { assessDemonstrativeRelease, releaseDemonstratively, revokeRelease, type ProductionReleaseRecord, type RevocationReason } from '../../domain/production-release/models';
-import { canCompleteExecution, completeExecution, pauseExecution, resumeExecution, startExecution, updateProducedQuantity, type DemonstrativePauseReason, type ProductionExecutionRecord } from '../../domain/production-execution/models';
+import { canCompleteExecution, completeExecution, pauseExecution, resumeExecution, startExecution, type DemonstrativePauseReason, type ProductionExecutionRecord } from '../../domain/production-execution/models';
+import { accumulatedProducedQuantity, buildProductionConfirmation, confirmedQuantityByLot, groupConfirmationsByRequirement, validateConfirmationIncrement, type ConfirmationRejection, type ProductionConfirmation } from '../../domain/production-confirmation/models';
 import { resolveDemonstrativeRelease } from '../adapters/releaseResolution';
 import { demonstrativeOperatorForResource } from '../fixtures/demonstrativeOperators';
+import { fundicaoDcProductionConfirmationsFixture } from '../fixtures/fundicaoDcProductionConfirmations';
 import { fundicaoDcProductionExecutionFixture } from '../fixtures/fundicaoDcProductionExecution';
+import { fundicaoDcSourceDerivedProductionConfirmationsFixture } from '../fixtures/fundicaoDcSourceDerivedProductionConfirmations';
 import { fundicaoDcSourceDerivedProductionExecutionFixture } from '../fixtures/fundicaoDcSourceDerivedProductionExecution';
+import { sourceDerivedTraceabilityByLotId } from '../scenarios/fundicaoDcSourceDerivedScenario';
 
 /**
  * Session Operational Clock (Section 9) — every Capability 05 action reads
@@ -42,6 +46,7 @@ interface PersistedScenarioDecisions {
   schemaVersion: number;
   productionReleases: Record<string, ProductionReleaseRecord>;
   productionExecutions: Record<string, ProductionExecutionRecord>;
+  productionConfirmations: Record<string, readonly ProductionConfirmation[]>;
   organizationsByLotId: Record<string, LotOrganization>;
   preparationConfirmedByLotId: Record<string, boolean>;
   postponedLotIds: Record<string, { targetLabel: string; postponedAt: string }>;
@@ -55,6 +60,7 @@ function isPersistedScenarioDecisions(value: unknown): value is PersistedScenari
   return record.schemaVersion === SCENARIO_SCHEMA_VERSION
     && typeof record.productionReleases === 'object' && record.productionReleases !== null
     && typeof record.productionExecutions === 'object' && record.productionExecutions !== null
+    && typeof record.productionConfirmations === 'object' && record.productionConfirmations !== null
     && typeof record.organizationsByLotId === 'object' && record.organizationsByLotId !== null
     && typeof record.preparationConfirmedByLotId === 'object' && record.preparationConfirmedByLotId !== null
     && typeof record.postponedLotIds === 'object' && record.postponedLotIds !== null
@@ -88,6 +94,7 @@ function writePersistedScenarioDecisions(state: ScenarioState): void {
     schemaVersion: SCENARIO_SCHEMA_VERSION,
     productionReleases: state.productionReleases,
     productionExecutions: state.productionExecutions,
+    productionConfirmations: state.productionConfirmations,
     organizationsByLotId: state.organizationsByLotId,
     preparationConfirmedByLotId: state.preparationConfirmedByLotId,
     postponedLotIds: state.postponedLotIds,
@@ -120,6 +127,8 @@ interface ScenarioState {
   journeyContext: { origin: 'LOT_CONTEXT' | 'EXCEPTION_SUMMARY'; selectedLotId: string | null; timelineScrollLeft: number; pageScrollY: number; sidebarExpanded: boolean } | null;
   productionReleases: Readonly<Record<string, ProductionReleaseRecord>>;
   productionExecutions: Readonly<Record<string, ProductionExecutionRecord>>;
+  /** Capability 06 — Production Confirmation, grouped by Requirement. Each Requirement's confirmed produced quantity is always SUM(this array), never a field on Execution. */
+  productionConfirmations: Readonly<Record<string, readonly ProductionConfirmation[]>>;
   organizationsByLotId: Readonly<Record<string, LotOrganization>>;
   preparationConfirmedByLotId: Readonly<Record<string, boolean>>;
   postponedLotIds: Readonly<Record<string, { targetLabel: string; postponedAt: string }>>;
@@ -145,7 +154,7 @@ interface ScenarioActions {
   startLotExecution: (lotId: string) => void;
   pauseLotExecution: (lotId: string, reason: DemonstrativePauseReason) => void;
   resumeLotExecution: (lotId: string) => void;
-  updateLotProducedQuantity: (lotId: string, quantity: number) => void;
+  confirmProduction: (lotId: string, increment: number) => void;
   completeLotExecution: (lotId: string) => void;
   adoptOrganization: (impact: ResourceReassignment, organizedBy: string) => void;
 }
@@ -154,6 +163,8 @@ export type ScenarioStore = ScenarioState & ScenarioActions;
 
 /** Apontamento inicial de execução por cenário — cada cenário traz seu próprio "estado atual" por máquina. */
 const executionSeedFor = (definition: ScenarioDefinition | null) => definition?.id === 'fundicao-dc' ? fundicaoDcSourceDerivedProductionExecutionFixture : definition?.id === 'fundicao-dc-legacy' ? fundicaoDcProductionExecutionFixture : [];
+/** Seed Production Confirmations per cenário — Capability 06's migration of the historical producedQuantity facts (Section 19). */
+const confirmationSeedFor = (definition: ScenarioDefinition | null) => definition?.id === 'fundicao-dc' ? fundicaoDcSourceDerivedProductionConfirmationsFixture : definition?.id === 'fundicao-dc-legacy' ? fundicaoDcProductionConfirmationsFixture : [];
 
 const baseline = (definition: ScenarioDefinition | null, revision: number): ScenarioState => {
   const executionSeed = executionSeedFor(definition);
@@ -177,6 +188,7 @@ const baseline = (definition: ScenarioDefinition | null, revision: number): Scen
     // exercitar. O cenário legado mantém o comportamento anterior (todo apontamento pré-liberado).
     productionReleases: persisted?.productionReleases ?? Object.fromEntries((definition?.id === 'fundicao-dc' ? executionSeed.filter((execution) => execution.status !== 'NOT_STARTED') : executionSeed).map((execution) => [execution.lotId, { lotId: execution.lotId, productionOrderId: execution.productionOrderId, resourceId: execution.resourceId, scheduleVersionId: execution.scheduleVersionId, readiness: 'READY', status: 'RELEASED', reason: 'Liberação demonstrativa anterior ao estado inicial da execução.', releasedAt: execution.actualStart ?? definition?.currentScenarioTime ?? '2025-05-15T17:00:00-03:00', releasedBy: 'Supervisor da Fundição · demonstrativo', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }])),
     productionExecutions: persisted?.productionExecutions ?? Object.fromEntries(executionSeed.map((record) => [record.lotId, record])),
+    productionConfirmations: persisted?.productionConfirmations ?? groupConfirmationsByRequirement(confirmationSeedFor(definition)),
     organizationsByLotId: persisted?.organizationsByLotId ?? {},
     preparationConfirmedByLotId: persisted?.preparationConfirmedByLotId ?? {},
     postponedLotIds: persisted?.postponedLotIds ?? {},
@@ -250,14 +262,44 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
     if (next === existing) return state;
     return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, sessionClock: at, scenarioModified: true };
   }),
-  updateLotProducedQuantity: (lotId, quantity) => set((state) => ({ productionExecutions: { ...state.productionExecutions, [lotId]: updateProducedQuantity(state.productionExecutions[lotId], quantity) }, scenarioModified: true })),
+  /**
+   * Capability 06 — Registrar Produção (Section 4/5/31): each confirmation
+   * carries its OWN increment, appended (never overwriting the accumulated
+   * total), and reuses the CURRENT Session Clock unchanged — confirming
+   * production is not, by itself, an operational-time-advancing action.
+   */
+  confirmProduction: (lotId, increment) => set((state) => {
+    const execution = state.productionExecutions[lotId];
+    const lot = state.productionScheduling?.lots.find((item) => item.id === lotId);
+    if (!execution || !lot) return state;
+    const existing = state.productionConfirmations[lotId] ?? [];
+    const accumulated = accumulatedProducedQuantity(existing);
+    const rejection: ConfirmationRejection | null = validateConfirmationIncrement({ executionStatus: execution.status, increment, plannedQuantity: execution.plannedQuantity, accumulated });
+    if (rejection) return state;
+    const at = state.sessionClock ?? state.definition?.currentScenarioTime ?? new Date().toISOString();
+    const material = state.productionScheduling?.materials.find((item) => item.id === lot.materialId);
+    const traceability = sourceDerivedTraceabilityByLotId[lotId];
+    const confirmation = buildProductionConfirmation({
+      id: `${lotId}-confirmation-${existing.length + 1}`,
+      requirementId: lotId,
+      resourceId: execution.resourceId,
+      operatorId: execution.operatorId,
+      componentId: material?.code ?? lot.materialId,
+      sourceLineCLot: traceability ? String(traceability.sourceLot) : undefined,
+      confirmedAt: at,
+      increment,
+      dataOrigin: 'USER_SIMULATION',
+    });
+    return { productionConfirmations: { ...state.productionConfirmations, [lotId]: [...existing, confirmation] }, scenarioModified: true };
+  }),
   completeLotExecution: (lotId) => set((state) => {
     const existing = state.productionExecutions[lotId]; const lot = state.productionScheduling?.lots.find((item) => item.id === lotId);
     if (!existing || !lot) return state;
+    const confirmedProducedQuantity = accumulatedProducedQuantity(state.productionConfirmations[lotId] ?? []);
+    if (!canCompleteExecution(existing, confirmedProducedQuantity)) return state;
     const at = advanceClock(state.sessionClock ?? state.definition?.currentScenarioTime ?? new Date().toISOString(), SESSION_CLOCK_STEP_MINUTES);
-    if (!canCompleteExecution(existing, lot.scheduledFinish, at)) return state;
     const operator = demonstrativeOperatorForResource(existing.resourceId);
-    const next = completeExecution(existing, lot.scheduledFinish, at, operator.displayName);
+    const next = completeExecution(existing, confirmedProducedQuantity, at, operator.displayName);
     if (next === existing) return state;
     return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, sessionClock: at, scenarioModified: true };
   }),
@@ -275,6 +317,23 @@ export const selectMaterialResourceEligibilities = (state: ScenarioStore) => sta
 const emptyProductionReadiness: ScenarioDefinition['productionReadiness'] = [];
 export const selectProductionReadiness = (state: ScenarioStore) => state.definition?.productionReadiness ?? emptyProductionReadiness;
 export const selectProductionExecutions = (state: ScenarioStore) => state.productionExecutions;
+export const selectProductionConfirmations = (state: ScenarioStore) => state.productionConfirmations;
+/**
+ * Total Count per Requirement, derived live from the Scenario Store — the
+ * single canonical source (Section 19/20). Memoized on the `productionConfirmations`
+ * reference itself (which Zustand only ever replaces via `set`, never mutates
+ * in place) — recomputing a fresh object on every read would give React a
+ * "changed" reference on every render and loop forever.
+ */
+let cachedConfirmationsByLot: ScenarioState['productionConfirmations'] | null = null;
+let cachedConfirmedQuantityByLotId: Readonly<Record<string, number>> = {};
+export const selectConfirmedQuantityByLotId = (state: ScenarioStore) => {
+  if (state.productionConfirmations !== cachedConfirmationsByLot) {
+    cachedConfirmationsByLot = state.productionConfirmations;
+    cachedConfirmedQuantityByLotId = confirmedQuantityByLot(state.productionConfirmations);
+  }
+  return cachedConfirmedQuantityByLotId;
+};
 export const selectOrganizationsByLotId = (state: ScenarioStore) => state.organizationsByLotId;
 export const selectProductionReleases = (state: ScenarioStore) => state.productionReleases;
 export const selectPreparationConfirmedByLotId = (state: ScenarioStore) => state.preparationConfirmedByLotId;

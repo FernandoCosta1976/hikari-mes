@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { canCompleteExecution, completeExecution, pauseExecution, resumeExecution, startExecution, updateProducedQuantity, type ProductionExecutionRecord } from './models';
+import { canCompleteExecution, completeExecution, pauseExecution, resumeExecution, startExecution, type ProductionExecutionRecord } from './models';
 
-const scheduledFinish = '2026-07-10T09:00:00-03:00';
-const notStarted: ProductionExecutionRecord = { lotId: 'lot-sd-509', productionOrderId: 'po-a', resourceId: 'DC01', scheduleVersionId: 'v01', plannedQuantity: 100, producedQuantity: 0, scheduledStart: '2026-07-10T08:00:00-03:00', status: 'NOT_STARTED', pauses: [], transitions: [], demonstrative: true, dataOrigin: 'SOURCE_DERIVED_PLAN', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' };
+const notStarted: ProductionExecutionRecord = { lotId: 'lot-sd-509', productionOrderId: 'po-a', resourceId: 'DC01', scheduleVersionId: 'v01', plannedQuantity: 100, scheduledStart: '2026-07-10T08:00:00-03:00', status: 'NOT_STARTED', pauses: [], transitions: [], demonstrative: true, dataOrigin: 'SOURCE_DERIVED_PLAN', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' };
 
 describe('Capability 05 — Start (Section 7/8/12)', () => {
   it('Released + Not Started → Start allowed', () => {
@@ -32,7 +31,6 @@ describe('Capability 05 — Start (Section 7/8/12)', () => {
     const started = startExecution(notStarted, true, '2026-07-10T08:15:00-03:00', 'Operador 01 · demonstrativo');
     expect(started.scheduledStart).toBe(notStarted.scheduledStart);
     expect(started.plannedQuantity).toBe(100);
-    expect(started.producedQuantity).toBe(0);
   });
 
   it('Start sets actualResource (resourceId) and plannedResourceId separately — Execution never changes which Resource is programmed', () => {
@@ -104,37 +102,37 @@ describe('Capability 05 — Pause/Resume (Section 13/14/15)', () => {
   });
 });
 
-describe('Capability 05 — Complete (Section 16)', () => {
+describe('Capability 06 — Complete depends on Production Confirmation (Section 18)', () => {
   const started = startExecution(notStarted, true, '2026-07-10T08:15:00-03:00', 'Operador 01 · demonstrativo');
 
-  it('Complete blocked before the Requirement\'s own Scheduled Finish is reached — no manual quantity entry exists this round, so eligibility is time-based, matching how every other COMPLETED Requirement in the canonical dataset already reached full quantity by its Scheduled Finish', () => {
-    expect(canCompleteExecution(started, scheduledFinish, '2026-07-10T08:45:00-03:00')).toBe(false);
-    expect(completeExecution(started, scheduledFinish, '2026-07-10T08:45:00-03:00', 'Operador 01 · demonstrativo')).toBe(started);
+  it('Complete blocked while confirmed produced quantity is below Planned Quantity', () => {
+    expect(canCompleteExecution(started, 80)).toBe(false);
+    expect(completeExecution(started, 80, '2026-07-10T09:05:00-03:00', 'Operador 01 · demonstrativo')).toBe(started);
   });
 
-  it('Complete allowed once the Session Clock reaches or passes Scheduled Finish', () => {
-    expect(canCompleteExecution(started, scheduledFinish, '2026-07-10T09:00:00-03:00')).toBe(true);
-    expect(canCompleteExecution(started, scheduledFinish, '2026-07-10T09:05:00-03:00')).toBe(true);
+  it('Complete allowed once confirmed produced quantity reaches (or, defensively, exceeds) Planned Quantity', () => {
+    expect(canCompleteExecution(started, 100)).toBe(true);
+    expect(canCompleteExecution(started, 101)).toBe(true);
   });
 
-  it('Complete → COMPLETED, sets actualFinish and produced = planned quantity, logs a COMPLETED transition', () => {
-    const completed = completeExecution(started, scheduledFinish, '2026-07-10T09:05:00-03:00', 'Operador 01 · demonstrativo');
-    expect(completed).toMatchObject({ status: 'COMPLETED', actualFinish: '2026-07-10T09:05:00-03:00', producedQuantity: 100, plannedQuantity: 100 });
+  it('Complete → COMPLETED, sets actualFinish, logs a COMPLETED transition — never touches quantity, which lives in Production Confirmation', () => {
+    const completed = completeExecution(started, 100, '2026-07-10T09:05:00-03:00', 'Operador 01 · demonstrativo');
+    expect(completed).toMatchObject({ status: 'COMPLETED', actualFinish: '2026-07-10T09:05:00-03:00', plannedQuantity: 100 });
     expect(completed.transitions.at(-1)).toMatchObject({ kind: 'COMPLETED' });
   });
 
-  it('Complete on a NOT_STARTED or PAUSED record is a no-op regardless of time', () => {
-    expect(completeExecution(notStarted, scheduledFinish, '2026-07-10T10:00:00-03:00', 'Operador 01 · demonstrativo')).toBe(notStarted);
+  it('Complete on a NOT_STARTED or PAUSED record is a no-op regardless of confirmed quantity', () => {
+    expect(completeExecution(notStarted, 100, '2026-07-10T10:00:00-03:00', 'Operador 01 · demonstrativo')).toBe(notStarted);
     const paused = pauseExecution(started, '2026-07-10T08:30:00-03:00', 'MACHINE_ADJUSTMENT', 'Operador 01 · demonstrativo');
-    expect(completeExecution(paused, scheduledFinish, '2026-07-10T10:00:00-03:00', 'Operador 01 · demonstrativo')).toBe(paused);
+    expect(completeExecution(paused, 100, '2026-07-10T10:00:00-03:00', 'Operador 01 · demonstrativo')).toBe(paused);
   });
 
   it('Historical Completed is immutable — Start/Pause/Resume/Complete are all no-ops on an already-COMPLETED record', () => {
-    const completed = completeExecution(started, scheduledFinish, '2026-07-10T09:05:00-03:00', 'Operador 01 · demonstrativo');
+    const completed = completeExecution(started, 100, '2026-07-10T09:05:00-03:00', 'Operador 01 · demonstrativo');
     expect(startExecution(completed, true, '2026-07-10T10:00:00-03:00', 'Operador 01 · demonstrativo')).toBe(completed);
     expect(pauseExecution(completed, '2026-07-10T10:00:00-03:00', 'MACHINE_ADJUSTMENT', 'Operador 01 · demonstrativo')).toBe(completed);
     expect(resumeExecution(completed, '2026-07-10T10:00:00-03:00', 'Operador 01 · demonstrativo')).toBe(completed);
-    expect(completeExecution(completed, scheduledFinish, '2026-07-10T10:00:00-03:00', 'Operador 01 · demonstrativo')).toBe(completed);
+    expect(completeExecution(completed, 100, '2026-07-10T10:00:00-03:00', 'Operador 01 · demonstrativo')).toBe(completed);
   });
 });
 
@@ -147,7 +145,7 @@ describe('Capability 05 — temporal-consistency invariants (Section 36)', () =>
 
   it('completedAt is never before actualStart', () => {
     const started = startExecution(notStarted, true, '2026-07-10T08:15:00-03:00', 'Operador 01 · demonstrativo');
-    const completed = completeExecution(started, scheduledFinish, '2026-07-10T09:05:00-03:00', 'Operador 01 · demonstrativo');
+    const completed = completeExecution(started, 100, '2026-07-10T09:05:00-03:00', 'Operador 01 · demonstrativo');
     expect(Date.parse(completed.actualFinish!)).toBeGreaterThanOrEqual(Date.parse(completed.actualStart!));
   });
 
@@ -168,13 +166,5 @@ describe('Capability 05 — temporal-consistency invariants (Section 36)', () =>
     expect(resumed2.pauses).toHaveLength(2);
     const [first, second] = resumed2.pauses;
     expect(Date.parse(second.pausedAt)).toBeGreaterThanOrEqual(Date.parse(first.resumedAt!));
-  });
-});
-
-describe('updateProducedQuantity (kept for a future Capability 06, not offered as UI this round)', () => {
-  it('only applies while RUNNING or PAUSED', () => {
-    const started = startExecution(notStarted, true, '2026-07-10T08:15:00-03:00', 'Operador 01 · demonstrativo');
-    expect(updateProducedQuantity(started, 72)).toMatchObject({ producedQuantity: 72 });
-    expect(updateProducedQuantity(notStarted, 72)).toBe(notStarted);
   });
 });

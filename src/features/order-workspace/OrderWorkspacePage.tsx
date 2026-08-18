@@ -5,7 +5,7 @@ import { useScenarioPath } from '../../app/routing/useScenarioPath';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { resolveDemonstrativeRelease } from '../../demo/adapters/releaseResolution';
 import { fundicaoDcIdealCycleTimeSecondsFixture } from '../../demo/fixtures/fundicaoDcIdealCycleTime';
-import { selectMaterialResourceEligibilities, selectOrganizationsByLotId, selectPostponedLotIds, selectPreparationConfirmedByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectConfirmedQuantityByLotId, selectMaterialResourceEligibilities, selectOrganizationsByLotId, selectPostponedLotIds, selectPreparationConfirmedByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { assessLotExecutionHealth } from '../../domain/production-execution/lotHealth';
 import { dominantReadinessCondition } from '../../domain/production-readiness/presentation';
 import { revocationReasonLabel, type ProductionReleaseRecord, type RevocationReason } from '../../domain/production-release/models';
@@ -31,6 +31,7 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
   const sessionClock = useScenarioStore(selectSessionClock);
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
+  const confirmedQuantityByLotId = useScenarioStore(selectConfirmedQuantityByLotId);
   const readinessAssessments = useScenarioStore(selectProductionReadiness);
   const organizationsByLotId = useScenarioStore(selectOrganizationsByLotId);
   const productionReleases = useScenarioStore(selectProductionReleases);
@@ -62,7 +63,7 @@ export function OrderWorkspacePage({ lotId }: { lotId: string }) {
   const operationalResourceId = organizationsByLotId[lot.id]?.operationalResourceId ?? lot.scheduledResourceId;
   const preparationConfirmed = Boolean(preparationConfirmedByLotId[lot.id]);
   const cycleTimeSeconds = fundicaoDcIdealCycleTimeSecondsFixture[lot.materialId];
-  const health = assessLotExecutionHealth(execution ?? null, lot.scheduledStart, lot.scheduledFinish, cycleTimeSeconds, currentTime);
+  const health = assessLotExecutionHealth(execution ?? null, confirmedQuantityByLotId[lot.id] ?? 0, lot.scheduledStart, lot.scheduledFinish, cycleTimeSeconds, currentTime);
   // A manually confirmed preparation lets Release proceed even while the underlying Readiness fact still shows ATTENTION — the two remain distinct, separately displayed facts (section 29).
   const effectiveReadinessStatus = preparationConfirmed ? 'READY' : readiness?.status;
   const releaseRecord: ProductionReleaseRecord | undefined = productionReleases[lot.id] ?? (effectiveReadinessStatus ? resolveDemonstrativeRelease({ lotId: lot.id, productionOrderId: lot.productionOrderId, resourceId: operationalResourceId, scheduleVersionId: activeScheduleVersionId, scheduledStart: lot.scheduledStart, scheduledFinish: lot.scheduledFinish, readiness: effectiveReadinessStatus }, lot.materialId, currentTime) : undefined);

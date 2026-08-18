@@ -37,7 +37,7 @@ function quantityTolerance(expected: number): number {
  * result via LotHealthIndicator, never recompute the classification itself.
  * DEMONSTRATIVE / BUSINESS VALIDATION REQUIRED.
  */
-export function assessLotExecutionHealth(execution: ProductionExecutionRecord | null, scheduledStart: string, scheduledFinish: string, cycleTimeSecondsPerPiece: number | undefined, currentTime: string): LotHealthProjection {
+export function assessLotExecutionHealth(execution: ProductionExecutionRecord | null, producedQuantity: number, scheduledStart: string, scheduledFinish: string, cycleTimeSecondsPerPiece: number | undefined, currentTime: string): LotHealthProjection {
   const base = { demonstrative: true as const, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' as const };
 
   if (execution === null) {
@@ -63,13 +63,13 @@ export function assessLotExecutionHealth(execution: ProductionExecutionRecord | 
   if (cycleTime === null || runTimeMinutes === null) return { ...base, status: 'UNKNOWN', startedLate, startDeviationMinutes, cycleTimeSecondsPerPiece: cycleTime, productionDurationSeconds: durationSeconds, runTimeMinutes, expectedQuantityNow: null, gapQuantity: null, projectedFinish: null };
 
   const expectedQuantityNow = Math.min(execution.plannedQuantity, Math.floor((runTimeMinutes * 60) / cycleTime));
-  const gapQuantity = execution.producedQuantity - expectedQuantityNow;
+  const gapQuantity = producedQuantity - expectedQuantityNow;
   const tolerance = quantityTolerance(expectedQuantityNow);
 
   let projectedFinish: string | null = null;
-  if (runTimeMinutes > 0 && execution.producedQuantity > 0) {
-    const rate = execution.producedQuantity / runTimeMinutes;
-    const remaining = execution.plannedQuantity - execution.producedQuantity;
+  if (runTimeMinutes > 0 && producedQuantity > 0) {
+    const rate = producedQuantity / runTimeMinutes;
+    const remaining = execution.plannedQuantity - producedQuantity;
     projectedFinish = rate > 0 ? new Date(Date.parse(currentTime) + (remaining / rate) * 60_000).toISOString() : null;
   }
 

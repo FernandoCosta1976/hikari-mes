@@ -1,7 +1,9 @@
 import { fundicaoDcIdealCycleTimeSecondsFixture } from '../fixtures/fundicaoDcIdealCycleTime';
+import { fundicaoDcProductionConfirmationsFixture } from '../fixtures/fundicaoDcProductionConfirmations';
 import { fundicaoDcQualityConfirmationsFixture } from '../fixtures/fundicaoDcQualityConfirmations';
 import { aggregateAvailability, aggregatePerformance, aggregateQuality, assessAvailability, assessOee, assessPerformance, classifyShiftStatus, plannedProductionTimeMinutes, resolveShift, topOeeImpacts, type OeeDimension, type ResourceOeeRow, type ShiftStatus } from '../../domain/oee/calculations';
 import { currentExecutionForResource, type ProductionExecutionRecord } from '../../domain/production-execution/models';
+import { confirmedQuantityByLot, groupConfirmationsByRequirement, type ProductionConfirmation } from '../../domain/production-confirmation/models';
 import { knownRunTimeMinutes, type QualityConfirmation } from '../../domain/production-quality/models';
 import type { Lot, ProductionSchedulingDefinition, Shift } from '../../domain/production-scheduling/models';
 import { FOUNDRY_RESOURCE_IDS, type FoundryResourceId } from '../../domain/resource/models';
@@ -39,24 +41,25 @@ export interface FundicaoDcShiftOeeSummary extends FundicaoDcOeeAggregate {
   rows: readonly FundicaoDcOeeRow[];
 }
 
-function buildRow(lot: Lot, execution: ProductionExecutionRecord, resourceId: FoundryResourceId, definition: ProductionSchedulingDefinition, currentTime: string, confirmationsByLot: Readonly<Record<string, QualityConfirmation>>, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>>): FundicaoDcOeeRow {
+function buildRow(lot: Lot, execution: ProductionExecutionRecord, resourceId: FoundryResourceId, definition: ProductionSchedulingDefinition, currentTime: string, confirmationsByLot: Readonly<Record<string, QualityConfirmation>>, confirmedQuantityByLotId: Readonly<Record<string, number>>, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>>): FundicaoDcOeeRow {
   const runTimeMinutes = knownRunTimeMinutes(execution, currentTime);
   const plannedTimeMinutes = plannedProductionTimeMinutes(lot, execution, definition.shifts, currentTime);
   const idealCycleTimeSeconds = idealCycleTimeSecondsByMaterialId[lot.materialId] ?? null;
   const confirmation = confirmationsByLot[execution.lotId];
+  const producedQuantity = confirmedQuantityByLotId[execution.lotId] ?? 0;
   const goodQuantity = confirmation?.goodQuantity ?? null;
   const availability = assessAvailability(runTimeMinutes, plannedTimeMinutes);
-  const performance = assessPerformance(idealCycleTimeSeconds, execution.producedQuantity, runTimeMinutes);
+  const performance = assessPerformance(idealCycleTimeSeconds, producedQuantity, runTimeMinutes);
   const quality = confirmation ? confirmation.goodQuantity / confirmation.producedQuantity : null;
-  return { resourceId, lot, execution, runTimeMinutes, plannedTimeMinutes, idealCycleTimeSeconds, producedQuantity: execution.producedQuantity, goodQuantity, availability, performance, quality, oee: assessOee(availability, performance, quality) };
+  return { resourceId, lot, execution, runTimeMinutes, plannedTimeMinutes, idealCycleTimeSeconds, producedQuantity, goodQuantity, availability, performance, quality, oee: assessOee(availability, performance, quality) };
 }
 
 /** One row per Resource, tracking only its currently active/most-recent Lot — feeds the live machine tiles and "maior perda" narrative (which resource, which Lot, right now). */
-function buildCurrentRows(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, confirmationsByLot: Readonly<Record<string, QualityConfirmation>>, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>>): readonly FundicaoDcOeeRow[] {
+function buildCurrentRows(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, confirmationsByLot: Readonly<Record<string, QualityConfirmation>>, confirmedQuantityByLotId: Readonly<Record<string, number>>, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>>): readonly FundicaoDcOeeRow[] {
   return FOUNDRY_RESOURCE_IDS.map((resourceId) => {
     const execution = currentExecutionForResource(Object.values(executionsByLot), resourceId)!;
     const lot = definition.lots.find((item) => item.id === execution.lotId)!;
-    return buildRow(lot, execution, resourceId, definition, currentTime, confirmationsByLot, idealCycleTimeSecondsByMaterialId);
+    return buildRow(lot, execution, resourceId, definition, currentTime, confirmationsByLot, confirmedQuantityByLotId, idealCycleTimeSecondsByMaterialId);
   });
 }
 
@@ -66,13 +69,13 @@ function buildCurrentRows(definition: ProductionSchedulingDefinition, executions
  * to 10 on one Resource) must have every one of them counted, not just its current Lot —
  * otherwise already-COMPLETED requirements silently vanish from the accumulated total.
  */
-function buildAllDueRows(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, confirmationsByLot: Readonly<Record<string, QualityConfirmation>>, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>>): readonly FundicaoDcOeeRow[] {
+function buildAllDueRows(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, confirmationsByLot: Readonly<Record<string, QualityConfirmation>>, confirmedQuantityByLotId: Readonly<Record<string, number>>, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>>): readonly FundicaoDcOeeRow[] {
   return definition.lots
     .filter((lot) => Date.parse(lot.scheduledStart) <= Date.parse(currentTime))
     .map((lot) => {
       const execution = executionsByLot[lot.id];
       if (!execution) return null;
-      return buildRow(lot, execution, lot.scheduledResourceId, definition, currentTime, confirmationsByLot, idealCycleTimeSecondsByMaterialId);
+      return buildRow(lot, execution, lot.scheduledResourceId, definition, currentTime, confirmationsByLot, confirmedQuantityByLotId, idealCycleTimeSecondsByMaterialId);
     })
     .filter((row): row is FundicaoDcOeeRow => row !== null);
 }
@@ -88,10 +91,11 @@ function aggregateRows(allRows: readonly FundicaoDcOeeRow[], currentRows: readon
 }
 
 /** Single source of truth for the Fundição DC OEE figures — reused by the OEE perspective (CAP-09), the Executive Home and Visão Estratégica so none ever drift apart. */
-export function computeFundicaoDcOeeSummary(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, qualityConfirmations: readonly QualityConfirmation[] = fundicaoDcQualityConfirmationsFixture, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>> = fundicaoDcIdealCycleTimeSecondsFixture): FundicaoDcOeeSummary {
+export function computeFundicaoDcOeeSummary(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, qualityConfirmations: readonly QualityConfirmation[] = fundicaoDcQualityConfirmationsFixture, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>> = fundicaoDcIdealCycleTimeSecondsFixture, productionConfirmations: readonly ProductionConfirmation[] = fundicaoDcProductionConfirmationsFixture): FundicaoDcOeeSummary {
   const confirmationsByLot = Object.fromEntries(qualityConfirmations.map((confirmation) => [confirmation.lotId, confirmation]));
-  const currentRows = buildCurrentRows(definition, executionsByLot, currentTime, confirmationsByLot, idealCycleTimeSecondsByMaterialId);
-  const allRows = buildAllDueRows(definition, executionsByLot, currentTime, confirmationsByLot, idealCycleTimeSecondsByMaterialId);
+  const confirmedQuantityByLotId = confirmedQuantityByLot(groupConfirmationsByRequirement(productionConfirmations));
+  const currentRows = buildCurrentRows(definition, executionsByLot, currentTime, confirmationsByLot, confirmedQuantityByLotId, idealCycleTimeSecondsByMaterialId);
+  const allRows = buildAllDueRows(definition, executionsByLot, currentTime, confirmationsByLot, confirmedQuantityByLotId, idealCycleTimeSecondsByMaterialId);
   return { rows: currentRows, ...aggregateRows(allRows, currentRows) };
 }
 
@@ -102,10 +106,11 @@ export function computeFundicaoDcOeeSummary(definition: ProductionSchedulingDefi
  * zero; `rows` (the live machine tiles) still reflect each Resource's current Lot, filtered
  * to that Shift, for the per-Shift "Situação das Máquinas" narrative.
  */
-export function computeFundicaoDcShiftOeeSummaries(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, qualityConfirmations: readonly QualityConfirmation[] = fundicaoDcQualityConfirmationsFixture, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>> = fundicaoDcIdealCycleTimeSecondsFixture): readonly FundicaoDcShiftOeeSummary[] {
+export function computeFundicaoDcShiftOeeSummaries(definition: ProductionSchedulingDefinition, executionsByLot: Readonly<Record<string, ProductionExecutionRecord>>, currentTime: string, qualityConfirmations: readonly QualityConfirmation[] = fundicaoDcQualityConfirmationsFixture, idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>> = fundicaoDcIdealCycleTimeSecondsFixture, productionConfirmations: readonly ProductionConfirmation[] = fundicaoDcProductionConfirmationsFixture): readonly FundicaoDcShiftOeeSummary[] {
   const confirmationsByLot = Object.fromEntries(qualityConfirmations.map((confirmation) => [confirmation.lotId, confirmation]));
-  const currentRows = buildCurrentRows(definition, executionsByLot, currentTime, confirmationsByLot, idealCycleTimeSecondsByMaterialId);
-  const allRows = buildAllDueRows(definition, executionsByLot, currentTime, confirmationsByLot, idealCycleTimeSecondsByMaterialId);
+  const confirmedQuantityByLotId = confirmedQuantityByLot(groupConfirmationsByRequirement(productionConfirmations));
+  const currentRows = buildCurrentRows(definition, executionsByLot, currentTime, confirmationsByLot, confirmedQuantityByLotId, idealCycleTimeSecondsByMaterialId);
+  const allRows = buildAllDueRows(definition, executionsByLot, currentTime, confirmationsByLot, confirmedQuantityByLotId, idealCycleTimeSecondsByMaterialId);
   return definition.shifts.map((shift) => {
     const shiftAllRows = allRows.filter((row) => resolveShift(definition.shifts, row.lot.scheduledStart)?.id === shift.id);
     const shiftCurrentRows = currentRows.filter((row) => resolveShift(definition.shifts, row.lot.scheduledStart)?.id === shift.id);

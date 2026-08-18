@@ -15,9 +15,16 @@ import type { ProductionExecutionRecord } from '../../domain/production-executio
 const t = (time: string) => `2026-07-10T${time}:00-03:00`;
 const po = (materialId: string) => `po-source-derived-${materialId.replace('component-', '')}`;
 
-type RawExecutionFact = Omit<ProductionExecutionRecord, 'transitions' | 'dataOrigin' | 'ruleStatus'>;
+/**
+ * producedQuantity is kept here as the raw historical fact — Capability 06
+ * migrates it into seed Production Confirmations
+ * (fundicaoDcSourceDerivedProductionConfirmations.ts), never into the
+ * ProductionExecutionRecord itself (Section 19/20: single source of Total
+ * Count).
+ */
+export type RawExecutionFact = Omit<ProductionExecutionRecord, 'transitions' | 'dataOrigin' | 'ruleStatus'> & { producedQuantity: number };
 
-const rawExecutionFacts: readonly RawExecutionFact[] = [
+export const rawExecutionFacts: readonly RawExecutionFact[] = [
   // DC01
   { lotId: 'lot-sd-501', productionOrderId: po('component-5lx-e5421-x0'), resourceId: 'DC01', scheduleVersionId: 'v01', plannedQuantity: 50, producedQuantity: 50, scheduledStart: t('00:30'), actualStart: t('00:30'), actualFinish: t('01:01'), status: 'COMPLETED', executedBy: 'Operador da Fundição · demonstrativo', pauses: [], demonstrative: true }, // 2min early
   { lotId: 'lot-sd-502', productionOrderId: po('component-1b2-e5411-w0'), resourceId: 'DC01', scheduleVersionId: 'v01', plannedQuantity: 50, producedQuantity: 50, scheduledStart: t('01:33'), actualStart: t('01:33'), actualFinish: t('02:16'), status: 'COMPLETED', executedBy: 'Operador da Fundição · demonstrativo', pauses: [], demonstrative: true }, // on time
@@ -50,4 +57,4 @@ const rawExecutionFacts: readonly RawExecutionFact[] = [
 
 /** Source-derived Plan/Execution facts — Capability 05's own interactive actions (transitions[]) start empty here and grow only from user actions in the live session, never in this static baseline. */
 export const fundicaoDcSourceDerivedProductionExecutionFixture: readonly ProductionExecutionRecord[] =
-  rawExecutionFacts.map((record) => ({ ...record, transitions: [], dataOrigin: 'SOURCE_DERIVED_PLAN', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }));
+  rawExecutionFacts.map(({ producedQuantity: _producedQuantity, ...record }) => ({ ...record, transitions: [], dataOrigin: 'SOURCE_DERIVED_PLAN', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }));

@@ -4,7 +4,7 @@ import type { ProductionExecutionRecord } from '../production-execution/models';
 import type { Lot } from '../production-scheduling/models';
 
 const baseLot: Lot = { id: 'lot-x', lotNumber: '1', materialId: 'm', quantity: 100, scheduledStart: '2026-07-10T10:00:00-03:00', scheduledFinish: '2026-07-10T11:10:00-03:00', workCenterId: 'wc', destination: 'ASSEMBLY', productionOrderId: 'po', scheduledResourceId: 'DC01', materialAttention: false, state: 'SCHEDULED' };
-const baseExecution: ProductionExecutionRecord = { lotId: 'lot-x', productionOrderId: 'po', resourceId: 'DC01', scheduleVersionId: 'v1', plannedQuantity: 100, producedQuantity: 0, scheduledStart: baseLot.scheduledStart, status: 'NOT_STARTED', pauses: [], transitions: [], demonstrative: true, dataOrigin: 'SOURCE_DERIVED_PLAN', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' };
+const baseExecution: ProductionExecutionRecord = { lotId: 'lot-x', productionOrderId: 'po', resourceId: 'DC01', scheduleVersionId: 'v1', plannedQuantity: 100, scheduledStart: baseLot.scheduledStart, status: 'NOT_STARTED', pauses: [], transitions: [], demonstrative: true, dataOrigin: 'SOURCE_DERIVED_PLAN', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' };
 
 describe('requirementStatus (Scheduled State != Execution State != Requirement State)', () => {
   it('COMPLETED execution is always COMPLETED regardless of clock', () => {
@@ -45,17 +45,18 @@ const lots: readonly Lot[] = [
   lot('lot-t-running', 'DC05', '11:30', '12:30'),
 ];
 const executionsByLotId: Record<string, ProductionExecutionRecord> = {
-  'lot-t-completed': execution('lot-t-completed', 'DC01', { status: 'COMPLETED', actualStart: at('08:00'), actualFinish: at('09:00'), producedQuantity: 100 }),
-  'lot-t-delayed': execution('lot-t-delayed', 'DC01', { status: 'IN_PROGRESS', actualStart: at('09:50'), producedQuantity: 40 }),
+  'lot-t-completed': execution('lot-t-completed', 'DC01', { status: 'COMPLETED', actualStart: at('08:00'), actualFinish: at('09:00') }),
+  'lot-t-delayed': execution('lot-t-delayed', 'DC01', { status: 'IN_PROGRESS', actualStart: at('09:50') }),
   'lot-t-propagated': execution('lot-t-propagated', 'DC01'),
   'lot-t-healthy-scheduled': execution('lot-t-healthy-scheduled', 'DC02'),
   'lot-t-not-started': execution('lot-t-not-started', 'DC04'),
-  'lot-t-running': execution('lot-t-running', 'DC05', { status: 'IN_PROGRESS', actualStart: at('11:32'), producedQuantity: 40 }),
+  'lot-t-running': execution('lot-t-running', 'DC05', { status: 'IN_PROGRESS', actualStart: at('11:32') }),
 };
+const confirmedQuantityByLotId: Record<string, number> = { 'lot-t-completed': 100, 'lot-t-delayed': 40, 'lot-t-running': 40 };
 const currentTime = at('12:00');
 
 describe('property dataset at Scenario Clock 12:00 — full state space in one deterministic pass', () => {
-  const snapshots = buildRequirementSnapshots(lots, executionsByLotId, currentTime);
+  const snapshots = buildRequirementSnapshots(lots, executionsByLotId, confirmedQuantityByLotId, currentTime);
 
   it('produces one snapshot per real requirement', () => {
     expect(snapshots).toHaveLength(6);
@@ -69,7 +70,7 @@ describe('property dataset at Scenario Clock 12:00 — full state space in one d
   it('DC05 has a healthy RUNNING lot within its scheduled window', () => {
     const running = snapshots.find((snapshot) => snapshot.lot.id === 'lot-t-running')!;
     expect(running.status).toBe('RUNNING');
-    expect(running.execution.producedQuantity).toBe(40);
+    expect(running.producedQuantity).toBe(40);
     expect(running.projectedFinish).toBe(new Date(Date.parse(at('12:32'))).toISOString());
     expect(running.projection).toBe('ON_TIME'); // +2min is healthy pace, not risk
   });
@@ -85,7 +86,7 @@ describe('property dataset at Scenario Clock 12:00 — full state space in one d
   it('DC04 has a requirement whose scheduled start has passed with no appointment — NOT_STARTED, never a fabricated zero', () => {
     const notStarted = snapshots.find((snapshot) => snapshot.lot.id === 'lot-t-not-started')!;
     expect(notStarted.status).toBe('NOT_STARTED');
-    expect(notStarted.execution.producedQuantity).toBe(0);
+    expect(notStarted.producedQuantity).toBe(0);
     expect(notStarted.execution.actualStart).toBeUndefined();
     expect(notStarted.projection).toBe('AT_RISK');
   });

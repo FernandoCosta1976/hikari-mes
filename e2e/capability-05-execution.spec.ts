@@ -74,17 +74,19 @@ test('the Context Modal traps focus on open and closes with Escape (Section 40 �
   await expect(dialog).toHaveCount(0);
 });
 
-test('Complete becomes available once the Session Clock reaches Scheduled Finish, and sets produced = planned quantity', async ({ page }) => {
+test('Complete becomes available once the confirmed Production total reaches Planned Quantity (Capability 06)', async ({ page }) => {
   await page.goto('/demo/fundicao-dc/production-monitoring');
   await openContext(page, 'lot-sd-507');
   const dialog = page.getByRole('dialog', { name: '44C-E5421-W0' });
   await expect(dialog).toContainText('SituaçãoEm execução');
+  await expect(dialog).toContainText('Produzido65 peças');
   await expect(dialog.getByRole('button', { name: 'Finalizar execução' })).toHaveCount(0);
 
-  // One Pause/Resume cycle (each a fixed +15min Session Clock step) reaches lot-sd-507's own Scheduled Finish (09:29).
-  await dialog.getByRole('button', { name: 'Pausar produção' }).click();
-  await dialog.getByRole('button', { name: 'Aguardando condição' }).click();
-  await dialog.getByRole('button', { name: 'Retomar produção' }).click();
+  // lot-sd-507 is already at 65/100 confirmed at the 09:15 baseline — registering the remaining 35 reaches Planned Quantity.
+  await dialog.getByRole('button', { name: 'Registrar produção' }).click();
+  await dialog.getByLabel('Quantidade produzida na DC01').fill('35');
+  await dialog.getByRole('button', { name: 'Confirmar apontamento' }).click();
+  await expect(dialog).toContainText('Produzido100 peças');
   await expect(dialog.getByRole('button', { name: 'Finalizar execução' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Finalizar execução' }).click();
   await expect(dialog).toContainText('Quantidade executada100 peças');

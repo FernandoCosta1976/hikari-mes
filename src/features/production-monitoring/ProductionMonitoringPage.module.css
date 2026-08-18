@@ -50,3 +50,11 @@
 .executionControl .sectionNote{margin:.3rem 0;font-size:.72rem;color:#4a5872}
 .executionActions,.pauseReasonChoices{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem}
 .pauseReasonChoices{align-items:center}
+.confirmationForm{margin-top:.4rem;padding:.55rem .65rem;background:#f4f7fb;border:1px solid #c9d3e2;border-radius:.4rem;display:flex;flex-direction:column;gap:.4rem}
+.confirmationForm label{display:flex;flex-direction:column;gap:.2rem;font-size:.72rem;color:#4a5872;font-weight:700}
+.confirmationForm input{padding:.35rem .5rem;border:1px solid #c9d3e2;border-radius:.3rem;font-size:.85rem;width:8rem}
+.confirmationError{margin:0;font-size:.72rem;font-weight:700;color:#8a4a00}
+.confirmationHistory{margin-top:.4rem}
+.confirmationHistory summary{cursor:pointer;font-size:.68rem;font-weight:800;color:#075dcc}
+.confirmationHistory ul{margin:.35rem 0 0;padding-left:1.1rem;font-size:.7rem;color:#4a5872}
+.confirmationHistory li{margin-bottom:.15rem}
