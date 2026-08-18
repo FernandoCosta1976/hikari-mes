@@ -9,7 +9,7 @@ import styles from '../ProductionSchedulingPage.module.css';
 
 const statusLabel = { READY: 'Com condição', ATTENTION: 'Atenção', BLOCKED: 'Sem condição', UNKNOWN: 'Desconhecido' } as const;
 
-export function SimulationWorkspace({ active, selectedLot, allLots, readiness, impact, rejection, comparing, alreadyReleased, locked, onActivate, onSimulate, onUndo, onDiscard, onCompare, onAdopt }: { active: boolean; selectedLot: Lot | null; allLots: readonly Lot[]; readiness?: LotReadinessAssessment; impact: SequenceMoveResult | null; rejection: string | null; comparing: boolean; alreadyReleased?: boolean; locked?: boolean; onActivate: () => void; onSimulate: (resourceId: FoundryResourceId, anchorLotId: string | null) => void; onUndo: () => void; onDiscard: () => void; onCompare: () => void; onAdopt: () => void }) {
+export function SimulationWorkspace({ active, selectedLot, allLots, readiness, impact, rejection, comparing, locked, onActivate, onSimulate, onUndo, onDiscard, onCompare }: { active: boolean; selectedLot: Lot | null; allLots: readonly Lot[]; readiness?: LotReadinessAssessment; impact: SequenceMoveResult | null; rejection: string | null; comparing: boolean; locked?: boolean; onActivate: () => void; onSimulate: (resourceId: FoundryResourceId, anchorLotId: string | null) => void; onUndo: () => void; onDiscard: () => void; onCompare: () => void }) {
   const [pendingResourceId, setPendingResourceId] = useState<FoundryResourceId | null>(null);
   if (!active) return <Button onClick={onActivate}><span aria-hidden="true">◇</span> Avaliar cenário</Button>;
 
@@ -52,10 +52,9 @@ export function SimulationWorkspace({ active, selectedLot, allLots, readiness, i
       </dl>
       <div className={styles.adoptRow}>
         <Button onClick={onUndo}>Desfazer</Button>
-        <Button disabled={locked} onClick={onAdopt}>Confirmar nova programação</Button>
-        {alreadyReleased ? <span className={styles.adoptWarning}>Lote já liberado na máquina programada — revisar Liberação após confirmar.</span> : null}
+        <strong className={styles.scenarioNotApplied} role="status">CENÁRIO SIMULADO — NÃO APLICADO</strong>
       </div>
-      {impact.affectedLotIds.length ? <p className={styles.sectionNote}>Confirmar aplica a máquina do Lote movido. O sequenciamento completo dos {impact.affectedLotIds.length} requirement(s) impactado(s) permanece como simulação — aplicação definitiva de sequenciamento ainda não governada.</p> : null}
+      <p className={styles.sectionNote}>Este cenário recalcula {impact.affectedLotIds.length + 1} requirement(s) em cascata. Aplicar apenas a máquina do Lote movido, sem os horários recalculados dos demais, deixaria o plano em um estado incoerente — por isso nenhuma ação de confirmação parcial é oferecida. Aplicação transacional do cenário completo ainda não é governada.</p>
       {comparing ? <section className={styles.simulationComparison} aria-label="Comparação Plano recebido versus Simulação"><h3>Plano recebido versus Simulação</h3><p>Máquina original: {impact.originResourceId} · Máquina simulada: {impact.destinationResourceId} · Δ Setups {impact.netSetupDeltaCount > 0 ? '+' : ''}{impact.netSetupDeltaCount} · Requirements impactados: {impact.affectedLotIds.length} · Fechamento {impact.destinationResourceId}: {impact.destinationClosingDeltaMinutes > 0 ? '+' : ''}{impact.destinationClosingDeltaMinutes} min.</p></section> : null}
     </div> : null}
   </section>;

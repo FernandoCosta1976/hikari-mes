@@ -309,7 +309,7 @@ test('simulates a vertical Resource move with fixed lanes, comparison, undo and 
   await expect(page.getByRole('button', { name: /Confirmar|Atribuir|Despachar|Liberar|Executar/ })).toHaveCount(0);
 });
 
-test('adopts an operational Resource for a not-started Lot without overwriting the Programmed baseline', async ({ page }) => {
+test('a cascading simulation offers no partial confirmation — it stays an explicit, discardable what-if', async ({ page }) => {
   const laneOrder = () => page.locator('[aria-label^="Máquina programada DC"]').evaluateAll((lanes) => lanes.map((lane) => lane.getAttribute('aria-label')));
   const fixedOrder = ['Máquina programada DC01', 'Máquina programada DC02', 'Máquina programada DC03', 'Máquina programada DC04', 'Máquina programada DC05'];
   await page.getByRole('button', { name: /Avaliar cenário/ }).click();
@@ -321,22 +321,17 @@ test('adopts an operational Resource for a not-started Lot without overwriting t
   await page.getByLabel('Lotes programados na DC05').dispatchEvent('drop', { dataTransfer });
   await expect(simulation).toContainText('1 movimentação');
 
-  await simulation.getByRole('button', { name: 'Confirmar nova programação' }).click();
+  // No "Confirmar" action exists for a cascading scenario — applying only the moved Lot's
+  // machine while its recalculated cascade reverts to baseline would leave an incoherent plan.
+  await expect(simulation.getByRole('button', { name: 'Confirmar nova programação' })).toHaveCount(0);
+  await expect(simulation).toContainText('CENÁRIO SIMULADO — NÃO APLICADO');
+
+  await simulation.getByRole('button', { name: 'Encerrar avaliação' }).click();
   await expect(simulation).toHaveCount(0);
   expect(await laneOrder()).toEqual(fixedOrder);
-  const organizedLot = page.locator('[data-lot-id="lot-251"]');
-  await expect(organizedLot).toHaveAttribute('data-organized', 'true');
-  await expect(organizedLot).toContainText('Organizado');
-  await expect(page.getByLabel('Lotes programados na DC05').locator('[data-lot-id="lot-251"]')).toBeVisible();
-
-  await organizedLot.click();
-  const modal = page.getByRole('dialog', { name: 'Lote 251' });
-  await modal.getByRole('button', { name: 'Liberação' }).click();
-  await expect(modal).toContainText('DC05');
-  await expect(modal).toContainText('Programado: DC01');
-  await modal.getByRole('button', { name: 'Liberar para produção' }).click();
-  await modal.getByRole('button', { name: 'Execução' }).click();
-  await expect(modal).toContainText('Lote liberado e organizado em DC05.');
+  const originalLot = page.locator('[data-lot-id="lot-251"]');
+  await expect(originalLot).toHaveAttribute('data-organized', 'false');
+  await expect(originalLot).toHaveAttribute('data-simulated', 'false');
 });
 
 test('captures Avaliar cenário candidates: conditions, buffer restore and impact preview', async ({ page }) => {
@@ -350,10 +345,12 @@ test('captures Avaliar cenário candidates: conditions, buffer restore and impac
   await page.getByRole('button', { name: /Avaliar cenário/ }).click();
   await page.locator('[data-lot-id="lot-251"]').click();
   await expect(page).toHaveScreenshot('WF-001-SIMULATION-MODE-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
-  await page.getByRole('region', { name: 'Avaliação de cenário' }).getByRole('button', { name: /DC05/ }).click();
+  await page.getByRole('region', { name: 'Avaliação de cenário' }).getByRole('button', { name: /^DC05/ }).click();
+  await page.getByRole('region', { name: 'Avaliação de cenário' }).getByRole('button', { name: 'No início' }).click();
   await expect(page).toHaveScreenshot('WF-001-SIMULATION-IMPACT-PREVIEW-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
   await page.locator('[data-lot-id="lot-255"]').click();
-  await page.getByRole('region', { name: 'Avaliação de cenário' }).getByRole('button', { name: /DC03/ }).click();
+  await page.getByRole('region', { name: 'Avaliação de cenário' }).getByRole('button', { name: /^DC03/ }).click();
+  await page.getByRole('region', { name: 'Avaliação de cenário' }).getByRole('button', { name: /Depois de Lote 266/ }).click();
   await expect(page).toHaveScreenshot('WF-001-SIMULATION-BUFFER-RISK-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 

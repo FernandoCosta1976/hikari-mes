@@ -78,7 +78,8 @@ test('impact summary shows Setup delta, both Resources closing times and stays a
   await expect(simulation).toContainText('Δ Setups');
   await expect(simulation).toContainText('Término DC01 (plano vigente)');
   await expect(simulation).toContainText('Término DC01 (simulação)');
-  await expect(simulation).toContainText('Cenário não aplicado').catch(() => {}); // optional wording, tolerated either way
+  await expect(simulation).toContainText('CENÁRIO SIMULADO — NÃO APLICADO');
+  await expect(simulation.getByRole('button', { name: 'Confirmar nova programação' })).toHaveCount(0);
   await expect(page).toHaveScreenshot('SCENARIO-IMPACT-SUMMARY-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 
   // Discard restores the baseline exactly (Section 23) — the plan itself never silently changes.

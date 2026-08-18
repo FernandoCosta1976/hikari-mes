@@ -91,9 +91,21 @@ function resequence(orderedLots: readonly Lot[], lockedLotIds: ReadonlySet<strin
   return result;
 }
 
-function hasOverlap(timings: readonly SequencedTiming[]): boolean {
-  const ordered = [...timings].sort((a, b) => Date.parse(a.scheduledStart) - Date.parse(b.scheduledStart));
-  return ordered.slice(1).some((timing, index) => Date.parse(timing.scheduledStart) < Date.parse(ordered[index].scheduledFinish));
+/**
+ * The FULL invariant, not just "no overlap" — a movable Lot that lands
+ * immediately before a locked checkpoint must still leave that checkpoint's
+ * own required Setup gap (locked Lots keep their fixed time unconditionally
+ * in `resequence`, so a violation there has to be caught here). Checked
+ * pairwise across every Resource in true chronological order.
+ */
+function violatesSequenceInvariant(orderedLots: readonly Lot[], timings: ReadonlyMap<string, SequencedTiming>, setupMinutes: number): boolean {
+  const withTiming = orderedLots.map((lot) => ({ lot, timing: timings.get(lot.id)! }));
+  const chronological = [...withTiming].sort((a, b) => Date.parse(a.timing.scheduledStart) - Date.parse(b.timing.scheduledStart));
+  return chronological.slice(1).some(({ lot, timing }, index) => {
+    const previous = chronological[index];
+    const requiredGapMs = (requiresSetup(previous.lot, lot) ? setupMinutes : 0) * 60_000;
+    return Date.parse(timing.scheduledStart) < Date.parse(previous.timing.scheduledFinish) + requiredGapMs;
+  });
 }
 
 /** The cascade must not silently reorder a Resource's real chronology — a Lot inserted "before" a locked checkpoint whose own anchor time actually falls later is a conflict, not a valid sequence. */
@@ -137,7 +149,7 @@ export function simulateSequenceMove(
 
   const destinationAnchorMs = originalDestination.length ? Math.min(...originalDestination.map((lot) => Date.parse(lot.scheduledStart))) : Date.parse(moved.scheduledStart);
   const destinationTimings = resequence(newDestinationOrder, lockedLotIds, setupMinutes, destinationAnchorMs);
-  if (hasOverlap([...destinationTimings.values()]) || !ordersMatchChronology(newDestinationOrder, destinationTimings)) return { feasible: false, reason: 'OVERLAP' };
+  if (violatesSequenceInvariant(newDestinationOrder, destinationTimings, setupMinutes) || !ordersMatchChronology(newDestinationOrder, destinationTimings)) return { feasible: false, reason: 'OVERLAP' };
 
   const scheduleByLotId: Record<string, SequencedTiming> = {};
   const affectedLotIds: string[] = [];
@@ -154,7 +166,7 @@ export function simulateSequenceMove(
     newOriginOrder = originalOrigin.filter((lot) => lot.id !== movedLotId);
     const originAnchorMs = newOriginOrder.length ? Math.min(...originalOrigin.map((lot) => Date.parse(lot.scheduledStart))) : Date.parse(moved.scheduledStart);
     const originTimings = resequence(newOriginOrder, lockedLotIds, setupMinutes, originAnchorMs);
-    if (hasOverlap([...originTimings.values()]) || !ordersMatchChronology(newOriginOrder, originTimings)) return { feasible: false, reason: 'OVERLAP' };
+    if (violatesSequenceInvariant(newOriginOrder, originTimings, setupMinutes) || !ordersMatchChronology(newOriginOrder, originTimings)) return { feasible: false, reason: 'OVERLAP' };
     for (const lot of newOriginOrder) {
       const timing = originTimings.get(lot.id)!;
       if (timingChanged(timing, lot)) {
