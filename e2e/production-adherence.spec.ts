@@ -21,7 +21,7 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
   const machines = page.getByRole('region', { name: 'Situação das Máquinas' });
   const dc03 = machines.getByRole('button', { name: /DC03/ });
   await expect(dc03).toHaveAttribute('data-tone', 'attention');
-  await expect(dc03).toContainText('Parado');
+  await expect(dc03).toContainText('Pausado');
   const dc04 = machines.getByRole('button', { name: /DC04/ });
   await expect(dc04).toContainText('-140 min');
 

@@ -5,13 +5,25 @@ import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { sourceDerivedTraceabilityByLotId } from '../../demo/scenarios/fundicaoDcSourceDerivedScenario';
 import { componentResourceMappingByCode } from '../../demo/reference-data/foundry/componentResourceMappings';
 import { eventsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectConfirmedQuantityByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { buildOperationalStatusByLotId } from '../../demo/adapters/operationalStatusResolution';
 import { buildRequirementSnapshots, summarizeDay, type RequirementSnapshot, type RequirementStatus } from '../../domain/production-monitoring/executionStatus';
 import { eventDurationMinutes, eventsNewestFirst, type ProductionEvent } from '../../domain/production-monitoring/models';
-import { canCompleteExecution, type DemonstrativePauseReason } from '../../domain/production-execution/models';
+import type { DemonstrativePauseReason } from '../../domain/production-execution/models';
 import { validateConfirmationIncrement, type ProductionConfirmation } from '../../domain/production-confirmation/models';
 import type { ProductionReleaseRecord } from '../../domain/production-release/models';
-import type { Material } from '../../domain/production-scheduling/models';
+import type { Material, Lot } from '../../domain/production-scheduling/models';
+import {
+  adherenceQualifierLabel,
+  deriveResourceStatusEntries,
+  lastStatusChange,
+  operationalStatusLabel,
+  resourceOperationalStatusLabel,
+  summarizeOperationalSnapshot,
+  type AdherenceQualifier,
+  type OperationalStatus,
+  type ProductionOperationalStatus,
+} from '../../domain/production-status/models';
 import { timelinePosition, timelineWidth } from '../../domain/production-scheduling/temporalMath';
 import { FOUNDRY_RESOURCE_IDS } from '../../domain/resource/models';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
@@ -25,7 +37,19 @@ const eventTypeLabel: Record<ProductionEvent['eventType'], string> = { MATERIAL:
 /** Section 13 — a simple, demonstrative reason set for the interactive Pause action, reusing three of the existing five OEE-linked reasons rather than inventing a new taxonomy. */
 const pauseReasonChoices: readonly [DemonstrativePauseReason, string][] = [['MACHINE_ADJUSTMENT', 'Parada operacional'], ['MATERIAL_SHORTAGE', 'Aguardando condição'], ['OTHER', 'Interrupção demonstrativa']];
 
-function ContextDialog({ snapshot, events, confirmations, material, release, currentTime, onClose, onStart, onPause, onResume, onConfirmProduction, onComplete }: { snapshot: RequirementSnapshot; events: readonly ProductionEvent[]; confirmations: readonly ProductionConfirmation[]; material: Material; release?: ProductionReleaseRecord; currentTime: string; onClose: () => void; onStart: () => void; onPause: (reason: DemonstrativePauseReason) => void; onResume: () => void; onConfirmProduction: (increment: number) => void; onComplete: () => void }) {
+/** Section 42 — "Próxima ação" is informational context, never a duplicate control of Controle de execução. */
+function nextActionLabel(status: OperationalStatus, pendingFinalization: boolean, isReleased: boolean): string {
+  if (pendingFinalization) return 'Finalizar execução';
+  if (status === 'RUNNING') return 'Registrar produção ou pausar';
+  if (status === 'PAUSED') return 'Retomar produção';
+  if (status === 'WAITING_START') return 'Iniciar produção';
+  if (status === 'READY_FOR_RELEASE') return 'Liberar para produção';
+  if (status === 'COMPLETED') return 'Nenhuma — requirement concluído';
+  if (!isReleased) return 'Aguardar liberação';
+  return 'Aguardar preparação';
+}
+
+function ContextDialog({ snapshot, operationalStatus, events, confirmations, material, release, currentTime, onClose, onStart, onPause, onResume, onConfirmProduction, onComplete }: { snapshot: RequirementSnapshot; operationalStatus: ProductionOperationalStatus; events: readonly ProductionEvent[]; confirmations: readonly ProductionConfirmation[]; material: Material; release?: ProductionReleaseRecord; currentTime: string; onClose: () => void; onStart: () => void; onPause: (reason: DemonstrativePauseReason) => void; onResume: () => void; onConfirmProduction: (increment: number) => void; onComplete: () => void }) {
   const close = useRef<HTMLButtonElement>(null);
   const [choosingPauseReason, setChoosingPauseReason] = useState(false);
   const [registeringProduction, setRegisteringProduction] = useState(false);
@@ -37,7 +61,7 @@ function ContextDialog({ snapshot, events, confirmations, material, release, cur
   const relevantEvents = events.filter((event) => event.lotId === snapshot.lot.id);
   const { execution } = snapshot;
   const isReleased = release?.status === 'RELEASED';
-  const canComplete = canCompleteExecution(execution, snapshot.producedQuantity);
+  const canComplete = operationalStatus.pendingFinalization;
   const lastPause = execution.pauses.at(-1);
   const incrementValue = Number(incrementInput);
   const incrementIsNumeric = incrementInput.trim() !== '' && Number.isFinite(incrementValue);
@@ -48,18 +72,28 @@ function ContextDialog({ snapshot, events, confirmations, material, release, cur
     : null;
   const previewAccumulated = incrementIsNumeric && !rejection ? snapshot.producedQuantity + incrementValue : snapshot.producedQuantity;
   const confirmProduction = () => { if (!incrementIsNumeric || rejection) return; onConfirmProduction(incrementValue); setIncrementInput(''); setRegisteringProduction(false); };
+  const lastChange = lastStatusChange(execution);
   return createPortal(<div className={styles.modalLayer}><button className={styles.backdrop} aria-label="Fechar contexto" onClick={onClose} /><section role="dialog" aria-modal="true" aria-labelledby="monitoring-context-title" className={styles.modal}>
     <header><div><small>ACOMPANHAMENTO DO REQUIREMENT</small><h2 id="monitoring-context-title">{material.code}</h2></div><Button ref={close} aria-label="Fechar contexto de acompanhamento" onClick={onClose}>×</Button></header>
+    <section aria-label="Situação operacional" className={styles.operationalStatusBlock} data-operational-status={operationalStatus.status}>
+      <h3>Situação operacional</h3>
+      <dl>
+        <div><dt>Situação</dt><dd>{operationalStatusLabel[operationalStatus.status]}{operationalStatus.pendingFinalization ? <small>Pronto para finalização</small> : null}</dd></div>
+        <div><dt>Aderência</dt><dd>{adherenceQualifierLabel[operationalStatus.adherence]}{operationalStatus.varianceMinutes !== null ? <small>{operationalStatus.varianceMinutes > 0 ? '+' : ''}{operationalStatus.varianceMinutes} min{snapshot.projectedFinish ? ` · Conclusão projetada ${formatTime(snapshot.projectedFinish)}` : ''}</small> : null}</dd></div>
+        <div><dt>Produção</dt><dd>{execution.status === 'NOT_STARTED' ? `— / ${snapshot.lot.quantity}` : `${snapshot.producedQuantity} / ${snapshot.lot.quantity}`}</dd></div>
+        <div><dt>Máquina</dt><dd>{snapshot.lot.scheduledResourceId}</dd></div>
+        <div><dt>Início</dt><dd>{execution.actualStart ? formatTime(execution.actualStart) : '—'}</dd></div>
+        <div><dt>Última mudança</dt><dd>{lastChange ? `${formatTime(lastChange.at)} · ${lastChange.label}` : '—'}</dd></div>
+        <div><dt>Próxima ação</dt><dd>{nextActionLabel(operationalStatus.status, operationalStatus.pendingFinalization, isReleased)}</dd></div>
+      </dl>
+      <small>Situação operacional demonstrativa · consequência dos fatos de Plano, Liberação, Execução e Apontamento · requer validação de negócio.</small>
+    </section>
     <dl>
       <div><dt>Peça</dt><dd>{material.code}</dd></div>
       <div><dt>Família</dt><dd>{materialFamilyLabel(material)}</dd></div>
       <div><dt>Lote Linha C</dt><dd>{traceability ? traceability.sourceLot : '—'}</dd></div>
-      <div><dt>Máquina</dt><dd>{snapshot.lot.scheduledResourceId}</dd></div>
       <div><dt>Planejado</dt><dd>{formatTime(snapshot.lot.scheduledStart)}–{formatTime(snapshot.lot.scheduledFinish)}</dd></div>
       <div><dt>Realizado</dt><dd>{snapshot.execution.actualStart ? `${formatTime(snapshot.execution.actualStart)}${snapshot.execution.actualFinish ? `–${formatTime(snapshot.execution.actualFinish)}` : ' (em curso)'}` : '—'}<small>{snapshot.execution.actualStart ? '' : 'Ausência de apontamento não significa zero produzido.'}</small></dd></div>
-      <div><dt>Situação</dt><dd>{statusLabel[snapshot.status]}</dd></div>
-      <div><dt>Quantidade</dt><dd>{snapshot.status === 'NOT_STARTED' || snapshot.status === 'SCHEDULED' ? `— / ${snapshot.lot.quantity}` : `${snapshot.producedQuantity} / ${snapshot.lot.quantity}`}</dd></div>
-      <div><dt>Projeção</dt><dd>{snapshot.projection === 'AT_RISK' ? 'Em risco' : 'No horário'}{snapshot.projectedFinish ? <small>Conclusão projetada {formatTime(snapshot.projectedFinish)}{snapshot.varianceMinutes ? ` · ${snapshot.varianceMinutes > 0 ? '+' : ''}${snapshot.varianceMinutes} min` : ''}</small> : null}</dd></div>
     </dl>
     <section aria-label="Detalhe da execução"><h3>Execução</h3><dl>
       <div><dt>Máquina titular</dt><dd>{resourceRole?.primaryResource ?? snapshot.lot.scheduledResourceId}</dd></div>
@@ -77,7 +111,7 @@ function ContextDialog({ snapshot, events, confirmations, material, release, cur
         <dl className={styles.contextGrid}>
           <div><dt>Início</dt><dd>{execution.actualStart ? formatTime(execution.actualStart) : '—'}</dd></div>
           <div><dt>Operador</dt><dd>{execution.executedBy ?? '—'}</dd></div>
-          <div><dt>Aderência</dt><dd>{snapshot.projection === 'AT_RISK' ? `Atrasado${snapshot.varianceMinutes ? ` +${snapshot.varianceMinutes} min` : ''}` : 'No horário'}</dd></div>
+          <div><dt>Aderência</dt><dd>{adherenceQualifierLabel[operationalStatus.adherence]}{operationalStatus.varianceMinutes !== null ? ` ${operationalStatus.varianceMinutes > 0 ? '+' : ''}${operationalStatus.varianceMinutes} min` : ''}</dd></div>
           <div><dt>Planejado</dt><dd>{execution.plannedQuantity} peças</dd></div>
           <div><dt>Produzido</dt><dd>{snapshot.producedQuantity} peças</dd></div>
           <div><dt>Restante</dt><dd>{Math.max(0, execution.plannedQuantity - snapshot.producedQuantity)} peças</dd></div>
@@ -114,6 +148,10 @@ export function ProductionMonitoringPage() {
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const releasesByLot = useScenarioStore(selectProductionReleases);
+  const readinessAssessments = useScenarioStore(selectProductionReadiness);
+  const preparationConfirmedByLotId = useScenarioStore(selectPreparationConfirmedByLotId);
+  const organizationsByLotId = useScenarioStore(selectOrganizationsByLotId);
+  const activeScheduleVersionId = useScenarioStore((state) => state.activeScheduleVersionId);
   const confirmedQuantityByLotId = useScenarioStore(selectConfirmedQuantityByLotId);
   const confirmationsByLot = useScenarioStore(selectProductionConfirmations);
   const sessionClock = useScenarioStore(selectSessionClock);
@@ -154,6 +192,35 @@ export function ProductionMonitoringPage() {
   const endOfDayStatus = totals.atRiskLotIds.length === 0 ? 'NO RITMO' : totals.atRiskLotIds.length <= 2 ? 'ATENÇÃO' : 'RISCO DE NÃO CUMPRIMENTO';
   const firstDelayed = snapshots.find((snapshot) => snapshot.status === 'DELAYED');
 
+  /**
+   * Capability 07 — the ONE shared Operational Status per Requirement, the
+   * single source every screen (Acompanhamento, Aderência, Estratégica)
+   * consumes — never recomputed independently per screen (Section 32/38).
+   */
+  const projectedFinishByLotId = useMemo(() => Object.fromEntries(snapshots.map((snapshot) => [snapshot.lot.id, snapshot.projectedFinish])), [snapshots]);
+  const statusByLotId = useMemo(() => buildOperationalStatusByLotId({
+    lots, executionsByLot, releasesByLot, readinessAssessments, preparationConfirmedByLotId, organizationsByLotId,
+    confirmedQuantityByLotId, projectedFinishByLotId, activeScheduleVersionId, currentTime,
+  }), [lots, executionsByLot, releasesByLot, readinessAssessments, preparationConfirmedByLotId, organizationsByLotId, confirmedQuantityByLotId, projectedFinishByLotId, activeScheduleVersionId, currentTime]);
+  const lotsOrderedByResource = useMemo(() => {
+    const map: Record<string, Lot[]> = {};
+    for (const resourceId of FOUNDRY_RESOURCE_IDS) map[resourceId] = lots.filter((lot) => lot.scheduledResourceId === resourceId).sort((a, b) => Date.parse(a.scheduledStart) - Date.parse(b.scheduledStart));
+    return map;
+  }, [lots]);
+  const resourceStatusEntries = useMemo(() => deriveResourceStatusEntries(FOUNDRY_RESOURCE_IDS, lotsOrderedByResource, statusByLotId), [lotsOrderedByResource, statusByLotId]);
+  const resourceStatusByResourceId = useMemo(() => Object.fromEntries(resourceStatusEntries.map((entry) => [entry.resourceId, entry])), [resourceStatusEntries]);
+  /** Section 44 — Operational Snapshot summary, real counts from the current per-Resource situation. */
+  const operationalSnapshotSummary = useMemo(() => summarizeOperationalSnapshot(resourceStatusEntries.map((entry) => {
+    const producedQuantity = entry.current ? (snapshots.find((snapshot) => snapshot.lot.id === entry.current!.lotId)?.producedQuantity ?? 0) : 0;
+    return entry.current ? { status: entry.current.status, adherence: entry.current.adherence, producedQuantity } : { status: 'PLANNED' as OperationalStatus, adherence: 'ON_TIME' as AdherenceQualifier, producedQuantity: 0 };
+  })), [resourceStatusEntries, snapshots]);
+  /** Section 13 — WIP strip, counted over every Requirement of the reference day, not just the current per-Resource pick. */
+  const wipSummary = useMemo(() => summarizeOperationalSnapshot(snapshots.map((snapshot) => {
+    const status = statusByLotId[snapshot.lot.id];
+    return status ? { status: status.status, adherence: status.adherence, producedQuantity: snapshot.producedQuantity } : null;
+  }).filter((entry): entry is { status: OperationalStatus; adherence: AdherenceQualifier; producedQuantity: number } => entry !== null)), [snapshots, statusByLotId]);
+  const openOperationalStatus = openSnapshot ? statusByLotId[openSnapshot.lot.id] : undefined;
+
   if (!definition) return <p>Preparando Acompanhamento demonstrativo…</p>;
 
   return <OperationalWorkspace perspective="MONITORING" sidebarContent={<div className={styles.sidebar}><strong>Acompanhamento</strong><IconTip icon="◷" label="Data de referência" value={`${businessDate.slice(8, 10)}/${businessDate.slice(5, 7)}`} tip={`Data de referência · ${businessDate}`} /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Dados de execução" tip="Fatos de execução demonstrativos · requerem validação de negócio" /></div>}>
@@ -176,6 +243,14 @@ export function ProductionMonitoringPage() {
         <div><span>Projeção do dia</span><strong>{totals.projectedFinalQuantity.toLocaleString('pt-BR')}</strong></div>
       </section>
 
+      <section className={styles.wip} aria-label="Situação operacional das máquinas" data-testid="operational-snapshot">
+        <button data-state={operationalSnapshotSummary.running > 0 ? 'running' : undefined}><span>Produzindo</span><strong>{operationalSnapshotSummary.running}</strong></button>
+        <button data-state={operationalSnapshotSummary.paused > 0 ? 'attention' : undefined}><span>Pausados</span><strong>{operationalSnapshotSummary.paused}</strong></button>
+        <button><span>Aguardando início</span><strong>{operationalSnapshotSummary.waitingStart}</strong></button>
+        <button><span>Concluídos</span><strong>{operationalSnapshotSummary.completed}</strong></button>
+        <p data-testid="wip-summary">WIP (demonstrativo) — {wipSummary.wipRequirementCount} requirements em execução ou pausados · {wipSummary.wipQuantity.toLocaleString('pt-BR')} peças apontadas até agora · {operationalSnapshotSummary.totalCount} máquinas · {operationalSnapshotSummary.late} atrasadas · {operationalSnapshotSummary.atRisk} em risco. <small>WIP SEMANTICS: DEMONSTRATIVE / BUSINESS VALIDATION REQUIRED — nunca Buffer, Estoque Disponível ou Produto Acabado.</small></p>
+      </section>
+
       <section className={styles.live} aria-labelledby="live-title">
         <header><div><h2 id="live-title">Quadro Hora-Hora — Passado, Agora e Futuro</h2><p>Planejado · Realizado · Projetado — clique em um requirement para acompanhar</p></div><span className={styles.legend}><i data-layer="scheduled" />Planejado<i data-layer="actual" />Realizado<i data-layer="projected" />Projetado</span></header>
         <div className={styles.timeline} data-testid="live-production-timeline">
@@ -187,10 +262,13 @@ export function ProductionMonitoringPage() {
               const laneSnapshots = snapshots.filter((snapshot) => snapshot.lot.scheduledResourceId === resourceId).sort((a, b) => Date.parse(a.lot.scheduledStart) - Date.parse(b.lot.scheduledStart));
               const dominant = laneSnapshots.find((s) => s.status === 'RUNNING' || s.status === 'DELAYED') ?? laneSnapshots.find((s) => s.status === 'NOT_STARTED') ?? [...laneSnapshots].reverse().find((s) => s.status === 'COMPLETED');
               const dominantMaterial = dominant ? materialOf(dominant.lot.materialId) : undefined;
+              const resourceEntry = resourceStatusByResourceId[resourceId];
+              const nextMaterial = resourceEntry?.next ? materialOf(lots.find((lot) => lot.id === resourceEntry.next!.lotId)!.materialId) : undefined;
               return <section className={styles.lane} key={resourceId} data-status={dominant?.status}>
-                <button className={styles.resource} onClick={() => dominant && setOpenLotId(dominant.lot.id)}>
-                  <span className={styles.resourceHead}><strong>{resourceId}</strong><span data-status={dominant?.status}>{dominant ? statusLabel[dominant.status] : '—'}</span></span>
-                  <small>{dominantMaterial ? `${dominantMaterial.code} · ${dominant!.producedQuantity}/${dominant!.lot.quantity}` : 'Sem requirement ativo'}</small>
+                <button className={styles.resource} data-operational-status={resourceEntry?.current?.status ?? 'NONE'} data-resource-status={resourceEntry?.resourceStatus} onClick={() => dominant && setOpenLotId(dominant.lot.id)}>
+                  <span className={styles.resourceHead}><strong>{resourceId}</strong><span data-status={dominant?.status}>{resourceEntry?.current ? operationalStatusLabel[resourceEntry.current.status] : resourceOperationalStatusLabel.NO_ACTIVE_REQUIREMENT}</span></span>
+                  <small>{dominantMaterial ? `${dominantMaterial.code} · ${dominant!.producedQuantity}/${dominant!.lot.quantity}${resourceEntry?.current ? ` · ${adherenceQualifierLabel[resourceEntry.current.adherence]}` : ''}` : 'Sem requirement ativo'}</small>
+                  {nextMaterial && resourceEntry?.next ? <small>Próximo: {nextMaterial.code} · {formatTime(resourceEntry.next.scheduledStart)}</small> : null}
                 </button>
                 <div className={styles.tracks}>
                   <div><span>PLANEJADO</span>{laneSnapshots.map((snapshot) => <button key={snapshot.lot.id} className={styles.scheduled} data-status={snapshot.status} data-lot-id={snapshot.lot.id} title={`${materialOf(snapshot.lot.materialId).code} · ${formatTime(snapshot.lot.scheduledStart)}–${formatTime(snapshot.lot.scheduledFinish)}`} style={{ left: `${timelinePosition(snapshot.lot.scheduledStart, rangeStart, rangeFinish)}%`, width: `${timelineWidth(snapshot.lot.scheduledStart, snapshot.lot.scheduledFinish, rangeStart, rangeFinish)}%` }} onClick={() => setOpenLotId(snapshot.lot.id)}>{materialOf(snapshot.lot.materialId).code}</button>)}</div>
@@ -231,6 +309,6 @@ export function ProductionMonitoringPage() {
 
       <details className={styles.disclosure}><summary>Como esses fatos preparam o OEE? <span>Ver detalhes</span></summary><div className={styles.oeeChain}><strong>Fatos de execução + Eventos + Tempo</strong><span>→ Tempo de Produção Planejado / Tempo em Operação / Tempo Parado</span><strong>Produzido (Quantidade Total)</strong><span>→ Quantidade Boa permanece desconhecida até haver dado de qualidade governado</span><strong>OEE</strong><span>não calculado nesta capacidade</span></div></details>
     </div>
-    {openSnapshot ? <ContextDialog snapshot={openSnapshot} events={events} confirmations={confirmationsByLot[openSnapshot.lot.id] ?? []} material={materialOf(openSnapshot.lot.materialId)} release={releasesByLot[openSnapshot.lot.id]} currentTime={currentTime} onClose={() => setOpenLotId(null)} onStart={() => startExecution(openSnapshot.lot.id)} onPause={(reason) => pauseExecution(openSnapshot.lot.id, reason)} onResume={() => resumeExecution(openSnapshot.lot.id)} onConfirmProduction={(increment) => confirmProduction(openSnapshot.lot.id, increment)} onComplete={() => completeExecution(openSnapshot.lot.id)} /> : null}
+    {openSnapshot && openOperationalStatus ? <ContextDialog snapshot={openSnapshot} operationalStatus={openOperationalStatus} events={events} confirmations={confirmationsByLot[openSnapshot.lot.id] ?? []} material={materialOf(openSnapshot.lot.materialId)} release={releasesByLot[openSnapshot.lot.id]} currentTime={currentTime} onClose={() => setOpenLotId(null)} onStart={() => startExecution(openSnapshot.lot.id)} onPause={(reason) => pauseExecution(openSnapshot.lot.id, reason)} onResume={() => resumeExecution(openSnapshot.lot.id)} onConfirmProduction={(increment) => confirmProduction(openSnapshot.lot.id, increment)} onComplete={() => completeExecution(openSnapshot.lot.id)} /> : null}
   </OperationalWorkspace>;
 }

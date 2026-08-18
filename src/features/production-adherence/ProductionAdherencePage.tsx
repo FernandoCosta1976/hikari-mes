@@ -3,11 +3,13 @@ import { createPortal } from 'react-dom';
 import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSummaries, rankedExceptions, type FundicaoDcAdherenceRow } from '../../demo/adapters/adherenceSummaryAdapter';
+import { buildOperationalStatusByLotId } from '../../demo/adapters/operationalStatusResolution';
 import { eventsForScenario, idealCycleTimeSecondsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectConfirmedQuantityByLotId, selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DeviationClassification } from '../../domain/production-adherence/models';
 import { assessLotExecutionHealth } from '../../domain/production-execution/lotHealth';
 import { eventDurationMinutes, type ProductionEvent, type ProductionEventType } from '../../domain/production-monitoring/models';
+import { adherenceQualifierLabel, operationalStatusLabel, type ProductionOperationalStatus } from '../../domain/production-status/models';
 import { timelinePosition, timelineWidth } from '../../domain/production-scheduling/temporalMath';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Bar } from '../../shared/ui/Bar/Bar';
@@ -24,7 +26,7 @@ const classificationTone: Record<DeviationClassification, 'positive' | 'attentio
 const eventLabel: Record<ProductionEventType, string> = { MATERIAL: 'Falta de material', MACHINE_ADJUSTMENT: 'Ajuste de máquina', TOOLING: 'Ferramental', QUALITY: 'Qualidade', OTHER: 'Outro' };
 const shiftStatusLabel = { COMPLETED: 'CONCLUÍDO', IN_PROGRESS: 'EM ANDAMENTO', UPCOMING: 'AINDA NÃO INICIADO' } as const;
 
-function AdherenceDialog({ row, events, idealCycleTimeSecondsByMaterialId, confirmedQuantityByLotId, currentTime, onClose }: { row: FundicaoDcAdherenceRow; events: readonly ProductionEvent[]; idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>>; confirmedQuantityByLotId: Readonly<Record<string, number>>; currentTime: string; onClose: () => void }) {
+function AdherenceDialog({ row, operationalStatus, events, idealCycleTimeSecondsByMaterialId, confirmedQuantityByLotId, currentTime, onClose }: { row: FundicaoDcAdherenceRow; operationalStatus?: ProductionOperationalStatus; events: readonly ProductionEvent[]; idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>>; confirmedQuantityByLotId: Readonly<Record<string, number>>; currentTime: string; onClose: () => void }) {
   const close = useRef<HTMLButtonElement>(null);
   useEffect(() => { close.current?.focus(); const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [onClose]);
   const { lot, execution, classification, deviationMinutes, impact, resourceId } = row;
@@ -33,14 +35,14 @@ function AdherenceDialog({ row, events, idealCycleTimeSecondsByMaterialId, confi
   const health = assessLotExecutionHealth(execution, producedQuantity, lot.scheduledStart, lot.scheduledFinish, idealCycleTimeSecondsByMaterialId[lot.materialId], currentTime);
   return createPortal(<div className={styles.modalLayer}><button className={styles.backdrop} aria-label="Fechar contexto" onClick={onClose} /><section role="dialog" aria-modal="true" aria-labelledby="adherence-context-title" className={styles.modal}>
     <header><div><small>ADERÊNCIA</small><h2 id="adherence-context-title">{resourceId} · Lote {lot.lotNumber}</h2><LotHealthIndicator health={health} context={{ lotLabel: lot.lotNumber, material: '', quantity: lot.quantity, resourceId, scheduledStart: formatTime(lot.scheduledStart), scheduledFinish: formatTime(lot.scheduledFinish) }} /></div><Button ref={close} aria-label="Fechar contexto de aderência" onClick={onClose}>×</Button></header>
-    <p>{classificationLabel[classification]}{deviationMinutes !== null ? ` · ${deviationMinutes > 0 ? '+' : ''}${deviationMinutes} min` : ''}</p>
+    {operationalStatus ? <p data-operational-status={operationalStatus.status}>{operationalStatusLabel[operationalStatus.status]} · {adherenceQualifierLabel[operationalStatus.adherence]}{operationalStatus.varianceMinutes !== null ? ` ${operationalStatus.varianceMinutes > 0 ? '+' : ''}${operationalStatus.varianceMinutes} min` : ''}</p> : null}
     <dl>
       <div><dt>Início planejado</dt><dd>{formatTime(lot.scheduledStart)}</dd></div>
       <div><dt>Início real</dt><dd>{execution.actualStart ? formatTime(execution.actualStart) : '—'}</dd></div>
       <div><dt>Término planejado</dt><dd>{formatTime(lot.scheduledFinish)}</dd></div>
       <div><dt>Término real/projetado</dt><dd>{execution.actualFinish ? formatTime(execution.actualFinish) : '—'}</dd></div>
       <div><dt>Progresso</dt><dd>{producedQuantity} / {execution.plannedQuantity} · {Math.round(producedQuantity / execution.plannedQuantity * 100)}%</dd></div>
-      <div><dt>Classificação do desvio</dt><dd>{classificationLabel[classification]} <small>DEMONSTRATIVA</small></dd></div>
+      <div><dt>Classificação do desvio de início</dt><dd>{classificationLabel[classification]}{deviationMinutes !== null ? ` · ${deviationMinutes > 0 ? '+' : ''}${deviationMinutes} min` : ''} <small>DEMONSTRATIVA</small></dd></div>
       <div><dt>Evento ativo</dt><dd>{activeEvent ? `${eventLabel[activeEvent.eventType]} · ${eventDurationMinutes(activeEvent, currentTime)} min` : 'Nenhum'}</dd></div>
       <div><dt>Próximo Lote potencialmente impactado</dt><dd>{impact ? `${impact.impactedLot.lotNumber} · ${formatDateTime(impact.impactedLot.scheduledStart)}` : 'Nenhum conhecido'}</dd></div>
     </dl>
@@ -52,6 +54,11 @@ export function ProductionAdherencePage() {
   const definition = useScenarioStore(selectProductionScheduling);
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
+  const releasesByLot = useScenarioStore(selectProductionReleases);
+  const readinessAssessments = useScenarioStore(selectProductionReadiness);
+  const preparationConfirmedByLotId = useScenarioStore(selectPreparationConfirmedByLotId);
+  const organizationsByLotId = useScenarioStore(selectOrganizationsByLotId);
+  const activeScheduleVersionId = useScenarioStore((state) => state.activeScheduleVersionId);
   const confirmedQuantityByLotId = useScenarioStore(selectConfirmedQuantityByLotId);
   const [openRow, setOpenRow] = useState<FundicaoDcAdherenceRow | null>(null);
   const sessionClock = useScenarioStore(selectSessionClock);
@@ -63,6 +70,12 @@ export function ProductionAdherencePage() {
   const rangeStart = `${businessDate}T00:00:00-03:00`;
   const rangeFinish = `${businessDate}T23:59:59-03:00`;
   const currentPosition = timelinePosition(currentTime, rangeStart, rangeFinish);
+
+  /** Capability 07 — the SAME shared Operational Status Acompanhamento consumes, never a separate "Em produção" classification (Section 23). */
+  const statusByLotId = buildOperationalStatusByLotId({
+    lots: definition.lots, executionsByLot, releasesByLot, readinessAssessments, preparationConfirmedByLotId, organizationsByLotId,
+    confirmedQuantityByLotId, activeScheduleVersionId, currentTime,
+  });
 
   const day = computeFundicaoDcAdherenceSummary(definition, executionsByLot, currentTime);
   const shifts = computeFundicaoDcShiftAdherenceSummaries(definition, executionsByLot, currentTime);
@@ -99,12 +112,12 @@ export function ProductionAdherencePage() {
       </section>
 
       <section className={styles.resources} aria-labelledby="resources-title">
-        <header><h2 id="resources-title">Situação das Máquinas</h2><p>DC01–DC05 · classificação de aderência · acumulado do dia</p></header>
+        <header><h2 id="resources-title">Situação das Máquinas</h2><p>DC01–DC05 · situação operacional e aderência · acumulado do dia</p></header>
         <div className={styles.machines}>
-          {day.rows.map((row) => { const producedQuantity = confirmedQuantityByLotId[row.lot.id] ?? 0; const health = assessLotExecutionHealth(row.execution, producedQuantity, row.lot.scheduledStart, row.lot.scheduledFinish, idealCycleTimeSecondsByMaterialId[row.lot.materialId], currentTime); return <button key={row.resourceId} className={styles.machineRow} data-tone={classificationTone[row.classification]} onClick={() => setOpenRow(row)}>
+          {day.rows.map((row) => { const producedQuantity = confirmedQuantityByLotId[row.lot.id] ?? 0; const health = assessLotExecutionHealth(row.execution, producedQuantity, row.lot.scheduledStart, row.lot.scheduledFinish, idealCycleTimeSecondsByMaterialId[row.lot.materialId], currentTime); const operationalStatus = statusByLotId[row.lot.id]; return <button key={row.resourceId} className={styles.machineRow} data-tone={classificationTone[row.classification]} data-operational-status={operationalStatus?.status} onClick={() => setOpenRow(row)}>
             <span className={styles.machineIcon} aria-hidden="true">{classificationIcon[row.classification]}</span>
             <span className={styles.machineId}>{row.resourceId}</span>
-            <span className={styles.machineStatus}><small>Lote {row.lot.lotNumber}</small><strong>{classificationLabel[row.classification]}</strong></span>
+            <span className={styles.machineStatus}><small>Lote {row.lot.lotNumber}</small><strong>{operationalStatus ? `${operationalStatusLabel[operationalStatus.status]} · ${adherenceQualifierLabel[operationalStatus.adherence]}` : classificationLabel[row.classification]}</strong></span>
             <LotHealthIndicator health={health} compact />
             <span className={styles.machineApq}>{row.deviationMinutes !== null ? `${row.deviationMinutes > 0 ? '+' : ''}${row.deviationMinutes} min vs. plano` : `${producedQuantity}/${row.execution.plannedQuantity}`}</span>
             {row.impact ? <em className={styles.machineNote}>Impacto: Lote {row.impact.impactedLot.lotNumber}</em> : null}
@@ -128,6 +141,6 @@ export function ProductionAdherencePage() {
         </div>
       </details>
     </div>
-    {openRow ? <AdherenceDialog row={openRow} events={events} idealCycleTimeSecondsByMaterialId={idealCycleTimeSecondsByMaterialId} confirmedQuantityByLotId={confirmedQuantityByLotId} currentTime={currentTime} onClose={() => setOpenRow(null)} /> : null}
+    {openRow ? <AdherenceDialog row={openRow} operationalStatus={statusByLotId[openRow.lot.id]} events={events} idealCycleTimeSecondsByMaterialId={idealCycleTimeSecondsByMaterialId} confirmedQuantityByLotId={confirmedQuantityByLotId} currentTime={currentTime} onClose={() => setOpenRow(null)} /> : null}
   </OperationalWorkspace>;
 }

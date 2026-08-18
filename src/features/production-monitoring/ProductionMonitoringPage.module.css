@@ -58,3 +58,13 @@
 .confirmationHistory summary{cursor:pointer;font-size:.68rem;font-weight:800;color:#075dcc}
 .confirmationHistory ul{margin:.35rem 0 0;padding-left:1.1rem;font-size:.7rem;color:#4a5872}
 .confirmationHistory li{margin-bottom:.15rem}
+.operationalStatusBlock{background:#f4f7fb;border:1px solid #c9d3e2;border-left:4px solid #2771ce;border-radius:.4rem;padding:.6rem .75rem;margin-top:.6rem}
+.operationalStatusBlock h3{margin:0 0 .4rem;font-size:.78rem;text-transform:uppercase;color:#075dcc}
+.operationalStatusBlock dl{display:grid;grid-template-columns:repeat(2,1fr);gap:.4rem}
+.operationalStatusBlock dl div{background:#fff;padding:.4rem .5rem;border-radius:.3rem}
+.operationalStatusBlock dt{font-size:.6rem;color:#647089;text-transform:uppercase}
+.operationalStatusBlock dd{margin:.1rem 0;font-weight:700}
+.operationalStatusBlock dd small{display:block;font-weight:600;color:#61708a}
+.operationalStatusBlock>small{display:block;margin-top:.5rem;color:#647089;font-size:.65rem}
+.operationalStatusBlock[data-operational-status=PAUSED]{border-left-color:#b56800}
+.operationalStatusBlock[data-operational-status=BLOCKED]{border-left-color:#8a4a00}

@@ -21,7 +21,7 @@ test('shows Passado/Agora/Futuro with real diversity across DC01-DC05 and no int
   // an active or pending requirement right now, so no lane's dominant status is Concluído; individual
   // Concluído blocks are still visible on the REAL track for every Resource (checked below via click).
   await expect(timeline.getByText('Em execução')).toHaveCount(4);
-  await expect(timeline.getByText('Não iniciado', { exact: true })).toBeVisible();
+  await expect(timeline.getByText('Pronto para liberar', { exact: true })).toBeVisible();
   await expect(timeline.locator('button[data-status="COMPLETED"]').first()).toBeVisible();
 
   const strip = page.getByRole('region', { name: 'Resumo operacional do dia' });
@@ -41,7 +41,7 @@ test('a Lot Completed before and one Running now are both real requirements, nev
   await dc01.getByRole('button').first().click();
   const runningDialog = page.getByRole('dialog', { name: '44C-E5421-W0' });
   await expect(runningDialog).toContainText('SituaçãoEm execução');
-  await expect(runningDialog).toContainText('Quantidade65 / 100');
+  await expect(runningDialog).toContainText('Produção65 / 100');
   await expect(runningDialog).toContainText('Conclusão projetada 09:39');
   await runningDialog.getByRole('button', { name: 'Fechar contexto de acompanhamento' }).click();
 
@@ -64,8 +64,8 @@ test('DC05 setup-overrun Event delays the requirement start, visible end to end 
   const dialog = page.getByRole('dialog', { name: '1ST-E1310-W0' });
   await expect(dialog).toContainText('Lote Linha C309');
   await expect(dialog).toContainText('SituaçãoEm execução');
-  await expect(dialog).toContainText('Quantidade18 / 100');
-  await expect(dialog).toContainText('Em riscoConclusão projetada 11:23 · +15 min');
+  await expect(dialog).toContainText('Produção18 / 100');
+  await expect(dialog).toContainText('Em risco+15 min · Conclusão projetada 11:23');
   await expect(dialog).toContainText('Ferramental');
   await expect(page).toHaveScreenshot('ACOMPANHAMENTO-0915-DC05-DOWNTIME-IMPACT-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });

@@ -13,9 +13,9 @@ test('shows the 2026-07-10 Scenario Clock 09:15 context and all five Resources w
   expect(screen.getByText('10/07/2026 · Dados simulados até 09:15 · Futuro projetado')).toBeInTheDocument();
   const timeline = screen.getByTestId('live-production-timeline');
   for (const resource of ['DC01', 'DC02', 'DC03', 'DC04', 'DC05']) expect(within(timeline).getByText(resource)).toBeInTheDocument();
-  // Diversity across the states genuinely present at 09:15 — four DCs running, DC03 not yet started.
+  // Diversity across the states genuinely present at 09:15 — four DCs running, DC03 ready to release (not yet released or started).
   expect(within(timeline).getAllByText('Em execução').length).toBe(4);
-  expect(within(timeline).getByText('Não iniciado')).toBeInTheDocument();
+  expect(within(timeline).getByText('Pronto para liberar')).toBeInTheDocument();
 });
 
 test('KPI strip reflects the real 23-requirement reference dataset totals at 09:15', () => {
@@ -37,9 +37,9 @@ test('opens the NOT_STARTED DC03 requirement context — scheduled start already
   const dialog = screen.getByRole('dialog', { name: '1S4-E5411-W0' });
   expect(dialog).toHaveTextContent('Lote Linha C331');
   expect(dialog).toHaveTextContent('MáquinaDC03');
-  expect(dialog).toHaveTextContent('SituaçãoNão iniciado');
-  expect(dialog).toHaveTextContent('Quantidade— / 100');
-  expect(dialog).toHaveTextContent('Em risco');
+  expect(dialog).toHaveTextContent('SituaçãoPronto para liberar');
+  expect(dialog).toHaveTextContent('Produção— / 100');
+  expect(dialog).toHaveTextContent('Atrasado');
 });
 
 test('DC05 setup-overrun Event delays the requirement start, visible end to end from the block to the modal, without double-counting the downtime already reflected in Realizado', async () => {
@@ -51,9 +51,9 @@ test('DC05 setup-overrun Event delays the requirement start, visible end to end 
   const dialog = screen.getByRole('dialog', { name: '1ST-E1310-W0' });
   expect(dialog).toHaveTextContent('Realizado08:45');
   expect(dialog).toHaveTextContent('SituaçãoEm execução');
-  expect(dialog).toHaveTextContent('Quantidade18 / 100');
+  expect(dialog).toHaveTextContent('Produção18 / 100');
   expect(dialog).toHaveTextContent('Em risco');
-  expect(dialog).toHaveTextContent('Conclusão projetada 11:23 · +15 min');
+  expect(dialog).toHaveTextContent('Conclusão projetada 11:23');
   expect(dialog).toHaveTextContent('Ferramental');
 });
 
@@ -65,8 +65,8 @@ test('Unknown != 0 — a requirement with no appointment never shows a fabricate
   const dialog = screen.getByRole('dialog');
   expect(dialog).toHaveTextContent('Realizado—');
   expect(dialog).toHaveTextContent('Ausência de apontamento não significa zero produzido.');
-  expect(dialog).toHaveTextContent('Quantidade— / 100');
-  expect(dialog).not.toHaveTextContent('Quantidade0 / 100');
+  expect(dialog).toHaveTextContent('Produção— / 100');
+  expect(dialog).not.toHaveTextContent('Produção0 / 100');
 });
 
 test('has no fabricated Material A/B/C and no execution controls (Acompanhamento does not start, pause or complete production)', () => {
