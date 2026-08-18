@@ -72,6 +72,8 @@ export interface ResourceOeeInput {
   plannedTimeMinutes: number | null;
   idealCycleTimeSeconds: number | null;
   producedQuantity: number;
+  /** Capability 09 — Good/Reject/Rework already classified for this Requirement; may be < producedQuantity while a Pending balance remains. */
+  classifiedQuantity: number;
   goodQuantity: number | null;
 }
 
@@ -92,12 +94,17 @@ export function aggregatePerformance(rows: readonly Pick<ResourceOeeInput, 'idea
   return runTimeSeconds > 0 ? clamp01(idealTotal / runTimeSeconds) : null;
 }
 
-export function aggregateQuality(rows: readonly Pick<ResourceOeeInput, 'producedQuantity' | 'goodQuantity'>[]): number | null {
-  const eligible = rows.filter((row): row is { producedQuantity: number; goodQuantity: number } => row.producedQuantity > 0 && row.goodQuantity !== null);
+/**
+ * Capability 09 (Section 20/26) — Good/Classified, never Good/Produced: a
+ * Requirement still carrying a Pending Classification balance must not have
+ * its unclassified pieces silently treated as loss.
+ */
+export function aggregateQuality(rows: readonly Pick<ResourceOeeInput, 'classifiedQuantity' | 'goodQuantity'>[]): number | null {
+  const eligible = rows.filter((row): row is { classifiedQuantity: number; goodQuantity: number } => row.classifiedQuantity > 0 && row.goodQuantity !== null);
   if (!eligible.length) return null;
-  const produced = eligible.reduce((sum, row) => sum + row.producedQuantity, 0);
+  const classified = eligible.reduce((sum, row) => sum + row.classifiedQuantity, 0);
   const good = eligible.reduce((sum, row) => sum + row.goodQuantity, 0);
-  return produced > 0 ? clamp01(good / produced) : null;
+  return classified > 0 ? clamp01(good / classified) : null;
 }
 
 export type OeeDimension = 'AVAILABILITY' | 'PERFORMANCE' | 'QUALITY';

@@ -1,8 +1,14 @@
-import type { QualityConfirmation } from '../../domain/production-quality/models';
+import type { ProductionQualityConfirmation } from '../../domain/production-quality/models';
 
-export const fundicaoDcQualityConfirmationsFixture: readonly QualityConfirmation[] = [
-  { lotId: 'lot-265', resourceId: 'DC01', producedQuantity: 83, goodQuantity: 79, rejectQuantity: 4, reworkQuantity: 0, confirmedAt: '2025-05-15T17:20:00-03:00', confirmedBy: 'Operador da Fundição · demonstrativo', lossReason: 'SCRAP', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' },
-  { lotId: 'lot-264', resourceId: 'DC02', producedQuantity: 50, goodQuantity: 49, rejectQuantity: 1, reworkQuantity: 0, confirmedAt: '2025-05-15T11:12:00-03:00', confirmedBy: 'Operador da Fundição · demonstrativo', lossReason: 'DIMENSIONAL', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' },
-  { lotId: 'lot-266', resourceId: 'DC03', producedQuantity: 41, goodQuantity: 35, rejectQuantity: 0, reworkQuantity: 6, confirmedAt: '2025-05-15T17:05:00-03:00', confirmedBy: 'Operador da Fundição · demonstrativo', lossReason: 'PROCESS_DEFECT', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' },
-  { lotId: 'lot-268', resourceId: 'DC04', producedQuantity: 35, goodQuantity: 28, rejectQuantity: 7, reworkQuantity: 0, confirmedAt: '2025-05-15T17:20:00-03:00', confirmedBy: 'Operador da Fundição · demonstrativo', lossReason: 'SURFACE', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' },
+/**
+ * Every Lot below is already fully classified (Good + Reject + Rework ==
+ * its own Production Confirmation total in fundicaoDcProductionConfirmations.ts)
+ * — Produced is never repeated here, it is always read from Production
+ * Confirmations (Capability 06), never a field on Quality Confirmation.
+ */
+export const fundicaoDcQualityConfirmationsFixture: readonly ProductionQualityConfirmation[] = [
+  { id: 'lot-265-quality-seed', lotId: 'lot-265', resourceId: 'DC01', goodQuantity: 79, rejectQuantity: 4, reworkQuantity: 0, reasonCode: 'OTHER_DEMONSTRATIVE', confirmedAt: '2025-05-15T17:20:00-03:00', operator: 'Operador da Fundição · demonstrativo', dataOrigin: 'DEMONSTRATIVE_QUALITY', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' },
+  { id: 'lot-264-quality-seed', lotId: 'lot-264', resourceId: 'DC02', goodQuantity: 49, rejectQuantity: 1, reworkQuantity: 0, reasonCode: 'DIMENSIONAL', confirmedAt: '2025-05-15T11:12:00-03:00', operator: 'Operador da Fundição · demonstrativo', dataOrigin: 'DEMONSTRATIVE_QUALITY', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' },
+  { id: 'lot-266-quality-seed', lotId: 'lot-266', resourceId: 'DC03', goodQuantity: 35, rejectQuantity: 0, reworkQuantity: 6, confirmedAt: '2025-05-15T17:05:00-03:00', operator: 'Operador da Fundição · demonstrativo', dataOrigin: 'DEMONSTRATIVE_QUALITY', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' },
+  { id: 'lot-268-quality-seed', lotId: 'lot-268', resourceId: 'DC04', goodQuantity: 28, rejectQuantity: 7, reworkQuantity: 0, reasonCode: 'VISUAL', confirmedAt: '2025-05-15T17:20:00-03:00', operator: 'Operador da Fundição · demonstrativo', dataOrigin: 'DEMONSTRATIVE_QUALITY', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' },
 ];

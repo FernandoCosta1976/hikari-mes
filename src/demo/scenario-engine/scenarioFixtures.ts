@@ -10,7 +10,7 @@ import { fundicaoDcSourceDerivedMoldsFixture } from '../fixtures/fundicaoDcSourc
 import { sourceDerivedIdealCycleTimeSecondsByMaterialId } from '../scenarios/fundicaoDcSourceDerivedScenario';
 import type { DownstreamAreaHealth } from '../../domain/downstream/models';
 import type { Mold } from '../../domain/mold/models';
-import type { QualityConfirmation } from '../../domain/production-quality/models';
+import type { ProductionQualityConfirmation } from '../../domain/production-quality/models';
 import type { ProductionEvent } from '../../domain/production-monitoring/models';
 
 /**
@@ -24,7 +24,7 @@ export function eventsForScenario(scenarioId: string | undefined): readonly Prod
   return scenarioId === 'fundicao-dc' ? fundicaoDcSourceDerivedProductionEventsFixture : fundicaoDcProductionEventsFixture;
 }
 
-export function qualityConfirmationsForScenario(scenarioId: string | undefined): readonly QualityConfirmation[] {
+export function qualityConfirmationsForScenario(scenarioId: string | undefined): readonly ProductionQualityConfirmation[] {
   return scenarioId === 'fundicao-dc' ? fundicaoDcSourceDerivedQualityConfirmationsFixture : fundicaoDcQualityConfirmationsFixture;
 }
 

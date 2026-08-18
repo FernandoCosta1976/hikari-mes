@@ -7,13 +7,14 @@ import { assessDemonstrativeRelease, releaseDemonstratively, revokeRelease, type
 import { canCompleteExecution, completeExecution, pauseExecution, resumeExecution, startExecution, type DemonstrativePauseReason, type ProductionExecutionRecord } from '../../domain/production-execution/models';
 import { accumulatedProducedQuantity, buildProductionConfirmation, confirmedQuantityByLot, groupConfirmationsByRequirement, validateConfirmationIncrement, type ConfirmationRejection, type ProductionConfirmation } from '../../domain/production-confirmation/models';
 import { closeEvent, groupEventsByLot, openEvent, pauseReasonToEventType, type ProductionEvent } from '../../domain/production-monitoring/models';
+import { accumulatedQuality, buildQualityConfirmation, classifiedQuantity, groupQualityConfirmationsByRequirement, pendingClassification, validateQualityIncrement, type ProductionQualityConfirmation, type QualityRejection, type QualityReasonCode } from '../../domain/production-quality/models';
 import { resolveDemonstrativeRelease } from '../adapters/releaseResolution';
 import { demonstrativeOperatorForResource } from '../fixtures/demonstrativeOperators';
 import { fundicaoDcProductionConfirmationsFixture } from '../fixtures/fundicaoDcProductionConfirmations';
 import { fundicaoDcProductionExecutionFixture } from '../fixtures/fundicaoDcProductionExecution';
 import { fundicaoDcSourceDerivedProductionConfirmationsFixture } from '../fixtures/fundicaoDcSourceDerivedProductionConfirmations';
 import { fundicaoDcSourceDerivedProductionExecutionFixture } from '../fixtures/fundicaoDcSourceDerivedProductionExecution';
-import { eventsForScenario } from './scenarioFixtures';
+import { eventsForScenario, qualityConfirmationsForScenario } from './scenarioFixtures';
 import { sourceDerivedTraceabilityByLotId } from '../scenarios/fundicaoDcSourceDerivedScenario';
 
 /**
@@ -50,8 +51,8 @@ export function scenarioStorageKey(scenarioId: string): string {
   return `hikari:demo:${scenarioId}:v1`;
 }
 export const SCENARIO_STORAGE_KEY = scenarioStorageKey('fundicao-dc');
-/** Bumped for Capability 08's productionEvents slice — any persisted decisions from before it must fall back to the fixture baseline instead of missing the new field. */
-const SCENARIO_SCHEMA_VERSION = 3;
+/** Bumped for Capability 09's productionQualityConfirmations slice — any persisted decisions from before it must fall back to the fixture baseline instead of missing the new field. */
+const SCENARIO_SCHEMA_VERSION = 4;
 
 interface PersistedScenarioDecisions {
   schemaVersion: number;
@@ -59,6 +60,7 @@ interface PersistedScenarioDecisions {
   productionExecutions: Record<string, ProductionExecutionRecord>;
   productionConfirmations: Record<string, readonly ProductionConfirmation[]>;
   productionEvents: Record<string, readonly ProductionEvent[]>;
+  productionQualityConfirmations: Record<string, readonly ProductionQualityConfirmation[]>;
   organizationsByLotId: Record<string, LotOrganization>;
   preparationConfirmedByLotId: Record<string, boolean>;
   postponedLotIds: Record<string, { targetLabel: string; postponedAt: string }>;
@@ -74,6 +76,7 @@ function isPersistedScenarioDecisions(value: unknown): value is PersistedScenari
     && typeof record.productionExecutions === 'object' && record.productionExecutions !== null
     && typeof record.productionConfirmations === 'object' && record.productionConfirmations !== null
     && typeof record.productionEvents === 'object' && record.productionEvents !== null
+    && typeof record.productionQualityConfirmations === 'object' && record.productionQualityConfirmations !== null
     && typeof record.organizationsByLotId === 'object' && record.organizationsByLotId !== null
     && typeof record.preparationConfirmedByLotId === 'object' && record.preparationConfirmedByLotId !== null
     && typeof record.postponedLotIds === 'object' && record.postponedLotIds !== null
@@ -109,6 +112,7 @@ function writePersistedScenarioDecisions(state: ScenarioState): void {
     productionExecutions: state.productionExecutions,
     productionConfirmations: state.productionConfirmations,
     productionEvents: state.productionEvents,
+    productionQualityConfirmations: state.productionQualityConfirmations,
     organizationsByLotId: state.organizationsByLotId,
     preparationConfirmedByLotId: state.preparationConfirmedByLotId,
     postponedLotIds: state.postponedLotIds,
@@ -145,6 +149,8 @@ interface ScenarioState {
   productionConfirmations: Readonly<Record<string, readonly ProductionConfirmation[]>>;
   /** Capability 08 — Production Events, grouped by Requirement. The ONLY Event source — seeded facts and live Registrar-parada/Retomar events live in the SAME array, never a separate store (Section 24). */
   productionEvents: Readonly<Record<string, readonly ProductionEvent[]>>;
+  /** Capability 09 — Quality Confirmation, grouped by Requirement. Each Requirement's Classified Quantity is always SUM(this array) — Produced always comes from productionConfirmations, never repeated here (Section 3/31). */
+  productionQualityConfirmations: Readonly<Record<string, readonly ProductionQualityConfirmation[]>>;
   organizationsByLotId: Readonly<Record<string, LotOrganization>>;
   preparationConfirmedByLotId: Readonly<Record<string, boolean>>;
   postponedLotIds: Readonly<Record<string, { targetLabel: string; postponedAt: string }>>;
@@ -172,6 +178,7 @@ interface ScenarioActions {
   resumeLotExecution: (lotId: string) => void;
   confirmProduction: (lotId: string, increment: number) => void;
   completeLotExecution: (lotId: string) => void;
+  confirmQuality: (lotId: string, goodIncrement: number, rejectIncrement: number, reasonCode?: QualityReasonCode) => void;
   adoptOrganization: (impact: ResourceReassignment, organizedBy: string) => void;
 }
 
@@ -181,6 +188,8 @@ export type ScenarioStore = ScenarioState & ScenarioActions;
 const executionSeedFor = (definition: ScenarioDefinition | null) => definition?.id === 'fundicao-dc' ? fundicaoDcSourceDerivedProductionExecutionFixture : definition?.id === 'fundicao-dc-legacy' ? fundicaoDcProductionExecutionFixture : [];
 /** Seed Production Confirmations per cenário — Capability 06's migration of the historical producedQuantity facts (Section 19). */
 const confirmationSeedFor = (definition: ScenarioDefinition | null) => definition?.id === 'fundicao-dc' ? fundicaoDcSourceDerivedProductionConfirmationsFixture : definition?.id === 'fundicao-dc-legacy' ? fundicaoDcProductionConfirmationsFixture : [];
+/** Seed Quality Confirmations per cenário — Capability 09's migration of the historical Quality facts (Section 32). */
+const qualityConfirmationSeedFor = (definition: ScenarioDefinition | null) => qualityConfirmationsForScenario(definition?.id);
 
 const baseline = (definition: ScenarioDefinition | null, revision: number): ScenarioState => {
   const executionSeed = executionSeedFor(definition);
@@ -206,6 +215,7 @@ const baseline = (definition: ScenarioDefinition | null, revision: number): Scen
     productionExecutions: persisted?.productionExecutions ?? Object.fromEntries(executionSeed.map((record) => [record.lotId, record])),
     productionConfirmations: persisted?.productionConfirmations ?? groupConfirmationsByRequirement(confirmationSeedFor(definition)),
     productionEvents: persisted?.productionEvents ?? groupEventsByLot(eventsForScenario(definition?.id)),
+    productionQualityConfirmations: persisted?.productionQualityConfirmations ?? groupQualityConfirmationsByRequirement(qualityConfirmationSeedFor(definition)),
     organizationsByLotId: persisted?.organizationsByLotId ?? {},
     preparationConfirmedByLotId: persisted?.preparationConfirmedByLotId ?? {},
     postponedLotIds: persisted?.postponedLotIds ?? {},
@@ -331,6 +341,38 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
     if (next === existing) return state;
     return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, sessionClock: at, scenarioModified: true };
   }),
+  /**
+   * Capability 09 — Registrar Qualidade (Section 3/5/8): never re-asks
+   * Produced (already known from Production Confirmations) — good/reject
+   * are validated against the Pending Classification balance, which the
+   * caller must have computed the SAME way (Produced - Classified). Each
+   * confirmation carries its OWN increment, appended, never overwriting.
+   */
+  confirmQuality: (lotId, goodIncrement, rejectIncrement, reasonCode) => set((state) => {
+    const execution = state.productionExecutions[lotId];
+    const lot = state.productionScheduling?.lots.find((item) => item.id === lotId);
+    if (!execution || !lot) return state;
+    const confirmedQuantity = accumulatedProducedQuantity(state.productionConfirmations[lotId] ?? []);
+    const existingQuality = state.productionQualityConfirmations[lotId] ?? [];
+    const classified = classifiedQuantity(accumulatedQuality(existingQuality));
+    const pending = pendingClassification(confirmedQuantity, classified);
+    const rejection: QualityRejection | null = validateQualityIncrement({ goodIncrement, rejectIncrement, pendingQuantity: pending, reasonCode });
+    if (rejection) return state;
+    const at = state.sessionClock ?? state.definition?.currentScenarioTime ?? UNINITIALIZED_SCENARIO_FALLBACK_TIME;
+    const operator = demonstrativeOperatorForResource(execution.resourceId);
+    const confirmation = buildQualityConfirmation({
+      id: `${lotId}-quality-${existingQuality.length + 1}`,
+      lotId,
+      resourceId: execution.resourceId,
+      operator: operator.displayName,
+      goodQuantity: goodIncrement,
+      rejectQuantity: rejectIncrement,
+      reasonCode,
+      confirmedAt: at,
+      dataOrigin: 'USER_SIMULATION',
+    });
+    return { productionQualityConfirmations: { ...state.productionQualityConfirmations, [lotId]: [...existingQuality, confirmation] }, scenarioModified: true };
+  }),
 }));
 
 useScenarioStore.subscribe((state) => { if (state.initialized) writePersistedScenarioDecisions(state); });
@@ -377,6 +419,21 @@ export const selectAllProductionEvents = (state: ScenarioStore) => {
     cachedFlatEvents = Object.values(state.productionEvents).flat();
   }
   return cachedFlatEvents;
+};
+export const selectProductionQualityConfirmations = (state: ScenarioStore) => state.productionQualityConfirmations;
+/**
+ * Flattened Quality Confirmation list — the SAME source Acompanhamento,
+ * Qualidade & Desempenho, OEE and Visão Estratégica all read (Section 31),
+ * memoized on the `productionQualityConfirmations` reference itself.
+ */
+let cachedQualityByLot: ScenarioState['productionQualityConfirmations'] | null = null;
+let cachedFlatQuality: readonly ProductionQualityConfirmation[] = [];
+export const selectAllQualityConfirmations = (state: ScenarioStore) => {
+  if (state.productionQualityConfirmations !== cachedQualityByLot) {
+    cachedQualityByLot = state.productionQualityConfirmations;
+    cachedFlatQuality = Object.values(state.productionQualityConfirmations).flat();
+  }
+  return cachedFlatQuality;
 };
 export const selectOrganizationsByLotId = (state: ScenarioStore) => state.organizationsByLotId;
 export const selectProductionReleases = (state: ScenarioStore) => state.productionReleases;

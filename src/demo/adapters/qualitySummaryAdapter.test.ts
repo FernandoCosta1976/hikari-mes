@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fundicaoDcProductionExecutionFixture } from '../fixtures/fundicaoDcProductionExecution';
 import { fundicaoDcScenario } from '../scenarios/fundicaoDcScenario';
+import { qualityRate } from '../../domain/production-quality/models';
 import { computeFundicaoDcQualitySummary, computeFundicaoDcShiftQualitySummaries } from './qualitySummaryAdapter';
 
 const executionsByLot = Object.fromEntries(fundicaoDcProductionExecutionFixture.map((execution) => [execution.lotId, execution]));
@@ -13,6 +14,17 @@ describe('computeFundicaoDcQualitySummary', () => {
     expect(day).toMatchObject({ produced: 174, good: 163, reject: 5, rework: 6 });
     expect(day.qualityRate).toBeCloseTo(0.9368, 3);
     expect(day.losses.map((loss) => loss.resourceId)).toEqual(['DC03', 'DC01', 'DC02']);
+  });
+
+  it('Capability 09 (Section 5/6) — per-Resource rows never over-classify their own Produced total, and the day Quality Rate matches good/classified computed from the SAME totals', () => {
+    const day = computeFundicaoDcQualitySummary(definition, executionsByLot, currentTime);
+    for (const row of day.rows) {
+      expect(row.classified).toBe(row.quality.good + row.quality.reject + row.quality.rework);
+      expect(row.classified).toBeLessThanOrEqual(row.producedQuantity);
+      expect(row.pending).toBe(row.producedQuantity - row.classified);
+    }
+    expect(day.classified).toBe(day.good + day.reject + day.rework);
+    expect(day.qualityRate).toBeCloseTo(qualityRate(day.good, day.classified)!, 6);
   });
 });
 

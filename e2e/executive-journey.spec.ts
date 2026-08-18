@@ -7,7 +7,7 @@ const STEPS: readonly { id: string; label: string; heading: string }[] = [
   { id: '04', label: 'Execução', heading: 'O que está sendo executado agora?' },
   { id: '05', label: 'Acompanhamento', heading: 'O que está acontecendo em relação ao plano?' },
   { id: '06', label: 'Aderência', heading: 'Estamos executando conforme o planejado?' },
-  { id: '07', label: 'Qualidade', heading: 'Quanto produzimos e quanto foi bom?' },
+  { id: '07', label: 'Qualidade', heading: 'Do que produzimos, quanto está conforme e quanto perdemos por qualidade?' },
   { id: '08', label: 'OEE', heading: 'Como estamos performando e por quê?' },
 ];
 

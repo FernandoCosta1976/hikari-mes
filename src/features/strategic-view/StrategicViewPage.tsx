@@ -6,8 +6,8 @@ import { computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSumma
 import { computeFundicaoDcOeeSummary } from '../../demo/adapters/oeeSummaryAdapter';
 import { computeFundicaoDcQualitySummary } from '../../demo/adapters/qualitySummaryAdapter';
 import { buildOperationalStatusByLotId } from '../../demo/adapters/operationalStatusResolution';
-import { downstreamHealthForScenario, idealCycleTimeSecondsForScenario, moldsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectAllProductionEvents, selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { downstreamHealthForScenario, idealCycleTimeSecondsForScenario, moldsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
+import { selectAllProductionEvents, selectAllQualityConfirmations, selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DownstreamAreaStatus } from '../../domain/downstream/models';
 import { mostCriticalMold } from '../../domain/mold/models';
 import { assessLotExecutionHealth, byLotHealthAttention, lotHealthIcon, lotHealthLabel, type LotHealthProjection, type LotHealthStatus } from '../../domain/production-execution/lotHealth';
@@ -64,7 +64,7 @@ export function StrategicViewPage() {
   const events = useScenarioStore(selectAllProductionEvents);
   const sessionClock = useScenarioStore(selectSessionClock);
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
-  const qualityConfirmations = qualityConfirmationsForScenario(scenario?.id);
+  const qualityConfirmations = useScenarioStore(selectAllQualityConfirmations);
   const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   const downstream = downstreamHealthForScenario(scenario?.id);
   const criticalMold = mostCriticalMold(moldsForScenario(scenario?.id));
@@ -131,6 +131,14 @@ export function StrategicViewPage() {
   const totalDowntimeMinutes = resourcesWithDowntime.reduce((sum, [, minutes]) => sum + minutes, 0);
   const activeEvent = events.find((event) => event.status === 'ACTIVE');
   const activeEventResourceId = activeEvent ? oeeDay.rows.find((row) => row.lot.id === activeEvent.lotId)?.resourceId : undefined;
+
+  /**
+   * Capability 09 — Section 30: "Component with reject" main attention,
+   * derived from the SAME Quality Confirmations aggregate (qualityDay.losses)
+   * every other screen reads — never an independently computed number.
+   */
+  const topQualityLoss = qualityDay.losses[0];
+  const topQualityLossMaterial = topQualityLoss ? definition.materials.find((material) => material.id === topQualityLoss.lot.materialId) : undefined;
 
   const statusReason = status === 'RISCO'
     ? `${healthCounts.LATE_NOT_STARTED + healthCounts.BEHIND_PLAN} máquina(s) atrasada(s) ou abaixo do plano`
@@ -212,8 +220,8 @@ export function StrategicViewPage() {
 
         <article aria-label="Qualidade do dia">
           <h3>Qualidade do dia</h3>
-          <StackedBar segments={[{ value: qualityDay.good, tone: 'positive', label: `Boas ${qualityDay.good}` }, { value: qualityDay.reject, tone: 'attention', label: `Refugo ${qualityDay.reject}` }, { value: qualityDay.rework, tone: 'neutral', label: `Retrabalho ${qualityDay.rework}` }]} />
-          <small>{pct(qualityDay.qualityRate)} de qualidade · {qualityDay.produced} peças produzidas</small>
+          <StackedBar segments={[{ value: qualityDay.good, tone: 'positive', label: `Boas ${qualityDay.good}` }, { value: qualityDay.reject, tone: 'attention', label: `Rejeitadas ${qualityDay.reject}` }, { value: qualityDay.rework, tone: 'neutral', label: `Retrabalho ${qualityDay.rework}` }, { value: qualityDay.pending, tone: 'neutral', label: `Pendente ${qualityDay.pending}` }]} />
+          <small data-testid="strategic-quality-summary">{pct(qualityDay.qualityRate)} de qualidade · {qualityDay.produced} peças produzidas · {qualityDay.reject} rejeitadas{topQualityLoss ? ` · Principal: ${topQualityLossMaterial?.code ?? topQualityLoss.lot.materialId} em ${topQualityLoss.resourceId}` : ''}</small>
           <a href={withBase(scenarioPath('/production-quality'))}>Ver Qualidade →</a>
         </article>
 

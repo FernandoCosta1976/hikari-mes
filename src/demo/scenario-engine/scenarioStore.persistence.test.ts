@@ -28,7 +28,7 @@ describe('scenario persistence — serialize / hydrate', () => {
     const raw = window.localStorage.getItem(SCENARIO_STORAGE_KEY);
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
-    expect(parsed.schemaVersion).toBe(3);
+    expect(parsed.schemaVersion).toBe(4);
     expect(parsed.preparationConfirmedByLotId['lot-sd-502']).toBe(true);
   });
 
@@ -108,6 +108,6 @@ describe('scenario persistence — derived data never persisted', () => {
       expect(raw).not.toContain(forbidden);
     }
     const parsed = JSON.parse(raw);
-    expect(Object.keys(parsed).sort()).toEqual(['organizationsByLotId', 'postponedLotIds', 'preparationConfirmedByLotId', 'productionConfirmations', 'productionEvents', 'productionExecutions', 'productionReleases', 'schemaVersion', 'scenarioModified', 'sessionClock'].sort());
+    expect(Object.keys(parsed).sort()).toEqual(['organizationsByLotId', 'postponedLotIds', 'preparationConfirmedByLotId', 'productionConfirmations', 'productionEvents', 'productionExecutions', 'productionQualityConfirmations', 'productionReleases', 'schemaVersion', 'scenarioModified', 'sessionClock'].sort());
   });
 });

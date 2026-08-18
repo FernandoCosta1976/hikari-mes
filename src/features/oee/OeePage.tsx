@@ -4,11 +4,11 @@ import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { withBase } from '../../app/routing/basePath';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcOeeSummary, computeFundicaoDcShiftOeeSummaries, type FundicaoDcOeeRow } from '../../demo/adapters/oeeSummaryAdapter';
-import { idealCycleTimeSecondsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectAllProductionEvents, selectProductionConfirmations, selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { idealCycleTimeSecondsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
+import { selectAllProductionEvents, selectAllQualityConfirmations, selectProductionConfirmations, selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { OeeDimension } from '../../domain/oee/calculations';
 import { eventTypeLabel, type ProductionEvent } from '../../domain/production-monitoring/models';
-import type { QualityConfirmation } from '../../domain/production-quality/models';
+import { qualityReasonLabel, type ProductionQualityConfirmation } from '../../domain/production-quality/models';
 import type { FoundryResourceId } from '../../domain/resource/models';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Button } from '../../shared/ui/Button/Button';
@@ -20,7 +20,6 @@ import styles from './OeePage.module.css';
 const dimensionIcon: Record<OeeDimension, string> = { AVAILABILITY: '⏱', PERFORMANCE: '⚡', QUALITY: '◆' };
 
 const dimensionLabel: Record<OeeDimension, string> = { AVAILABILITY: 'Disponibilidade', PERFORMANCE: 'Desempenho', QUALITY: 'Qualidade' };
-const lossReasonLabel: Record<string, string> = { SCRAP: 'Sucateamento', PROCESS_DEFECT: 'Defeito de processo', DIMENSIONAL: 'Desvio dimensional', SURFACE: 'Defeito superficial', OTHER: 'Outro' };
 const pct = (value: number | null) => value === null ? 'N/A' : `${Math.round(value * 100)}%`;
 
 type Row = FundicaoDcOeeRow;
@@ -35,16 +34,18 @@ function rowAttention(row: Row, impacts: readonly { dimension: OeeDimension; res
   return { icon: '✓', tone: 'positive', note: null };
 }
 
-function impactEvidence(row: Row, dimension: OeeDimension, events: readonly ProductionEvent[], qualityConfirmations: readonly QualityConfirmation[]): string {
+function impactEvidence(row: Row, dimension: OeeDimension, events: readonly ProductionEvent[], qualityConfirmations: readonly ProductionQualityConfirmation[]): string {
   if (dimension === 'AVAILABILITY') {
     const event = events.find((item) => item.lotId === row.lot.id);
     const downtime = row.plannedTimeMinutes !== null && row.runTimeMinutes !== null ? row.plannedTimeMinutes - row.runTimeMinutes : null;
     return event ? `${event.status === 'ACTIVE' ? 'Parada ativa' : 'Parada registrada'} · ${downtime !== null ? `${downtime} min de tempo não produtivo conhecido` : 'duração não calculável'}` : `${downtime ?? '—'} min de tempo não produtivo conhecido`;
   }
   if (dimension === 'PERFORMANCE') return `Ritmo observado abaixo do Tempo de ciclo padrão (${row.idealCycleTimeSeconds ?? '—'}s/peça, ${row.producedQuantity} peças em ${row.runTimeMinutes ?? '—'} min de Tempo em produção)`;
-  const confirmation = qualityConfirmations.find((item) => item.lotId === row.lot.id);
-  const lossQty = (confirmation?.rejectQuantity ?? 0) + (confirmation?.reworkQuantity ?? 0);
-  return `${lossQty} peças em refugo/retrabalho${confirmation?.lossReason ? ` · ${lossReasonLabel[confirmation.lossReason]}` : ''}`;
+  const lotConfirmations = qualityConfirmations.filter((item) => item.lotId === row.lot.id);
+  const rejectQty = lotConfirmations.reduce((sum, item) => sum + item.rejectQuantity, 0);
+  const reworkQty = lotConfirmations.reduce((sum, item) => sum + (item.reworkQuantity ?? 0), 0);
+  const mainReason = lotConfirmations.find((item) => item.reasonCode)?.reasonCode;
+  return `${rejectQty + reworkQty} peças em refugo/retrabalho${mainReason ? ` · ${qualityReasonLabel[mainReason]}` : ''}`;
 }
 
 function FocusDialog({ focus, rows, currentTime, onClose }: { focus: Focus; rows: readonly Row[]; currentTime: string; onClose: () => void }) {
@@ -94,7 +95,7 @@ export function OeePage() {
   const sessionClock = useScenarioStore(selectSessionClock);
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
   const events = useScenarioStore(selectAllProductionEvents);
-  const qualityConfirmations = qualityConfirmationsForScenario(scenario?.id);
+  const qualityConfirmations = useScenarioStore(selectAllQualityConfirmations);
   const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   if (!definition || !scenario) return <p>Preparando OEE demonstrativo…</p>;
   const businessDate = currentTime.slice(0, 10);

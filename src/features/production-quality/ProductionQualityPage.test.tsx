@@ -9,7 +9,7 @@ beforeEach(() => { useScenarioStore.setState({ definition: null, productionSched
 
 test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and a highlighted machine panel', () => {
   renderWithFoundation(<ProductionQualityPage />);
-  expect(screen.getByRole('heading', { name: 'Quanto produzimos e quanto foi bom?' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Do que produzimos, quanto está conforme e quanto perdemos por qualidade?' })).toBeInTheDocument();
 
   const turnoRow = screen.getByRole('region', { name: 'Qualidade do Turno 2 e acumulado do dia' });
   expect(turnoRow).toHaveTextContent('TURNO 2 · EM ANDAMENTO');
@@ -29,7 +29,7 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
   expect(dc05).toHaveTextContent('Aguardando');
   const dc04 = within(machines).getByRole('button', { name: /DC04/ });
   expect(dc04).toHaveAttribute('data-tone', 'attention');
-  expect(dc04).toHaveTextContent('refugadas');
+  expect(dc04).toHaveTextContent('rejeitadas');
 });
 
 test('opens the Qualidade & Performance drill-down without execution controls', async () => {

@@ -5,7 +5,7 @@ import { fundicaoDcSourceDerivedQualityConfirmationsFixture } from './fundicaoDc
 import { fundicaoDcSourceDerivedProductionEventsFixture } from './fundicaoDcSourceDerivedProductionEvents';
 import { sourceDerivedLots } from '../scenarios/fundicaoDcSourceDerivedScenario';
 import { accumulatedProducedQuantity, confirmedQuantityByLot, groupConfirmationsByRequirement } from '../../domain/production-confirmation/models';
-import { isValidQualityConfirmation } from '../../domain/production-quality/models';
+import { accumulatedQuality, classifiedQuantity, groupQualityConfirmationsByRequirement } from '../../domain/production-quality/models';
 
 describe('reference 2026-07-10 execution/quality/event facts', () => {
   it('one execution fact per real requirement (23), none invented, none missing', () => {
@@ -14,11 +14,16 @@ describe('reference 2026-07-10 execution/quality/event facts', () => {
     for (const execution of fundicaoDcSourceDerivedProductionExecutionFixture) expect(lotIds.has(execution.lotId)).toBe(true);
   });
 
-  it('Quality Total Count never exceeds or diverges from the Production Confirmation aggregate for the same requirement (Section 22)', () => {
+  it('Quality Classified Quantity never exceeds the Production Confirmation aggregate for the same requirement (Capability 09, Section 6)', () => {
     const confirmedQuantityByLotId = confirmedQuantityByLot(groupConfirmationsByRequirement(fundicaoDcSourceDerivedProductionConfirmationsFixture));
-    for (const confirmation of fundicaoDcSourceDerivedQualityConfirmationsFixture) {
-      expect(confirmation.producedQuantity, confirmation.lotId).toBe(confirmedQuantityByLotId[confirmation.lotId]);
-      expect(isValidQualityConfirmation(confirmation), confirmation.lotId).toBe(true);
+    const qualityByLot = groupQualityConfirmationsByRequirement(fundicaoDcSourceDerivedQualityConfirmationsFixture);
+    for (const [lotId, confirmations] of Object.entries(qualityByLot)) {
+      const classified = classifiedQuantity(accumulatedQuality(confirmations));
+      expect(classified, lotId).toBeLessThanOrEqual(confirmedQuantityByLotId[lotId]);
+      for (const confirmation of confirmations) {
+        expect(confirmation.goodQuantity, confirmation.id).toBeGreaterThanOrEqual(0);
+        expect(confirmation.rejectQuantity, confirmation.id).toBeGreaterThanOrEqual(0);
+      }
     }
   });
 
@@ -27,9 +32,12 @@ describe('reference 2026-07-10 execution/quality/event facts', () => {
     for (const [lotId, confirmations] of Object.entries(byLot)) expect(accumulatedProducedQuantity(confirmations), lotId).toBeGreaterThan(0);
   });
 
-  it('every Quality confirmation belongs to a COMPLETED requirement (never a Running/Not-Started one)', () => {
+  it('every Quality confirmation belongs to a COMPLETED requirement, except lot-sd-507 — the ONE demonstrative RUNNING Requirement left Pending Classification for the interactive Capability 09 journey', () => {
     const executionByLot = Object.fromEntries(fundicaoDcSourceDerivedProductionExecutionFixture.map((execution) => [execution.lotId, execution]));
-    for (const confirmation of fundicaoDcSourceDerivedQualityConfirmationsFixture) expect(executionByLot[confirmation.lotId].status, confirmation.lotId).toBe('COMPLETED');
+    for (const confirmation of fundicaoDcSourceDerivedQualityConfirmationsFixture) {
+      if (confirmation.lotId === 'lot-sd-507') { expect(executionByLot[confirmation.lotId].status).toBe('IN_PROGRESS'); continue; }
+      expect(executionByLot[confirmation.lotId].status, confirmation.lotId).toBe('COMPLETED');
+    }
   });
 
   it('required diversity at 09:15: at least one Completed Early, 2+ Completed OnTime, 1+ Completed Late, 1+ Running OnTime, 1+ Running Late, 1+ Not Started, and Future requirements remain', () => {

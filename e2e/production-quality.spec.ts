@@ -4,7 +4,7 @@ import { expect, test } from './fixtures';
 test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and a highlighted machine panel', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc-legacy/production-quality');
-  await expect(page.getByRole('heading', { name: 'Quanto produzimos e quanto foi bom?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Do que produzimos, quanto está conforme e quanto perdemos por qualidade?' })).toBeVisible();
 
   const turnoRow = page.getByRole('region', { name: 'Qualidade do Turno 2 e acumulado do dia' });
   await expect(turnoRow).toContainText('TURNO 2 · EM ANDAMENTO');
@@ -23,7 +23,7 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
   await expect(machines.getByRole('button', { name: /DC05/ })).toContainText('Aguardando');
   const dc04 = machines.getByRole('button', { name: /DC04/ });
   await expect(dc04).toHaveAttribute('data-tone', 'attention');
-  await expect(dc04).toContainText('refugadas');
+  await expect(dc04).toContainText('rejeitadas');
 
   await expect(page).toHaveScreenshot('CAP-08-QUALITY-OVERVIEW-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });

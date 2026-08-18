@@ -27,8 +27,9 @@ function rowFor(lotId: string): ResourceOeeRow {
   const goodQuantity = confirmation?.goodQuantity ?? null;
   const availability = assessAvailability(runTimeMinutes, plannedTimeMinutes);
   const performance = assessPerformance(idealCycleTimeSeconds, producedQuantity, runTimeMinutes);
-  const quality = confirmation ? confirmation.goodQuantity / confirmation.producedQuantity : null;
-  return { resourceId: execution.resourceId, runTimeMinutes, plannedTimeMinutes, idealCycleTimeSeconds, producedQuantity, goodQuantity, availability, performance, quality, oee: assessOee(availability, performance, quality) };
+  const classified = confirmation ? confirmation.goodQuantity + confirmation.rejectQuantity + (confirmation.reworkQuantity ?? 0) : 0;
+  const quality = confirmation && classified > 0 ? confirmation.goodQuantity / classified : null;
+  return { resourceId: execution.resourceId, runTimeMinutes, plannedTimeMinutes, idealCycleTimeSeconds, producedQuantity, classifiedQuantity: classified, goodQuantity, availability, performance, quality, oee: assessOee(availability, performance, quality) };
 }
 
 const rows = ['lot-265', 'lot-264', 'lot-266', 'lot-268', 'lot-271'].map(rowFor);

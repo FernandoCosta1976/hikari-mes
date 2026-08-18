@@ -157,7 +157,7 @@ test('cross-screen reactivity: confirming production updates Acompanhamento, Qua
   expect(producedAfter).toBe(producedBefore + 13);
 
   await page.goto('/demo/fundicao-dc/production-quality');
-  await expect(page.getByRole('heading', { name: 'Quanto produzimos e quanto foi bom?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Do que produzimos, quanto está conforme e quanto perdemos por qualidade?' })).toBeVisible();
   await expect(page.getByText(/\d+ peças/).first()).toBeVisible();
 });
 

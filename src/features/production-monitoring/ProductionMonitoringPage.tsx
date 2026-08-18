@@ -4,12 +4,13 @@ import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { sourceDerivedTraceabilityByLotId } from '../../demo/scenarios/fundicaoDcSourceDerivedScenario';
 import { componentResourceMappingByCode } from '../../demo/reference-data/foundry/componentResourceMappings';
-import { selectAllProductionEvents, selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectAllProductionEvents, selectAllQualityConfirmations, selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { buildOperationalStatusByLotId } from '../../demo/adapters/operationalStatusResolution';
 import { buildRequirementSnapshots, summarizeDay, type RequirementSnapshot, type RequirementStatus } from '../../domain/production-monitoring/executionStatus';
 import { activeEventForLot, eventDurationMinutes, eventsNewestFirst, eventTypeLabel, oeeClassificationFor, type ProductionEvent } from '../../domain/production-monitoring/models';
 import type { DemonstrativePauseReason } from '../../domain/production-execution/models';
 import { validateConfirmationIncrement, type ProductionConfirmation } from '../../domain/production-confirmation/models';
+import { accumulatedQuality, classifiedQuantity, pendingClassification, qualityRate, qualityReasonLabel, validateQualityIncrement, type ProductionQualityConfirmation, type QualityReasonCode } from '../../domain/production-quality/models';
 import type { ProductionReleaseRecord } from '../../domain/production-release/models';
 import type { Material, Lot } from '../../domain/production-scheduling/models';
 import {
@@ -45,6 +46,8 @@ const stopReasonChoices: readonly [DemonstrativePauseReason, string][] = [
   ['MACHINE_ADJUSTMENT', eventTypeLabel.MACHINE_ADJUSTMENT],
   ['OTHER', eventTypeLabel.OTHER],
 ];
+const qualityReasonChoices = Object.entries(qualityReasonLabel) as [QualityReasonCode, string][];
+const pct = (value: number | null) => value === null ? 'N/A' : `${Math.round(value * 100)}%`;
 
 /** Section 42 — "Próxima ação" is informational context, never a duplicate control of Controle de execução. */
 function nextActionLabel(status: OperationalStatus, pendingFinalization: boolean, isReleased: boolean): string {
@@ -58,15 +61,19 @@ function nextActionLabel(status: OperationalStatus, pendingFinalization: boolean
   return 'Aguardar preparação';
 }
 
-function ContextDialog({ snapshot, operationalStatus, events, confirmations, material, release, currentTime, onClose, onStart, onPause, onResume, onConfirmProduction, onComplete }: { snapshot: RequirementSnapshot; operationalStatus: ProductionOperationalStatus; events: readonly ProductionEvent[]; confirmations: readonly ProductionConfirmation[]; material: Material; release?: ProductionReleaseRecord; currentTime: string; onClose: () => void; onStart: () => void; onPause: (reason: DemonstrativePauseReason, observation?: string) => void; onResume: () => void; onConfirmProduction: (increment: number) => void; onComplete: () => void }) {
+function ContextDialog({ snapshot, operationalStatus, events, confirmations, qualityConfirmations, material, release, currentTime, onClose, onStart, onPause, onResume, onConfirmProduction, onComplete, onConfirmQuality }: { snapshot: RequirementSnapshot; operationalStatus: ProductionOperationalStatus; events: readonly ProductionEvent[]; confirmations: readonly ProductionConfirmation[]; qualityConfirmations: readonly ProductionQualityConfirmation[]; material: Material; release?: ProductionReleaseRecord; currentTime: string; onClose: () => void; onStart: () => void; onPause: (reason: DemonstrativePauseReason, observation?: string) => void; onResume: () => void; onConfirmProduction: (increment: number) => void; onComplete: () => void; onConfirmQuality: (good: number, reject: number, reasonCode?: QualityReasonCode) => void }) {
   const close = useRef<HTMLButtonElement>(null);
   const [registeringStop, setRegisteringStop] = useState(false);
   const [stopReason, setStopReason] = useState<DemonstrativePauseReason>('EQUIPMENT_FAILURE');
   const [stopObservation, setStopObservation] = useState('');
   const [registeringProduction, setRegisteringProduction] = useState(false);
   const [incrementInput, setIncrementInput] = useState('');
+  const [registeringQuality, setRegisteringQuality] = useState(false);
+  const [qualityGoodInput, setQualityGoodInput] = useState('');
+  const [qualityRejectInput, setQualityRejectInput] = useState('');
+  const [qualityReasonCode, setQualityReasonCode] = useState<QualityReasonCode>(qualityReasonChoices[0][0]);
   useEffect(() => { close.current?.focus(); const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [onClose]);
-  useEffect(() => { setRegisteringStop(false); setStopObservation(''); setRegisteringProduction(false); setIncrementInput(''); }, [snapshot.lot.id]);
+  useEffect(() => { setRegisteringStop(false); setStopObservation(''); setRegisteringProduction(false); setIncrementInput(''); setRegisteringQuality(false); setQualityGoodInput(''); setQualityRejectInput(''); }, [snapshot.lot.id]);
   const traceability = sourceDerivedTraceabilityByLotId[snapshot.lot.id];
   const resourceRole = componentResourceMappingByCode[material.code];
   const relevantEvents = events.filter((event) => event.lotId === snapshot.lot.id);
@@ -85,6 +92,30 @@ function ContextDialog({ snapshot, operationalStatus, events, confirmations, mat
   const confirmProduction = () => { if (!incrementIsNumeric || rejection) return; onConfirmProduction(incrementValue); setIncrementInput(''); setRegisteringProduction(false); };
   const confirmStop = () => { onPause(stopReason, stopObservation.trim() || undefined); setRegisteringStop(false); setStopObservation(''); };
   const lastChange = lastStatusChange(execution);
+  /**
+   * Capability 09 — Section 7/8: Qualidade materialized in the SAME Context
+   * Modal, never asking Produzido again (snapshot.producedQuantity is
+   * already the Capability 06 aggregate) — only the Pending Classification
+   * balance is editable, and it is independent from Controle de execução.
+   */
+  const lotQualityConfirmations = qualityConfirmations.filter((item) => item.lotId === snapshot.lot.id);
+  const qualityTotals = accumulatedQuality(lotQualityConfirmations);
+  const classified = classifiedQuantity(qualityTotals);
+  const pendingQuality = pendingClassification(snapshot.producedQuantity, classified);
+  const rate = classified > 0 ? qualityRate(qualityTotals.good, classified) : null;
+  const qualityGoodValue = Number(qualityGoodInput || 0);
+  const qualityRejectValue = Number(qualityRejectInput || 0);
+  const hasQualityInput = qualityGoodInput.trim() !== '' || qualityRejectInput.trim() !== '';
+  const qualityRejection = hasQualityInput ? validateQualityIncrement({ goodIncrement: qualityGoodValue, rejectIncrement: qualityRejectValue, pendingQuantity: pendingQuality, reasonCode: qualityRejectValue > 0 ? qualityReasonCode : undefined }) : null;
+  const qualityRejectionMessage = qualityRejection?.kind === 'EXCEEDS_PENDING' ? `Existem apenas ${qualityRejection.pending} peças pendentes de classificação.`
+    : qualityRejection?.kind === 'MUST_BE_INTEGER' ? 'Quantidade deve ser um número inteiro.'
+    : qualityRejection?.kind === 'NEGATIVE_QUANTITY' ? 'Quantidade não pode ser negativa.'
+    : qualityRejection?.kind === 'REQUIRES_POSITIVE_TOTAL' ? 'Informe ao menos uma peça boa ou rejeitada.'
+    : qualityRejection?.kind === 'REQUIRES_REASON' ? 'Selecione o motivo da rejeição.'
+    : null;
+  const previewClassified = hasQualityInput && !qualityRejection ? classified + qualityGoodValue + qualityRejectValue : classified;
+  const previewPendingQuality = Math.max(0, snapshot.producedQuantity - previewClassified);
+  const confirmQualityIncrement = () => { if (!hasQualityInput || qualityRejection) return; onConfirmQuality(qualityGoodValue, qualityRejectValue, qualityRejectValue > 0 ? qualityReasonCode : undefined); setQualityGoodInput(''); setQualityRejectInput(''); setRegisteringQuality(false); };
   return createPortal(<div className={styles.modalLayer}><button className={styles.backdrop} aria-label="Fechar contexto" onClick={onClose} /><section role="dialog" aria-modal="true" aria-labelledby="monitoring-context-title" className={styles.modal}>
     <header><div><small>ACOMPANHAMENTO DO REQUIREMENT</small><h2 id="monitoring-context-title">{material.code}</h2></div><Button ref={close} aria-label="Fechar contexto de acompanhamento" onClick={onClose}>×</Button></header>
     <section aria-label="Situação operacional" className={styles.operationalStatusBlock} data-operational-status={operationalStatus.status}>
@@ -156,6 +187,25 @@ function ContextDialog({ snapshot, operationalStatus, events, confirmations, mat
       <small>Execução demonstrativa · EXECUTION GRANULARITY: DEMONSTRATIVE · requer validação de negócio.</small>
     </section>
     <section aria-label="Eventos do requirement"><h3>Eventos</h3>{relevantEvents.length ? relevantEvents.map((event) => <p key={event.eventId}>{formatTime(event.startedAt)} · {eventTypeLabel[event.eventType]} · {event.status === 'ACTIVE' ? `ATIVO · ${eventDurationMinutes(event, currentTime)} min` : `${eventDurationMinutes(event, currentTime)} min · ENCERRADO`}</p>) : <p>Sem eventos demonstrativos.</p>}</section>
+    {snapshot.producedQuantity > 0 ? <section aria-label="Qualidade" className={styles.executionControl}>
+      <h3>Qualidade</h3>
+      <dl className={styles.contextGrid}>
+        <div><dt>Produção confirmada</dt><dd>{snapshot.producedQuantity}</dd></div>
+        <div><dt>Classificado</dt><dd>{classified}</dd></div>
+        <div><dt>Pendente</dt><dd>{pendingQuality}</dd></div>
+        <div><dt>Boas</dt><dd>{qualityTotals.good}</dd></div>
+        <div><dt>Rejeitadas</dt><dd>{qualityTotals.reject}</dd></div>
+        <div><dt>Taxa de qualidade</dt><dd>{pct(rate)}</dd></div>
+      </dl>
+      {pendingQuality === 0 ? <p className={styles.sectionNote}>Classificação completa — não há saldo pendente.</p> : registeringQuality ? <div className={styles.confirmationForm}>
+        <label>Boas<input type="number" step="1" min="0" value={qualityGoodInput} onChange={(event) => setQualityGoodInput(event.target.value)} aria-label={`Peças boas na ${snapshot.lot.scheduledResourceId}`} autoFocus /></label>
+        <label>Rejeitadas<input type="number" step="1" min="0" value={qualityRejectInput} onChange={(event) => setQualityRejectInput(event.target.value)} aria-label={`Peças rejeitadas na ${snapshot.lot.scheduledResourceId}`} /></label>
+        {qualityRejectValue > 0 ? <label>Motivo da rejeição<select aria-label={`Motivo da rejeição na ${snapshot.lot.scheduledResourceId}`} value={qualityReasonCode} onChange={(event) => setQualityReasonCode(event.target.value as QualityReasonCode)}>{qualityReasonChoices.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label> : null}
+        {qualityRejectionMessage ? <p className={styles.confirmationError} role="alert">{qualityRejectionMessage}</p> : <p className={styles.sectionNote}>Após confirmar: Classificado {previewClassified} · Pendente {previewPendingQuality}</p>}
+        <div className={styles.executionActions}><Button onClick={confirmQualityIncrement} disabled={!hasQualityInput || Boolean(qualityRejection)}>Confirmar</Button><Button onClick={() => { setRegisteringQuality(false); setQualityGoodInput(''); setQualityRejectInput(''); }}>Cancelar</Button></div>
+      </div> : <div className={styles.executionActions}><Button onClick={() => setRegisteringQuality(true)}>Registrar qualidade</Button></div>}
+      {lotQualityConfirmations.length ? <details className={styles.confirmationHistory}><summary>Histórico de qualidade</summary><ul>{[...lotQualityConfirmations].reverse().map((confirmation) => <li key={confirmation.id}>{formatTime(confirmation.confirmedAt)} · +{confirmation.goodQuantity} boas{confirmation.rejectQuantity > 0 ? ` · +${confirmation.rejectQuantity} rejeitadas${confirmation.reasonCode ? ` · ${qualityReasonLabel[confirmation.reasonCode]}` : ''}` : ''}</li>)}</ul></details> : null}
+    </section> : null}
     <small>Produzido não significa estoque disponível, quantidade boa ou aceita. Dados de execução são demonstrativos · requerem validação de negócio.</small>
   </section></div>, document.body);
 }
@@ -171,6 +221,7 @@ export function ProductionMonitoringPage() {
   const activeScheduleVersionId = useScenarioStore((state) => state.activeScheduleVersionId);
   const confirmedQuantityByLotId = useScenarioStore(selectConfirmedQuantityByLotId);
   const confirmationsByLot = useScenarioStore(selectProductionConfirmations);
+  const qualityConfirmations = useScenarioStore(selectAllQualityConfirmations);
   const sessionClock = useScenarioStore(selectSessionClock);
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
   const startExecution = useScenarioStore((state) => state.startLotExecution);
@@ -178,6 +229,7 @@ export function ProductionMonitoringPage() {
   const resumeExecution = useScenarioStore((state) => state.resumeLotExecution);
   const confirmProduction = useScenarioStore((state) => state.confirmProduction);
   const completeExecution = useScenarioStore((state) => state.completeLotExecution);
+  const confirmQuality = useScenarioStore((state) => state.confirmQuality);
   const [openLotId, setOpenLotId] = useState<string | null>(null);
 
   const events = useScenarioStore(selectAllProductionEvents);
@@ -329,6 +381,6 @@ export function ProductionMonitoringPage() {
 
       <details className={styles.disclosure}><summary>Como esses fatos preparam o OEE? <span>Ver detalhes</span></summary><div className={styles.oeeChain}><strong>Fatos de execução + Eventos + Tempo</strong><span>→ Tempo de Produção Planejado / Tempo em Operação / Tempo Parado</span><strong>Produzido (Quantidade Total)</strong><span>→ Quantidade Boa permanece desconhecida até haver dado de qualidade governado</span><strong>OEE</strong><span>não calculado nesta capacidade</span></div></details>
     </div>
-    {openSnapshot && openOperationalStatus ? <ContextDialog snapshot={openSnapshot} operationalStatus={openOperationalStatus} events={events} confirmations={confirmationsByLot[openSnapshot.lot.id] ?? []} material={materialOf(openSnapshot.lot.materialId)} release={releasesByLot[openSnapshot.lot.id]} currentTime={currentTime} onClose={() => setOpenLotId(null)} onStart={() => startExecution(openSnapshot.lot.id)} onPause={(reason, observation) => pauseExecution(openSnapshot.lot.id, reason, observation)} onResume={() => resumeExecution(openSnapshot.lot.id)} onConfirmProduction={(increment) => confirmProduction(openSnapshot.lot.id, increment)} onComplete={() => completeExecution(openSnapshot.lot.id)} /> : null}
+    {openSnapshot && openOperationalStatus ? <ContextDialog snapshot={openSnapshot} operationalStatus={openOperationalStatus} events={events} confirmations={confirmationsByLot[openSnapshot.lot.id] ?? []} qualityConfirmations={qualityConfirmations} material={materialOf(openSnapshot.lot.materialId)} release={releasesByLot[openSnapshot.lot.id]} currentTime={currentTime} onClose={() => setOpenLotId(null)} onStart={() => startExecution(openSnapshot.lot.id)} onPause={(reason, observation) => pauseExecution(openSnapshot.lot.id, reason, observation)} onResume={() => resumeExecution(openSnapshot.lot.id)} onConfirmProduction={(increment) => confirmProduction(openSnapshot.lot.id, increment)} onComplete={() => completeExecution(openSnapshot.lot.id)} onConfirmQuality={(good, reject, reasonCode) => confirmQuality(openSnapshot.lot.id, good, reject, reasonCode)} /> : null}
   </OperationalWorkspace>;
 }

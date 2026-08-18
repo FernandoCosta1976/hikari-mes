@@ -1,6 +1,7 @@
 import { scenarioDefinitionAdapter } from '../adapters/scenarioDefinitionAdapter';
 import { activeEventForLot } from '../../domain/production-monitoring/models';
-import { selectAllProductionEvents, selectConfirmedQuantityByLotId, useScenarioStore } from './scenarioStore';
+import { accumulatedQuality, classifiedQuantity, qualityRate } from '../../domain/production-quality/models';
+import { selectAllProductionEvents, selectAllQualityConfirmations, selectConfirmedQuantityByLotId, useScenarioStore } from './scenarioStore';
 
 test('initializes and atomically resets the scenario', () => {
   const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!;
@@ -154,5 +155,67 @@ describe('Capability 08 — Registrar Parada / Retomar Produção materializes a
     useScenarioStore.getState().pauseLotExecution('lot-271', 'EQUIPMENT_FAILURE');
     const flat = selectAllProductionEvents(useScenarioStore.getState());
     expect(flat.some((event) => event.lotId === 'lot-271' && event.status === 'ACTIVE')).toBe(true);
+  });
+});
+
+/**
+ * Capability 09 — Registrar Qualidade (Section 3/5/8/31): lot-sd-507 is the
+ * ONE reference Requirement seeded with a Pending Classification balance
+ * (Produced 65, Classified 50, Pending 15) — the same demonstrative fact
+ * used by the E2E journey, exercised here at the store layer.
+ */
+describe('Capability 09 — Registrar Qualidade (confirmQuality)', () => {
+  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
+
+  beforeEach(() => {
+    useScenarioStore.getState().initializeScenario(fundicaoDcScenario);
+    useScenarioStore.getState().resetScenario();
+  });
+
+  test('accumulates multiple Quality Confirmations for the same Requirement, each with a distinct id — never overwrites', () => {
+    expect(useScenarioStore.getState().productionQualityConfirmations['lot-sd-507']).toHaveLength(1); // seed
+    useScenarioStore.getState().confirmQuality('lot-sd-507', 10, 3, 'PROCESS_DEFECT');
+    useScenarioStore.getState().confirmQuality('lot-sd-507', 2, 0);
+    const all = useScenarioStore.getState().productionQualityConfirmations['lot-sd-507'];
+    expect(all).toHaveLength(3);
+    expect(new Set(all.map((c) => c.id)).size).toBe(3);
+    expect(accumulatedQuality(all)).toEqual({ good: 48 + 10 + 2, reject: 2 + 3, rework: 0 });
+  });
+
+  test('cannot classify beyond the Pending balance — an over-limit increment is rejected, state unchanged', () => {
+    const before = useScenarioStore.getState().productionQualityConfirmations['lot-sd-507'];
+    useScenarioStore.getState().confirmQuality('lot-sd-507', 14, 2, 'DIMENSIONAL'); // Pending is 15, this asks for 16
+    expect(useScenarioStore.getState().productionQualityConfirmations['lot-sd-507']).toBe(before);
+  });
+
+  test('Reject > 0 without a reasonCode is rejected — state unchanged', () => {
+    const before = useScenarioStore.getState().productionQualityConfirmations['lot-sd-507'];
+    useScenarioStore.getState().confirmQuality('lot-sd-507', 0, 2);
+    expect(useScenarioStore.getState().productionQualityConfirmations['lot-sd-507']).toBe(before);
+  });
+
+  test('registering Quality changes the Quality Rate but never Produced (Capability 06 aggregate) nor Execution Status', () => {
+    const producedBefore = selectConfirmedQuantityByLotId(useScenarioStore.getState())['lot-sd-507'];
+    const statusBefore = useScenarioStore.getState().productionExecutions['lot-sd-507'].status;
+    useScenarioStore.getState().confirmQuality('lot-sd-507', 10, 5, 'VISUAL');
+    const state = useScenarioStore.getState();
+    expect(selectConfirmedQuantityByLotId(state)['lot-sd-507']).toBe(producedBefore);
+    expect(state.productionExecutions['lot-sd-507'].status).toBe(statusBefore);
+    const totals = accumulatedQuality(state.productionQualityConfirmations['lot-sd-507']);
+    expect(qualityRate(totals.good, classifiedQuantity(totals))).toBeCloseTo(58 / 65, 5);
+  });
+
+  test('Reset restores the exact Quality Confirmation baseline — user classifications are discarded', () => {
+    const seed = useScenarioStore.getState().productionQualityConfirmations;
+    useScenarioStore.getState().confirmQuality('lot-sd-507', 10, 5, 'VISUAL');
+    expect(useScenarioStore.getState().productionQualityConfirmations['lot-sd-507']).toHaveLength(2);
+    useScenarioStore.getState().resetScenario();
+    expect(useScenarioStore.getState().productionQualityConfirmations).toEqual(seed);
+  });
+
+  test('selectAllQualityConfirmations flattens the per-Requirement map into the single source every screen reads', () => {
+    useScenarioStore.getState().confirmQuality('lot-sd-507', 10, 5, 'VISUAL');
+    const flat = selectAllQualityConfirmations(useScenarioStore.getState());
+    expect(flat.some((c) => c.lotId === 'lot-sd-507' && c.goodQuantity === 10 && c.rejectQuantity === 5)).toBe(true);
   });
 });
