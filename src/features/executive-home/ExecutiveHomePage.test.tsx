@@ -21,14 +21,14 @@ test('shows the live OEE demonstrativo reusing the same projection as the OEE pe
   const user = userEvent.setup();
   renderWithFoundation(<ExecutiveHomePage />);
   const oeeTile = screen.getByLabelText('OEE demonstrativo da Fundição DC');
-  expect(oeeTile).toHaveTextContent('OEE 70%');
-  expect(oeeTile).toHaveTextContent('Disponibilidade 89%');
+  expect(oeeTile).toHaveTextContent('OEE 69%');
+  expect(oeeTile).toHaveTextContent('Disponibilidade 86%');
   expect(oeeTile).toHaveTextContent('Desempenho 86%');
-  expect(oeeTile).toHaveTextContent('Qualidade 91%');
+  expect(oeeTile).toHaveTextContent('Qualidade 94%');
   expect(oeeTile).toHaveTextContent('Maior perda: Disponibilidade');
   expect(screen.getByText(/Estamos protegendo a cadeia para atender a necessidade da Montagem hoje\?/)).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Reiniciar demonstração' }));
-  expect(screen.getByLabelText('OEE demonstrativo da Fundição DC')).toHaveTextContent('OEE 70%');
+  expect(screen.getByLabelText('OEE demonstrativo da Fundição DC')).toHaveTextContent('OEE 69%');
 });
 
 test('shows downstream Usinagem health and the ranked action-now list, without a new capability', () => {

@@ -27,8 +27,18 @@ export function useApplicationScenarioTime(businessDate: string): string {
   return `${businessDate}T${hh}:${mm}:${ss}-03:00`;
 }
 
-/** Convenience wrapper: derives the Business Date from a demonstrative reference timestamp (fixture) and composes it with the live clock. */
+/**
+ * Each Scenario owns its full deterministic clock (Business Date AND
+ * Scenario Clock time-of-day) via its own `currentScenarioTime` — this is
+ * still never `Date.now()`, just a fixed value scoped to the Scenario
+ * rather than one shared global. Before any Scenario has loaded, falls back
+ * to composing the app-wide demonstrative time onto a placeholder date.
+ * `window.__HIKARI_CLOCK_FIXED_AT__` (E2E-only override, see `freezeClockAt`
+ * in e2e/dynamic-clock.spec.ts) always wins, for every Scenario, so tests can
+ * still exercise shift-derivation logic at an arbitrary instant.
+ */
 export function useLiveScenarioTime(referenceScenarioTime: string | null | undefined): string {
-  const businessDate = (referenceScenarioTime ?? '2025-05-15T00:00:00-03:00').slice(0, 10);
-  return useApplicationScenarioTime(businessDate);
+  if (typeof window !== 'undefined' && window.__HIKARI_CLOCK_FIXED_AT__) return window.__HIKARI_CLOCK_FIXED_AT__;
+  if (referenceScenarioTime) return referenceScenarioTime;
+  return useApplicationScenarioTime('2025-05-15');
 }

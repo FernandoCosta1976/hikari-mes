@@ -9,7 +9,7 @@ test('shows the executive cockpit with Meta, RISCO status, five machines and pri
 
   const production = page.getByRole('heading', { name: 'Eficácia', exact: true }).locator('..');
   await expect(production).toContainText('2.000');
-  await expect(production).toContainText('209');
+  await expect(production).toContainText('174');
 
   const machines = page.getByRole('heading', { name: 'Situação das Máquinas' }).locator('xpath=ancestor::section[1]');
   for (const resource of ['DC01', 'DC02', 'DC03', 'DC04', 'DC05']) await expect(machines.getByText(resource, { exact: true })).toBeVisible();

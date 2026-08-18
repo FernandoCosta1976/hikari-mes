@@ -9,11 +9,11 @@ test('shows Turno 2 beside the day accumulated, a simplified shift history and a
   const turnoRow = page.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' });
   await expect(turnoRow).toContainText('TURNO 2 · EM ANDAMENTO');
   await expect(turnoRow).toContainText('Parcial até 17:23');
-  await expect(turnoRow).toContainText('68%');
+  await expect(turnoRow).toContainText('67%');
   await expect(turnoRow).toContainText('Desempenho');
   await expect(turnoRow).toContainText('DC03');
   await expect(turnoRow).toContainText('Acumulado do dia');
-  await expect(turnoRow).toContainText('70%');
+  await expect(turnoRow).toContainText('69%');
 
   const history = page.getByRole('region', { name: 'Turnos concluídos hoje' });
   await expect(history).toContainText('Turno 3');
@@ -78,5 +78,5 @@ test('is accessible, keyboard reachable, responsive and contains no prohibited r
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole('button', { name: 'Reiniciar cenário' }).click();
   await page.getByRole('alertdialog', { name: 'Reiniciar cenário demonstrativo?' }).getByRole('button', { name: 'Reiniciar cenário' }).click();
-  await expect(page.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' })).toContainText('68%');
+  await expect(page.getByRole('region', { name: 'OEE do Turno 2 e acumulado do dia' })).toContainText('67%');
 });

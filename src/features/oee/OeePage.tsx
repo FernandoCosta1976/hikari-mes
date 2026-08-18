@@ -4,10 +4,11 @@ import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { withBase } from '../../app/routing/basePath';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcOeeSummary, computeFundicaoDcShiftOeeSummaries, type FundicaoDcOeeRow } from '../../demo/adapters/oeeSummaryAdapter';
-import { fundicaoDcProductionEventsFixture } from '../../demo/fixtures/fundicaoDcProductionEvents';
-import { fundicaoDcQualityConfirmationsFixture } from '../../demo/fixtures/fundicaoDcQualityConfirmations';
+import { eventsForScenario, idealCycleTimeSecondsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
 import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { OeeDimension } from '../../domain/oee/calculations';
+import type { ProductionEvent } from '../../domain/production-monitoring/models';
+import type { QualityConfirmation } from '../../domain/production-quality/models';
 import type { FoundryResourceId } from '../../domain/resource/models';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Button } from '../../shared/ui/Button/Button';
@@ -26,23 +27,23 @@ const pct = (value: number | null) => value === null ? 'N/A' : `${Math.round(val
 type Row = FundicaoDcOeeRow;
 type Focus = { kind: 'DIMENSION'; dimension: OeeDimension; rows: readonly Row[]; scopeLabel: string } | { kind: 'RESOURCE'; resourceId: FoundryResourceId };
 
-function rowAttention(row: Row, impacts: readonly { dimension: OeeDimension; resourceId: FoundryResourceId }[]): { icon: string; tone: 'attention' | 'positive' | 'neutral'; note: string | null } {
+function rowAttention(row: Row, impacts: readonly { dimension: OeeDimension; resourceId: FoundryResourceId }[], events: readonly ProductionEvent[]): { icon: string; tone: 'attention' | 'positive' | 'neutral'; note: string | null } {
   if (row.oee === null) return { icon: '○', tone: 'neutral', note: 'Aguardando produção' };
-  const activeEvent = fundicaoDcProductionEventsFixture.find((event) => event.resourceId === row.resourceId && event.status === 'ACTIVE');
+  const activeEvent = events.find((event) => event.resourceId === row.resourceId && event.status === 'ACTIVE');
   if (activeEvent) return { icon: '⚠', tone: 'attention', note: `${eventTypeLabel[activeEvent.eventType]} ativo` };
   const impact = impacts.find((item) => item.resourceId === row.resourceId);
   if (impact) return { icon: dimensionIcon[impact.dimension], tone: 'attention', note: `Principal atenção: ${dimensionLabel[impact.dimension]}` };
   return { icon: '✓', tone: 'positive', note: null };
 }
 
-function impactEvidence(row: Row, dimension: OeeDimension): string {
+function impactEvidence(row: Row, dimension: OeeDimension, events: readonly ProductionEvent[], qualityConfirmations: readonly QualityConfirmation[]): string {
   if (dimension === 'AVAILABILITY') {
-    const event = fundicaoDcProductionEventsFixture.find((item) => item.lotId === row.lot.id);
+    const event = events.find((item) => item.lotId === row.lot.id);
     const downtime = row.plannedTimeMinutes !== null && row.runTimeMinutes !== null ? row.plannedTimeMinutes - row.runTimeMinutes : null;
     return event ? `${event.status === 'ACTIVE' ? 'Parada ativa' : 'Parada registrada'} · ${downtime !== null ? `${downtime} min de tempo não produtivo conhecido` : 'duração não calculável'}` : `${downtime ?? '—'} min de tempo não produtivo conhecido`;
   }
   if (dimension === 'PERFORMANCE') return `Ritmo observado abaixo do Tempo de ciclo padrão (${row.idealCycleTimeSeconds ?? '—'}s/peça, ${row.producedQuantity} peças em ${row.runTimeMinutes ?? '—'} min de Tempo em produção)`;
-  const confirmation = fundicaoDcQualityConfirmationsFixture.find((item) => item.lotId === row.lot.id);
+  const confirmation = qualityConfirmations.find((item) => item.lotId === row.lot.id);
   const lossQty = (confirmation?.rejectQuantity ?? 0) + (confirmation?.reworkQuantity ?? 0);
   return `${lossQty} peças em refugo/retrabalho${confirmation?.lossReason ? ` · ${lossReasonLabel[confirmation.lossReason]}` : ''}`;
 }
@@ -91,16 +92,20 @@ export function OeePage() {
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const [focus, setFocus] = useState<Focus | null>(null);
   const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
+  const events = eventsForScenario(scenario?.id);
+  const qualityConfirmations = qualityConfirmationsForScenario(scenario?.id);
+  const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   if (!definition || !scenario) return <p>Preparando OEE demonstrativo…</p>;
+  const businessDate = currentTime.slice(0, 10);
 
-  const day = computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime);
-  const shifts = computeFundicaoDcShiftOeeSummaries(definition, executionsByLot, currentTime);
+  const day = computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
+  const shifts = computeFundicaoDcShiftOeeSummaries(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
   const currentShift = shifts.find((shift) => shift.status === 'IN_PROGRESS') ?? shifts[shifts.length - 1];
   const completedShifts = shifts.filter((shift) => shift.status === 'COMPLETED');
   const { rows, mainImpact: dayMainImpact } = day;
   const shiftMainImpactRow = currentShift.mainImpact ? currentShift.rows.find((row) => row.resourceId === currentShift.mainImpact!.resourceId) : undefined;
 
-  return <OperationalWorkspace perspective="OEE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>OEE</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Fórmula demonstrativa" tip="Fórmula demonstrativa · requer validação de negócio" /></div>}>
+  return <OperationalWorkspace perspective="OEE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>OEE</strong><IconTip icon="◷" label="Data de referência" value={`${businessDate.slice(8, 10)}/${businessDate.slice(5, 7)}`} tip={`Data de referência · ${businessDate}`} /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Fórmula demonstrativa" tip="Fórmula demonstrativa · requer validação de negócio" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
         <div><span>Capacidade 09 · OEE</span><h1>Como estamos performando e por quê?</h1></div>
@@ -117,7 +122,7 @@ export function OeePage() {
             <button className={styles.dimTile} onClick={() => setFocus({ kind: 'DIMENSION', dimension: 'QUALITY', rows: currentShift.rows, scopeLabel: currentShift.shiftName.toUpperCase() })}><span className={styles.btnHead}><span aria-hidden="true">{dimensionIcon.QUALITY}</span>Qualidade</span><strong>{pct(currentShift.areaQuality)}</strong></button>
           </div>
           <div className={styles.mainImpact}>
-            {currentShift.mainImpact && shiftMainImpactRow ? <><span>Maior perda do turno</span><strong>{dimensionLabel[currentShift.mainImpact.dimension]} é o maior fator de redução do OEE</strong><p>{shiftMainImpactRow.resourceId} · Lote {shiftMainImpactRow.lot.lotNumber} · {impactEvidence(shiftMainImpactRow, currentShift.mainImpact.dimension)}</p></> : <span>Nenhuma perda relevante identificada neste turno.</span>}
+            {currentShift.mainImpact && shiftMainImpactRow ? <><span>Maior perda do turno</span><strong>{dimensionLabel[currentShift.mainImpact.dimension]} é o maior fator de redução do OEE</strong><p>{shiftMainImpactRow.resourceId} · Lote {shiftMainImpactRow.lot.lotNumber} · {impactEvidence(shiftMainImpactRow, currentShift.mainImpact.dimension, events, qualityConfirmations)}</p></> : <span>Nenhuma perda relevante identificada neste turno.</span>}
           </div>
         </div>
         <div className={styles.dayTile}><span>Acumulado do dia</span><strong>{pct(day.areaOee)}</strong><small>A {pct(day.areaAvailability)} · P {pct(day.areaPerformance)} · Q {pct(day.areaQuality)}</small><em>{dayMainImpact ? `Maior perda do dia: ${dimensionLabel[dayMainImpact.dimension]}` : 'Sem perda relevante'}</em></div>
@@ -125,7 +130,7 @@ export function OeePage() {
 
       <section className={styles.shiftHistory} aria-label="Turnos concluídos hoje">
         <span>Turnos concluídos hoje</span>
-        <div>{completedShifts.map((shift) => { const produced = shift.rows.reduce((sum, row) => sum + row.producedQuantity, 0); return <div key={shift.shiftId} className={styles.shiftHistoryRow}>
+        <div>{completedShifts.map((shift) => { const produced = shift.producedQuantity; return <div key={shift.shiftId} className={styles.shiftHistoryRow}>
           <b>{shift.shiftName}</b><span>{produced} peças</span>
           {shift.areaOee === null ? <em>OEE N/A · sem execução registrada</em> : <em>OEE {pct(shift.areaOee)}{shift.mainImpact ? ` · Maior perda: ${dimensionLabel[shift.mainImpact.dimension]}` : ''}</em>}
         </div>; })}</div>
@@ -136,7 +141,7 @@ export function OeePage() {
       <section className={styles.resources} aria-labelledby="resources-title">
         <header><h2 id="resources-title">Situação das Máquinas</h2><p>DC01–DC05 · Disponibilidade · Desempenho · Qualidade · OEE · acumulado do dia</p></header>
         <div className={styles.machines}>
-          {rows.map((row) => { const attention = rowAttention(row, day.impacts); return <button key={row.resourceId} className={styles.machineRow} data-tone={attention.tone} onClick={() => setFocus({ kind: 'RESOURCE', resourceId: row.resourceId })}>
+          {rows.map((row) => { const attention = rowAttention(row, day.impacts, events); return <button key={row.resourceId} className={styles.machineRow} data-tone={attention.tone} onClick={() => setFocus({ kind: 'RESOURCE', resourceId: row.resourceId })}>
             <span className={styles.machineIcon} aria-hidden="true">{attention.icon}</span>
             <span className={styles.machineId}>{row.resourceId}</span>
             <span className={styles.machineOee}><small>OEE</small><strong>{pct(row.oee)}</strong></span>
@@ -151,7 +156,7 @@ export function OeePage() {
         <div className={styles.explain}>
           <p>Ranking simples por impacto conhecido · até 3 fatores · acumulado do dia</p>
           {day.impacts.length === 0 ? <p className={styles.empty}>Nenhuma perda relevante identificada.</p> : <div>{day.impacts.map((impact, index) => { const row = rows.find((item) => item.resourceId === impact.resourceId)!; return <button key={`${impact.dimension}-${impact.resourceId}-${index}`} onClick={() => setFocus({ kind: 'RESOURCE', resourceId: row.resourceId })}>
-            <strong>{row.resourceId}</strong><span>Lote {row.lot.lotNumber}</span><b>{dimensionLabel[impact.dimension]} · -{Math.round(impact.lossFraction * 100)}pp</b><em>{impactEvidence(row, impact.dimension)}</em>
+            <strong>{row.resourceId}</strong><span>Lote {row.lot.lotNumber}</span><b>{dimensionLabel[impact.dimension]} · -{Math.round(impact.lossFraction * 100)}pp</b><em>{impactEvidence(row, impact.dimension, events, qualityConfirmations)}</em>
           </button>; })}</div>}
           <div className={styles.closing}><div><b>Plano</b><i>→</i><b>Execução</b><i>→</i><b>Eventos</b><i>→</i><b>Perdas</b><i>→</i><b>Qualidade</b><i>→</i><strong>Indicador explicável</strong></div></div>
         </div>

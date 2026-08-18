@@ -1,0 +1,63 @@
+import { describe, expect, it } from 'vitest';
+import { fundicaoDcSourceDerivedProductionExecutionFixture } from './fundicaoDcSourceDerivedProductionExecution';
+import { fundicaoDcSourceDerivedQualityConfirmationsFixture } from './fundicaoDcSourceDerivedQualityConfirmations';
+import { fundicaoDcSourceDerivedProductionEventsFixture } from './fundicaoDcSourceDerivedProductionEvents';
+import { sourceDerivedLots } from '../scenarios/fundicaoDcSourceDerivedScenario';
+import { isValidQualityConfirmation } from '../../domain/production-quality/models';
+
+describe('canonical 2026-07-10 execution/quality/event facts', () => {
+  it('one execution fact per real requirement (23), none invented, none missing', () => {
+    expect(fundicaoDcSourceDerivedProductionExecutionFixture).toHaveLength(23);
+    const lotIds = new Set(sourceDerivedLots.map((lot) => lot.id));
+    for (const execution of fundicaoDcSourceDerivedProductionExecutionFixture) expect(lotIds.has(execution.lotId)).toBe(true);
+  });
+
+  it('Quality Total Count never exceeds or diverges from Execution Produced for the same requirement', () => {
+    const executionByLot = Object.fromEntries(fundicaoDcSourceDerivedProductionExecutionFixture.map((execution) => [execution.lotId, execution]));
+    for (const confirmation of fundicaoDcSourceDerivedQualityConfirmationsFixture) {
+      expect(confirmation.producedQuantity, confirmation.lotId).toBe(executionByLot[confirmation.lotId].producedQuantity);
+      expect(isValidQualityConfirmation(confirmation), confirmation.lotId).toBe(true);
+    }
+  });
+
+  it('every Quality confirmation belongs to a COMPLETED requirement (never a Running/Not-Started one)', () => {
+    const executionByLot = Object.fromEntries(fundicaoDcSourceDerivedProductionExecutionFixture.map((execution) => [execution.lotId, execution]));
+    for (const confirmation of fundicaoDcSourceDerivedQualityConfirmationsFixture) expect(executionByLot[confirmation.lotId].status, confirmation.lotId).toBe('COMPLETED');
+  });
+
+  it('required diversity at 09:15: at least one Completed Early, 2+ Completed OnTime, 1+ Completed Late, 1+ Running OnTime, 1+ Running Late, 1+ Not Started, and Future requirements remain', () => {
+    const currentTime = '2026-07-10T09:15:00-03:00';
+    const lotById = Object.fromEntries(sourceDerivedLots.map((lot) => [lot.id, lot]));
+    const withinTolerance = (execution: (typeof fundicaoDcSourceDerivedProductionExecutionFixture)[number]) => {
+      const lot = lotById[execution.lotId];
+      if (!execution.actualFinish) return null;
+      return Math.round((Date.parse(execution.actualFinish) - Date.parse(lot.scheduledFinish)) / 60_000);
+    };
+    const completed = fundicaoDcSourceDerivedProductionExecutionFixture.filter((e) => e.status === 'COMPLETED');
+    const early = completed.filter((e) => (withinTolerance(e) ?? 0) < -1);
+    const onTime = completed.filter((e) => Math.abs(withinTolerance(e) ?? 0) <= 5);
+    const late = completed.filter((e) => (withinTolerance(e) ?? 0) > 5);
+    const running = fundicaoDcSourceDerivedProductionExecutionFixture.filter((e) => e.status === 'IN_PROGRESS');
+    const runningLate = running.filter((e) => Date.parse(e.actualStart!) > Date.parse(lotById[e.lotId].scheduledStart) + 5 * 60_000);
+    const runningOnTime = running.filter((e) => Date.parse(e.actualStart!) <= Date.parse(lotById[e.lotId].scheduledStart) + 5 * 60_000);
+    const notStartedLate = fundicaoDcSourceDerivedProductionExecutionFixture.filter((e) => e.status === 'NOT_STARTED' && Date.parse(lotById[e.lotId].scheduledStart) < Date.parse(currentTime));
+    const future = fundicaoDcSourceDerivedProductionExecutionFixture.filter((e) => e.status === 'NOT_STARTED' && Date.parse(lotById[e.lotId].scheduledStart) >= Date.parse(currentTime));
+
+    expect(early.length, 'completed early').toBeGreaterThanOrEqual(1);
+    expect(onTime.length, 'completed on time').toBeGreaterThanOrEqual(2);
+    expect(late.length, 'completed late').toBeGreaterThanOrEqual(1);
+    expect(runningOnTime.length, 'running on time').toBeGreaterThanOrEqual(1);
+    expect(runningLate.length, 'running late').toBeGreaterThanOrEqual(1);
+    expect(notStartedLate.length, 'not started late').toBeGreaterThanOrEqual(1);
+    expect(future.length, 'future scheduled').toBeGreaterThanOrEqual(1);
+  });
+
+  it('three demonstrative events, each tied to a real requirement, each Closed before 09:15', () => {
+    expect(fundicaoDcSourceDerivedProductionEventsFixture).toHaveLength(3);
+    const lotIds = new Set(sourceDerivedLots.map((lot) => lot.id));
+    for (const event of fundicaoDcSourceDerivedProductionEventsFixture) {
+      expect(lotIds.has(event.lotId)).toBe(true);
+      expect(Date.parse(event.endedAt!)).toBeLessThanOrEqual(Date.parse('2026-07-10T09:15:00-03:00'));
+    }
+  });
+});

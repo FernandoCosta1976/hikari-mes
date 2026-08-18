@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { buildRequirementSnapshots, requirementStatus, summarizeDay } from './executionStatus';
-import { monitoringDowntimeMinutesByLotId, monitoringExecutionsByLotId, monitoringLots, monitoringScenarioClock } from '../../demo/scenarios/fundicaoDcMonitoring1007';
 import type { ProductionExecutionRecord } from '../production-execution/models';
 import type { Lot } from '../production-scheduling/models';
 
@@ -25,65 +24,98 @@ describe('requirementStatus (Scheduled State != Execution State != Requirement S
   });
 });
 
-describe('2026-07-10 dataset at Scenario Clock 17:23 (real FOUNDRY_DC requirements only)', () => {
-  const snapshots = buildRequirementSnapshots(monitoringLots, monitoringExecutionsByLotId, monitoringScenarioClock, monitoringDowntimeMinutesByLotId);
+/**
+ * Property-style dataset covering the full state space in one pass — not
+ * tied to any Scenario/dataset (the Acompanhamento screen has none of its
+ * own, per Section 14; this exercises the domain algorithm directly with
+ * bespoke synthetic Lots).
+ */
+const lot = (id: string, resourceId: Lot['scheduledResourceId'], start: string, finish: string, quantity = 100): Lot =>
+  ({ ...baseLot, id, lotNumber: id, scheduledResourceId: resourceId, scheduledStart: `2026-07-10T${start}:00-03:00`, scheduledFinish: `2026-07-10T${finish}:00-03:00`, quantity });
+const execution = (lotId: string, resourceId: string, overrides: Partial<ProductionExecutionRecord> = {}): ProductionExecutionRecord =>
+  ({ ...baseExecution, lotId, resourceId, scheduledStart: '2026-07-10T00:00:00-03:00', ...overrides });
+const at = (time: string) => `2026-07-10T${time}:00-03:00`;
 
-  it('produces one snapshot per real requirement — 23, matching the canonical dataset for 2026-07-10', () => {
-    expect(snapshots).toHaveLength(23);
+const lots: readonly Lot[] = [
+  lot('lot-t-completed', 'DC01', '08:00', '09:00'),
+  lot('lot-t-delayed', 'DC01', '09:30', '10:30'),
+  lot('lot-t-propagated', 'DC01', '13:00', '14:00'),
+  lot('lot-t-healthy-scheduled', 'DC02', '13:00', '14:00'),
+  lot('lot-t-not-started', 'DC04', '10:00', '11:00'),
+  lot('lot-t-running', 'DC05', '11:30', '12:30'),
+];
+const executionsByLotId: Record<string, ProductionExecutionRecord> = {
+  'lot-t-completed': execution('lot-t-completed', 'DC01', { status: 'COMPLETED', actualStart: at('08:00'), actualFinish: at('09:00'), producedQuantity: 100 }),
+  'lot-t-delayed': execution('lot-t-delayed', 'DC01', { status: 'IN_PROGRESS', actualStart: at('09:50'), producedQuantity: 40 }),
+  'lot-t-propagated': execution('lot-t-propagated', 'DC01'),
+  'lot-t-healthy-scheduled': execution('lot-t-healthy-scheduled', 'DC02'),
+  'lot-t-not-started': execution('lot-t-not-started', 'DC04'),
+  'lot-t-running': execution('lot-t-running', 'DC05', { status: 'IN_PROGRESS', actualStart: at('11:32'), producedQuantity: 40 }),
+};
+const currentTime = at('12:00');
+
+describe('property dataset at Scenario Clock 12:00 — full state space in one deterministic pass', () => {
+  const snapshots = buildRequirementSnapshots(lots, executionsByLotId, currentTime);
+
+  it('produces one snapshot per real requirement', () => {
+    expect(snapshots).toHaveLength(6);
   });
 
-  it('shows simultaneous diversity across DC01-DC05 — every one of the five minimal states appears', () => {
+  it('shows simultaneous diversity — every one of the five minimal states appears', () => {
     const statuses = new Set(snapshots.map((snapshot) => snapshot.status));
     expect(statuses).toEqual(new Set(['COMPLETED', 'RUNNING', 'DELAYED', 'NOT_STARTED', 'SCHEDULED']));
   });
 
-  it('DC01 has a healthy RUNNING lot within its scheduled window', () => {
-    const running = snapshots.find((snapshot) => snapshot.lot.id === 'lot-mon-508')!;
+  it('DC05 has a healthy RUNNING lot within its scheduled window', () => {
+    const running = snapshots.find((snapshot) => snapshot.lot.id === 'lot-t-running')!;
     expect(running.status).toBe('RUNNING');
-    expect(running.execution.producedQuantity).toBe(30);
-    expect(running.projectedFinish).toBe('2026-07-10T21:12:00.000Z'); // 18:12 -03:00
+    expect(running.execution.producedQuantity).toBe(40);
+    expect(running.projectedFinish).toBe(new Date(Date.parse(at('12:32'))).toISOString());
     expect(running.projection).toBe('ON_TIME'); // +2min is healthy pace, not risk
   });
 
-  it('DC03 is DELAYED past its scheduled finish because of the 15-minute unplanned stop, and the delay is visible in the projection', () => {
-    const delayed = snapshots.find((snapshot) => snapshot.lot.id === 'lot-mon-514')!;
+  it('DC01 is DELAYED past its scheduled finish because it started late, and the delay is visible in the projection', () => {
+    const delayed = snapshots.find((snapshot) => snapshot.lot.id === 'lot-t-delayed')!;
     expect(delayed.status).toBe('DELAYED');
-    expect(delayed.varianceMinutes).toBeGreaterThan(0);
-    expect(delayed.projectedFinish).toBe('2026-07-10T20:28:00.000Z'); // 17:28 -03:00
+    expect(delayed.varianceMinutes).toBe(20);
+    expect(delayed.projectedFinish).toBe(new Date(Date.parse(at('10:50'))).toISOString());
+    expect(delayed.projection).toBe('AT_RISK'); // DELAYED is always AT_RISK, unconditionally
   });
 
   it('DC04 has a requirement whose scheduled start has passed with no appointment — NOT_STARTED, never a fabricated zero', () => {
-    const notStarted = snapshots.find((snapshot) => snapshot.lot.id === 'lot-mon-516')!;
+    const notStarted = snapshots.find((snapshot) => snapshot.lot.id === 'lot-t-not-started')!;
     expect(notStarted.status).toBe('NOT_STARTED');
     expect(notStarted.execution.producedQuantity).toBe(0);
     expect(notStarted.execution.actualStart).toBeUndefined();
     expect(notStarted.projection).toBe('AT_RISK');
   });
 
-  it('DC01 propagates its running lot delay forward to the next SCHEDULED lot on the same Resource only', () => {
-    const next = snapshots.find((snapshot) => snapshot.lot.id === 'lot-mon-509')!;
+  it('DC01 propagates its delayed lot forward to the next SCHEDULED lot on the same Resource only', () => {
+    const next = snapshots.find((snapshot) => snapshot.lot.id === 'lot-t-propagated')!;
     expect(next.status).toBe('SCHEDULED');
-    expect(next.projectedFinish).toBe('2026-07-10T22:57:00.000Z'); // 19:57 -03:00
+    expect(next.projectedFinish).toBe(new Date(Date.parse(at('14:20'))).toISOString());
+    expect(next.projection).toBe('AT_RISK'); // +20min inherited exceeds tolerance
   });
 
   it('a Resource with no known delay keeps its next SCHEDULED lot ON_TIME', () => {
-    const next = snapshots.find((snapshot) => snapshot.lot.id === 'lot-mon-513')!;
+    const next = snapshots.find((snapshot) => snapshot.lot.id === 'lot-t-healthy-scheduled')!;
     expect(next.status).toBe('SCHEDULED');
     expect(next.projection).toBe('ON_TIME');
   });
 
-  it('day totals: planned quantity matches the real dataset (2100 pieces across 23 requirements)', () => {
+  it('day totals: planned, actual, running and remaining reconcile deterministically', () => {
     const totals = summarizeDay(snapshots);
-    expect(totals.plannedQuantity).toBe(2100);
-    expect(totals.actualQuantity).toBe(1300);
-    expect(totals.runningQuantity).toBe(123);
-    expect(totals.remainingQuantity).toBe(677);
-    expect(totals.atRiskLotIds).toContain('lot-mon-514');
-    expect(totals.atRiskLotIds).toContain('lot-mon-516');
+    expect(totals.plannedQuantity).toBe(600);
+    expect(totals.actualQuantity).toBe(100);
+    expect(totals.runningQuantity).toBe(80);
+    expect(totals.remainingQuantity).toBe(420);
+    expect(totals.atRiskLotIds).toContain('lot-t-delayed');
+    expect(totals.atRiskLotIds).toContain('lot-t-not-started');
+    expect(totals.atRiskLotIds).toContain('lot-t-propagated');
   });
 
   it('a healthy +2min variance does not register as at-risk — only meaningful delays do', () => {
     const totals = summarizeDay(snapshots);
-    expect(totals.atRiskLotIds).toEqual(['lot-mon-514', 'lot-mon-516']);
+    expect(totals.atRiskLotIds).toEqual(['lot-t-delayed', 'lot-t-propagated', 'lot-t-not-started']);
   });
 });

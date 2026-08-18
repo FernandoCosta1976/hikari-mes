@@ -15,7 +15,7 @@ test('shows the executive cockpit with Meta 2.000, RISCO status and the five mac
   expect(production).toHaveTextContent('Meta');
   expect(production).toHaveTextContent('2.000');
   expect(production).toHaveTextContent('Produzido');
-  expect(production).toHaveTextContent('209');
+  expect(production).toHaveTextContent('174');
 
   const machines = screen.getByRole('heading', { name: 'Situação das Máquinas' }).closest('section')!;
   for (const resource of ['DC01', 'DC02', 'DC03', 'DC04', 'DC05']) expect(within(machines).getByText(resource)).toBeInTheDocument();

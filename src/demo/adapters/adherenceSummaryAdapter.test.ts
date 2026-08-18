@@ -8,20 +8,20 @@ const definition = fundicaoDcScenario.productionScheduling;
 const currentTime = fundicaoDcScenario.currentScenarioTime;
 
 describe('computeFundicaoDcAdherenceSummary', () => {
-  it('counts 2/5 Lots on plan for the day (DC03 stopped, DC04 early, DC05 late to start)', () => {
+  it('counts due Lots on plan for the day (DC03 stopped, DC04 early, DC05 late to start) — only Lots with a known Execution fact and an already-due Scheduled Start are counted', () => {
     const day = computeFundicaoDcAdherenceSummary(definition, executionsByLot, currentTime);
-    expect(day).toMatchObject({ onPlan: 2, total: 5, ratio: 0.4 });
+    expect(day).toMatchObject({ onPlan: 2, total: 4, ratio: 0.5 });
   });
 });
 
 describe('computeFundicaoDcShiftAdherenceSummaries', () => {
   const shifts = computeFundicaoDcShiftAdherenceSummaries(definition, executionsByLot, currentTime);
 
-  it('allocates DC02 alone to Turno 1 (fully on plan) and the other four to Turno 2 (Current Time 17:23)', () => {
+  it('allocates DC02 alone to Turno 1 (fully on plan) and the other three due Lots to Turno 2 (Current Time 17:23)', () => {
     const turno1 = shifts.find((shift) => shift.shiftId === 'SHIFT_1')!;
     const turno2 = shifts.find((shift) => shift.shiftId === 'SHIFT_2')!;
     expect(turno1).toMatchObject({ status: 'COMPLETED', onPlan: 1, total: 1, ratio: 1 });
-    expect(turno2).toMatchObject({ status: 'IN_PROGRESS', onPlan: 1, total: 4, ratio: 0.25 });
+    expect(turno2).toMatchObject({ status: 'IN_PROGRESS', onPlan: 1, total: 3, ratio: 1 / 3 });
     expect(turno2.rows.map((row) => row.resourceId).sort()).toEqual(['DC01', 'DC03', 'DC04', 'DC05']);
   });
 

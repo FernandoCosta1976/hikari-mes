@@ -26,7 +26,7 @@ const routes = [
   ['Aderência', '/demo/fundicao-dc/production-adherence'],
   ['Qualidade', '/demo/fundicao-dc/production-quality'],
   ['OEE', '/demo/fundicao-dc/oee'],
-  ['Gestão da Ordem', '/demo/fundicao-dc/orders/lot-sd-401'],
+  ['Gestão da Ordem', '/demo/fundicao-dc/orders/lot-sd-501'],
 ] as const;
 
 for (const [name, path] of routes) {

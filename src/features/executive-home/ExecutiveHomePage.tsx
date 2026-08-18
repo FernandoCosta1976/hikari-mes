@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { withBase } from '../../app/routing/basePath';
 import { useScenarioPath } from '../../app/routing/useScenarioPath';
 import { computeFundicaoDcOeeSummary } from '../../demo/adapters/oeeSummaryAdapter';
-import { fundicaoDcUsinagemHealthFixture } from '../../demo/fixtures/fundicaoDcDownstreamHealth';
-import { fundicaoDcMoldsFixture } from '../../demo/fixtures/fundicaoDcMolds';
+import { downstreamHealthForScenario, idealCycleTimeSecondsForScenario, moldsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
 import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DownstreamAreaStatus } from '../../domain/downstream/models';
 import { classifyMoldLife, mostCriticalMold } from '../../domain/mold/models';
@@ -25,7 +24,7 @@ const moments: readonly Moment[] = [
     { id: '01', name: 'Receber Planejamento da Produção', priority: 'CORE', status: 'MATERIALIZED', href: '/production-scheduling' },
     { id: '02', name: 'Atualizar Alterações do Plano', priority: 'ESSENCIAL', status: 'MATERIALIZED', href: '/production-scheduling' },
     { id: '03', name: 'Organizar Sequenciamento Operacional da Área', priority: 'CORE', status: 'MATERIALIZED', href: '/production-scheduling' },
-    { id: '04', name: 'Liberar Produção', priority: 'CORE', status: 'MATERIALIZED', href: '/production-scheduling?lotId=lot-sd-401' },
+    { id: '04', name: 'Liberar Produção', priority: 'CORE', status: 'MATERIALIZED', href: '/production-scheduling?lotId=lot-sd-501' },
   ] },
   { id: 'execute', title: 'Executar e Registrar', capabilities: [
     { id: '05', name: 'Executar Ordens de Produção', priority: 'CORE', status: 'MATERIALIZED', href: '/production-execution' },
@@ -72,9 +71,9 @@ export function ExecutiveHomePage() {
   const scenario = useScenarioStore(selectScenarioDefinition);
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const resetScenario = useScenarioStore((state) => state.resetScenario);
-  const oee = definition && scenario ? computeFundicaoDcOeeSummary(definition, executionsByLot, scenario.currentScenarioTime) : null;
-  const usinagem = fundicaoDcUsinagemHealthFixture;
-  const criticalMold = mostCriticalMold(fundicaoDcMoldsFixture);
+  const oee = definition && scenario ? computeFundicaoDcOeeSummary(definition, executionsByLot, scenario.currentScenarioTime, qualityConfirmationsForScenario(scenario.id), idealCycleTimeSecondsForScenario(scenario.id)) : null;
+  const usinagem = downstreamHealthForScenario(scenario?.id);
+  const criticalMold = mostCriticalMold(moldsForScenario(scenario?.id));
   const nextExpectedLot = definition?.lots.find((lot) => lot.id === usinagem.nextExpectedLotId);
   const actionItems = [
     oee?.mainImpact ? { title: `${oee.mainImpact.resourceId} · ${dimensionLabel[oee.mainImpact.dimension]} abaixo do esperado`, detail: 'Principal fator de redução do OEE da Fundição hoje.' } : null,

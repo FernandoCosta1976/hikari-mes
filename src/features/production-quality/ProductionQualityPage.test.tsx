@@ -13,11 +13,11 @@ test('shows Turno 2 in progress beside the day accumulated, Turno 1 history and 
 
   const turnoRow = screen.getByRole('region', { name: 'Qualidade do Turno 2 e acumulado do dia' });
   expect(turnoRow).toHaveTextContent('TURNO 2 · EM ANDAMENTO');
-  expect(turnoRow).toHaveTextContent('159');
+  expect(turnoRow).toHaveTextContent('124');
   expect(turnoRow).toHaveTextContent('Desempenho vs. Tempo de ciclo padrão');
   expect(turnoRow).toHaveTextContent('88%');
   expect(turnoRow).toHaveTextContent('Acumulado do dia');
-  expect(turnoRow).toHaveTextContent('91%');
+  expect(turnoRow).toHaveTextContent('94%');
 
   const history = screen.getByRole('region', { name: 'Turnos concluídos hoje' });
   expect(history).toHaveTextContent('Turno 1');

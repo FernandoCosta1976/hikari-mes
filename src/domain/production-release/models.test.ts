@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { assessDemonstrativeRelease, releaseAutomatically, releaseDemonstratively, revokeRelease, type ProductionReleaseContext } from './models';
 
 const context = (readiness: ProductionReleaseContext['readiness']): ProductionReleaseContext => ({
-  lotId: 'lot-sd-407',
+  lotId: 'lot-sd-502',
   productionOrderId: 'po-source-derived-1b2-e5411-w0',
   resourceId: 'DC01',
   scheduleVersionId: 'v01',
-  scheduledStart: '2026-07-09T10:10:00-03:00',
-  scheduledFinish: '2026-07-09T11:20:00-03:00',
+  scheduledStart: '2026-07-10T01:33:00-03:00',
+  scheduledFinish: '2026-07-10T02:16:00-03:00',
   readiness,
 });
 

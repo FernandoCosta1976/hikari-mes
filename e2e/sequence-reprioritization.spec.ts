@@ -5,7 +5,10 @@ import { expect, test } from './fixtures';
  * REPRIORITIZATION: the whole affected Resource tail recalculates
  * automatically (Setup, no overlap), never just relocating the moved
  * requirement into a conflicting slot. Exercised on the official canonical
- * dataset (`fundicao-dc`, 2026-07-09).
+ * dataset (`fundicao-dc`, 2026-07-10, 09:15 Scenario Clock). At 09:15,
+ * lot-sd-501..507 (and 511/512, 515/516/517, 518/519, 521) are already
+ * COMPLETED/IN_PROGRESS — locked; lot-sd-508/509/510, 513, 514, 520,
+ * 522/523 are still NOT_STARTED — movable.
  */
 
 test('same-machine reprioritization cascades the whole DC01 tail automatically', async ({ page }) => {
@@ -13,12 +16,12 @@ test('same-machine reprioritization cascades the whole DC01 tail automatically',
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
   await page.getByRole('button', { name: /Avaliar cenário/ }).click();
-  await page.locator('[data-lot-id="lot-sd-401"]').click();
+  await page.locator('[data-lot-id="lot-sd-508"]').click();
 
   const simulation = page.getByRole('region', { name: 'Avaliação de cenário' });
   await simulation.getByRole('button', { name: /^DC01/ }).click();
-  await expect(simulation.getByRole('button', { name: /Depois de Lote 405/ })).toBeVisible();
-  await simulation.getByRole('button', { name: /Depois de Lote 405/ }).click();
+  await expect(simulation.getByRole('button', { name: /Depois de Lote 509/ })).toBeVisible();
+  await simulation.getByRole('button', { name: /Depois de Lote 509/ }).click();
 
   await expect(simulation).toContainText('1 movimentação');
   await expect(simulation).toContainText('OrigemDC01');
@@ -27,10 +30,10 @@ test('same-machine reprioritization cascades the whole DC01 tail automatically',
   expect(Number(impactedText.match(/\d+/)?.[0])).toBeGreaterThan(0);
 
   // The moved requirement and its cascade are both visible on the timeline, distinctly labeled.
-  await expect(page.locator('[data-lot-id="lot-sd-401"]')).toHaveAttribute('data-simulated', 'true');
-  await expect(page.locator('[data-lot-id="lot-sd-401"]')).toContainText('Movido');
-  await expect(page.locator('[data-lot-id="lot-sd-402"]')).toHaveAttribute('data-affected', 'true');
-  await expect(page.locator('[data-lot-id="lot-sd-402"]')).toContainText('Deslocado');
+  await expect(page.locator('[data-lot-id="lot-sd-508"]')).toHaveAttribute('data-simulated', 'true');
+  await expect(page.locator('[data-lot-id="lot-sd-508"]')).toContainText('Movido');
+  await expect(page.locator('[data-lot-id="lot-sd-509"]')).toHaveAttribute('data-affected', 'true');
+  await expect(page.locator('[data-lot-id="lot-sd-509"]')).toContainText('Deslocado');
 
   // Section 26 — Resource lane order is never disturbed by simulation.
   const laneOrder = await page.locator('[aria-label^="Máquina programada DC"]').evaluateAll((lanes) => lanes.map((lane) => lane.getAttribute('aria-label')));
@@ -44,19 +47,19 @@ test('cross-machine reallocation recalculates both origin and destination, and r
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
   await page.getByRole('button', { name: /Avaliar cenário/ }).click();
-  await page.locator('[data-lot-id="lot-sd-409"]').click(); // 1B2-E5411-W0, Reserve DC03
+  await page.locator('[data-lot-id="lot-sd-508"]').click(); // 44C-E5421-W0, Reserve DC02/DC03
 
   const simulation = page.getByRole('region', { name: 'Avaliação de cenário' });
-  await expect(simulation.getByRole('button', { name: /^DC02/ })).toBeDisabled(); // not Primary/Reserve for this component
+  await expect(simulation.getByRole('button', { name: /^DC04/ })).toBeDisabled(); // not Primary/Reserve for this component
   await simulation.getByRole('button', { name: /^DC03/ }).click();
-  await simulation.getByRole('button', { name: /Depois de Lote 413/ }).click(); // DC03's only existing (locked) requirement
+  await simulation.getByRole('button', { name: /Depois de Lote 514/ }).click(); // DC03's only existing requirement
 
   await expect(simulation).toContainText('OrigemDC01');
   await expect(simulation).toContainText('DestinoDC03');
-  await expect(page.locator('[data-lot-id="lot-sd-409"]')).toHaveAttribute('data-simulated', 'true');
-  await expect(page.getByLabel('Lotes programados na DC03').locator('[data-lot-id="lot-sd-409"]')).toBeVisible();
+  await expect(page.locator('[data-lot-id="lot-sd-508"]')).toHaveAttribute('data-simulated', 'true');
+  await expect(page.getByLabel('Lotes programados na DC03').locator('[data-lot-id="lot-sd-508"]')).toBeVisible();
   // DC01's tail compacts to fill the gap left behind.
-  await expect(page.locator('[data-lot-id="lot-sd-408"]')).toHaveAttribute('data-affected', 'true');
+  await expect(page.locator('[data-lot-id="lot-sd-509"]')).toHaveAttribute('data-affected', 'true');
 
   await expect(page).toHaveScreenshot('SCENARIO-CROSS-MACHINE-REPRIORITIZATION-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
@@ -65,13 +68,13 @@ test('impact summary shows Setup delta, both Resources closing times and stays a
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
-  const originalStart = await page.locator('[data-lot-id="lot-sd-401"]').evaluate((element) => (element as HTMLElement).style.left);
+  const originalStart = await page.locator('[data-lot-id="lot-sd-508"]').evaluate((element) => (element as HTMLElement).style.left);
 
   await page.getByRole('button', { name: /Avaliar cenário/ }).click();
-  await page.locator('[data-lot-id="lot-sd-401"]').click();
+  await page.locator('[data-lot-id="lot-sd-508"]').click();
   const simulation = page.getByRole('region', { name: 'Avaliação de cenário' });
   await simulation.getByRole('button', { name: /^DC01/ }).click();
-  await simulation.getByRole('button', { name: /Depois de Lote 405/ }).click();
+  await simulation.getByRole('button', { name: /Depois de Lote 509/ }).click();
 
   await expect(simulation).toContainText('Setups (plano vigente)');
   await expect(simulation).toContainText('Setups (simulação)');
@@ -85,17 +88,17 @@ test('impact summary shows Setup delta, both Resources closing times and stays a
   // Discard restores the baseline exactly (Section 23) — the plan itself never silently changes.
   await simulation.getByRole('button', { name: 'Encerrar avaliação' }).click();
   await expect(page.getByRole('region', { name: 'Avaliação de cenário' })).toHaveCount(0);
-  const restoredStart = await page.locator('[data-lot-id="lot-sd-401"]').evaluate((element) => (element as HTMLElement).style.left);
+  const restoredStart = await page.locator('[data-lot-id="lot-sd-508"]').evaluate((element) => (element as HTMLElement).style.left);
   expect(restoredStart).toBe(originalStart);
-  await expect(page.locator('[data-lot-id="lot-sd-401"]')).toHaveAttribute('data-simulated', 'false');
+  await expect(page.locator('[data-lot-id="lot-sd-508"]')).toHaveAttribute('data-simulated', 'false');
 });
 
-test('a locked (already-seeded Released) requirement cannot be moved at all', async ({ page }) => {
+test('a locked (already COMPLETED) requirement cannot be moved at all', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
   await page.getByRole('button', { name: /Avaliar cenário/ }).click();
-  await page.locator('[data-lot-id="lot-sd-410"]').click(); // the seeded COMPLETED lot on DC01
+  await page.locator('[data-lot-id="lot-sd-501"]').click(); // COMPLETED on DC01 at the 09:15 Scenario Clock
   const simulation = page.getByRole('region', { name: 'Avaliação de cenário' });
   await expect(simulation).toContainText('já iniciado/pausado/concluído');
 });
@@ -106,10 +109,10 @@ test('has no automatically detectable accessibility violations and no forbidden 
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
   await page.getByRole('button', { name: /Avaliar cenário/ }).click();
-  await page.locator('[data-lot-id="lot-sd-401"]').click();
+  await page.locator('[data-lot-id="lot-sd-508"]').click();
   const simulation = page.getByRole('region', { name: 'Avaliação de cenário' });
   await simulation.getByRole('button', { name: /^DC01/ }).click();
-  await simulation.getByRole('button', { name: /Depois de Lote 405/ }).click();
+  await simulation.getByRole('button', { name: /Depois de Lote 509/ }).click();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   const redUsages = await page.locator('body *').evaluateAll((elements) => {
     const forbidden = new Set(['rgb(255, 0, 0)', 'rgb(220, 38, 38)', 'rgb(239, 68, 68)']);

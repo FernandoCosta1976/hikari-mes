@@ -119,15 +119,15 @@ describe('moving a Lot back to its own current position is a coherent no-op', ()
   });
 });
 
-/** Real canonical dataset (2026-07-09, fundicao-dc) — DC01 has 10 requirements, the last (lot-sd-410) is the demonstrative baseline "already Released/Completed" seed. */
-const lockedCanonicalLotIds = new Set(['lot-sd-410', 'lot-sd-412', 'lot-sd-413', 'lot-sd-415', 'lot-sd-421']);
+/** Real canonical dataset (2026-07-10, fundicao-dc, 09:15 Scenario Clock) — DC01 has 10 requirements; lot-sd-510 (last on DC01) is the "locked, immutable at 09:15" seed, one per Resource ([510, 513, 514, 517, 523] are each the last requirement of their Resource). */
+const lockedCanonicalLotIds = new Set(['lot-sd-510', 'lot-sd-513', 'lot-sd-514', 'lot-sd-517', 'lot-sd-523']);
 
 describe('real canonical dataset — DC01 same-machine reprioritization', () => {
-  it('moving lot-sd-409 (1B2-E5411-W0) right after lot-sd-401 cascades the whole DC01 tail, no overlaps, locked lot-sd-410 untouched', () => {
-    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-409', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-401' }, lockedCanonicalLotIds, 30));
-    expect(result.scheduleByLotId['lot-sd-410']).toBeUndefined(); // locked, never rewritten
-    expect(result.affectedLotIds).toContain('lot-sd-402');
-    expect(result.affectedLotIds).not.toContain('lot-sd-409'); // the moved Lot itself is never listed as "affected"
+  it('moving lot-sd-503 right after lot-sd-501 cascades the DC01 tail, no overlaps, locked lot-sd-510 untouched', () => {
+    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-503', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-501' }, lockedCanonicalLotIds, 30));
+    expect(result.scheduleByLotId['lot-sd-510']).toBeUndefined(); // locked, never rewritten
+    expect(result.affectedLotIds).toContain('lot-sd-502');
+    expect(result.affectedLotIds).not.toContain('lot-sd-503'); // the moved Lot itself is never listed as "affected"
 
     const dc01 = sourceDerivedLots.filter((lot) => lot.scheduledResourceId === 'DC01');
     const timingFor = (lot: Lot) => result.scheduleByLotId[lot.id] ?? { scheduledStart: lot.scheduledStart, scheduledFinish: lot.scheduledFinish };
@@ -137,72 +137,82 @@ describe('real canonical dataset — DC01 same-machine reprioritization', () => 
       const current = timingFor(ordered[index]);
       expect(Date.parse(current.scheduledStart)).toBeGreaterThanOrEqual(Date.parse(previous.scheduledFinish));
     }
-    expect(ordered.map((lot) => lot.id)[1]).toBe('lot-sd-409'); // right after lot-sd-401
+    expect(ordered.map((lot) => lot.id)[1]).toBe('lot-sd-503'); // right after lot-sd-501
   });
 
-  it('rejects moving the locked lot-sd-410 itself', () => {
-    const result = simulateSequenceMove(sourceDerivedLots, 'lot-sd-410', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-401' }, lockedCanonicalLotIds, 30);
+  it('rejects moving the locked lot-sd-510 itself', () => {
+    const result = simulateSequenceMove(sourceDerivedLots, 'lot-sd-510', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-501' }, lockedCanonicalLotIds, 30);
     expect(result.feasible).toBe(false);
   });
 });
 
 describe('Section 13 — removing the original first Lot must not leave a permanent artificial gap', () => {
-  it('moving lot-sd-401 (originally first on DC01) later lets lot-sd-402 advance into the vacated 00:30 slot, not keep its own original 01:50 start', () => {
-    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-401', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-405' }, lockedCanonicalLotIds, 30));
-    // lot-sd-402 is now first; same component as lot-sd-401 (44C-E5421-W0), so it advances straight to the Resource's earliest known start with no Setup.
-    expect(sameInstant(result.scheduleByLotId['lot-sd-402'].scheduledStart, '2026-07-09T00:30:00-03:00')).toBe(true);
+  it('moving lot-sd-501 (originally first on DC01) later lets lot-sd-502 advance into the vacated 00:30 slot, not keep its own original 01:33 start', () => {
+    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-501', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-505' }, lockedCanonicalLotIds, 30));
+    // lot-sd-502 is now first on DC01, so it advances straight to the Resource's earliest known start (no predecessor, so no Setup gate).
+    expect(sameInstant(result.scheduleByLotId['lot-sd-502'].scheduledStart, '2026-07-10T00:30:00-03:00')).toBe(true);
   });
 });
 
 describe('real canonical dataset — cross-machine move onto an eligible Reserve Resource', () => {
-  it('moving lot-sd-409 (1B2-E5411-W0, Reserve DC03) onto DC03 after its locked lot-sd-413 recalculates both DC01 (compacted) and DC03 (extended)', () => {
-    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-409', { kind: 'CROSS_RESOURCE', resourceId: 'DC03', anchorLotId: 'lot-sd-413' }, lockedCanonicalLotIds, 30));
+  it('moving lot-sd-502 (1B2-E5411-W0, Reserve DC03) onto DC03 after its locked lot-sd-514 recalculates both DC01 (compacted) and DC03 (extended)', () => {
+    const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-502', { kind: 'CROSS_RESOURCE', resourceId: 'DC03', anchorLotId: 'lot-sd-514' }, lockedCanonicalLotIds, 30));
     expect(result.originResourceId).toBe('DC01');
     expect(result.destinationResourceId).toBe('DC03');
-    expect(result.scheduleByLotId['lot-sd-409'].scheduledResourceId).toBe('DC03');
-    // lot-sd-413 (locked) finishes 01:40 -03:00; different component (1S4-E5411-W0 -> 1B2-E5411-W0) requires a 30min Setup.
-    expect(sameInstant(result.scheduleByLotId['lot-sd-409'].scheduledStart, plusMinutes('2026-07-09T01:40:00-03:00', 30))).toBe(true);
-    expect(result.affectedLotIds).not.toContain('lot-sd-413'); // locked, untouched
-    expect(result.affectedLotIds).toContain('lot-sd-408'); // DC01 tail compacts to fill the gap left by lot-sd-409
+    expect(result.scheduleByLotId['lot-sd-502'].scheduledResourceId).toBe('DC03');
+    // lot-sd-514 (locked) finishes 09:15 -03:00; different component (1S4-E5411-W0 -> 1B2-E5411-W0) requires a 30min Setup.
+    expect(sameInstant(result.scheduleByLotId['lot-sd-502'].scheduledStart, plusMinutes('2026-07-10T09:15:00-03:00', 30))).toBe(true);
+    expect(result.affectedLotIds).not.toContain('lot-sd-514'); // locked, untouched
+    expect(result.affectedLotIds).toContain('lot-sd-503'); // DC01 tail compacts to fill the gap left by lot-sd-502
+
+    const dc01 = sourceDerivedLots.filter((lot) => lot.scheduledResourceId === 'DC01' && lot.id !== 'lot-sd-502');
+    const timingFor = (lot: Lot) => result.scheduleByLotId[lot.id] ?? { scheduledStart: lot.scheduledStart, scheduledFinish: lot.scheduledFinish };
+    const ordered = [...dc01].sort((a, b) => Date.parse(timingFor(a).scheduledStart) - Date.parse(timingFor(b).scheduledStart));
+    for (let index = 1; index < ordered.length; index += 1) {
+      const previous = timingFor(ordered[index - 1]);
+      const current = timingFor(ordered[index]);
+      expect(Date.parse(current.scheduledStart)).toBeGreaterThanOrEqual(Date.parse(previous.scheduledFinish));
+    }
   });
 
   it('rejects a move that would place a Lot chronologically before a locked checkpoint it was dropped after', () => {
     // The engine does not know about Component -> Resource eligibility (Section 11) by design (that gate lives in
     // the feature layer); it still must reject anything that would violate a locked checkpoint's real chronology.
-    const result = simulateSequenceMove(sourceDerivedLots, 'lot-sd-401', { kind: 'CROSS_RESOURCE', resourceId: 'DC03', anchorLotId: null }, lockedCanonicalLotIds, 30);
+    // lot-sd-507's own original start (08:19) sits after lot-sd-514's original start (08:00), so the destination
+    // anchor collapses onto 08:00 — colliding head-on with locked lot-sd-514's own fixed 08:00 start.
+    const result = simulateSequenceMove(sourceDerivedLots, 'lot-sd-507', { kind: 'CROSS_RESOURCE', resourceId: 'DC03', anchorLotId: null }, lockedCanonicalLotIds, 30);
     expect(result.feasible).toBe(false);
     expect((result as { reason: string }).reason).toBe('OVERLAP');
   });
 });
 
 /**
- * REGRESSION — the exact case published in an earlier report as
+ * REGRESSION — the exact class of case published in an earlier report as
  * "Lote 405: 06:40–07:50" / "Lote 401 movido depois do Lote 405: 06:10–07:20"
  * and flagged as a temporal contradiction. Root cause turned out to be the
- * PUBLISHED REPORT, not the engine: moving Lote 401 (originally first on
- * DC01) also compacts Lote 405 itself earlier (06:40 -> 05:00), so 401
- * genuinely starts immediately at 405's NEW finish (06:10) with zero
- * overlap. The report had incorrectly quoted 405's ORIGINAL baseline time
- * next to 401's NEW simulated time. This test independently recomputes
- * every DC01 timestamp and asserts the whole chain — it would fail under
- * the pre-fix `simulateResourceMove` behavior (which never moved 405 at
- * all, or under any regression that reintroduces that bug).
+ * PUBLISHED REPORT, not the engine: moving an originally-first Lot later on
+ * its own Resource also compacts every Lot between the old and new position
+ * — including the anchor itself — earlier. Re-verified end to end against
+ * the current canonical (2026-07-10, 09:15) dataset with the same
+ * moved-Lot-after-anchor shape (lot-sd-501 moved after lot-sd-505), so this
+ * would fail under the pre-fix `simulateResourceMove` behavior (which never
+ * moved the anchor at all), or under any regression that reintroduces that bug.
  */
-describe('regression — the exact published "406:40 vs 06:10" case, independently verified end to end', () => {
-  const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-401', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-405' }, lockedCanonicalLotIds, 30));
+describe('regression — the exact published "predecessor keeps its stale baseline time" case, independently verified end to end', () => {
+  const result = assumeFeasible(simulateSequenceMove(sourceDerivedLots, 'lot-sd-501', { kind: 'SAME_RESOURCE', anchorLotId: 'lot-sd-505' }, lockedCanonicalLotIds, 30));
 
-  it('lot-sd-405 itself compacts from its baseline 06:40 to a new 05:00 start — it is NOT still at 06:40 in the simulation', () => {
-    expect(sameInstant(result.scheduleByLotId['lot-sd-405'].scheduledStart, '2026-07-09T05:00:00-03:00')).toBe(true);
-    expect(sameInstant(result.scheduleByLotId['lot-sd-405'].scheduledFinish, '2026-07-09T06:10:00-03:00')).toBe(true);
+  it('lot-sd-505 itself compacts from its baseline 05:02 to a new 03:59 start — it is NOT still at its stale baseline time in the simulation', () => {
+    expect(sameInstant(result.scheduleByLotId['lot-sd-505'].scheduledStart, '2026-07-10T03:59:00-03:00')).toBe(true);
+    expect(sameInstant(result.scheduleByLotId['lot-sd-505'].scheduledFinish, '2026-07-10T05:36:00-03:00')).toBe(true);
   });
 
-  it('lot-sd-401 (moved) starts exactly at lot-sd-405\'s NEW finish (06:10), not its baseline finish (07:50) — same component, zero Setup', () => {
-    expect(sameInstant(result.scheduleByLotId['lot-sd-401'].scheduledStart, result.scheduleByLotId['lot-sd-405'].scheduledFinish)).toBe(true);
-    expect(sameInstant(result.scheduleByLotId['lot-sd-401'].scheduledStart, '2026-07-09T06:10:00-03:00')).toBe(true);
-    expect(sameInstant(result.scheduleByLotId['lot-sd-401'].scheduledFinish, '2026-07-09T07:20:00-03:00')).toBe(true);
+  it('lot-sd-501 (moved) starts exactly at lot-sd-505\'s NEW finish plus Setup (different component), not its baseline finish', () => {
+    expect(sameInstant(result.scheduleByLotId['lot-sd-501'].scheduledStart, plusMinutes(result.scheduleByLotId['lot-sd-505'].scheduledFinish, 30))).toBe(true);
+    expect(sameInstant(result.scheduleByLotId['lot-sd-501'].scheduledStart, '2026-07-10T06:06:00-03:00')).toBe(true);
+    expect(sameInstant(result.scheduleByLotId['lot-sd-501'].scheduledFinish, '2026-07-10T06:39:00-03:00')).toBe(true);
   });
 
-  it('every requirement on DC01 (locked lot-sd-410 included) satisfies next.start >= previous.finish + requiredSetup — the full mathematical invariant, not just the moved pair', () => {
+  it('every requirement on DC01 (locked lot-sd-510 included) satisfies next.start >= previous.finish + requiredSetup — the full mathematical invariant, not just the moved pair', () => {
     assertNoOverlapAndSetupHonored(sourceDerivedLots, result, 30);
   });
 
@@ -211,16 +221,16 @@ describe('regression — the exact published "406:40 vs 06:10" case, independent
     const timingFor = (lot: Lot) => result.scheduleByLotId[lot.id] ?? { scheduledStart: lot.scheduledStart, scheduledFinish: lot.scheduledFinish };
     const ordered = [...dc01].sort((a, b) => Date.parse(timingFor(a).scheduledStart) - Date.parse(timingFor(b).scheduledStart));
     const expected: [string, string, string][] = [
-      ['lot-sd-402', '2026-07-09T00:30:00-03:00', '2026-07-09T01:40:00-03:00'],
-      ['lot-sd-403', '2026-07-09T02:10:00-03:00', '2026-07-09T03:20:00-03:00'],
-      ['lot-sd-404', '2026-07-09T03:20:00-03:00', '2026-07-09T04:30:00-03:00'],
-      ['lot-sd-405', '2026-07-09T05:00:00-03:00', '2026-07-09T06:10:00-03:00'],
-      ['lot-sd-401', '2026-07-09T06:10:00-03:00', '2026-07-09T07:20:00-03:00'],
-      ['lot-sd-406', '2026-07-09T07:50:00-03:00', '2026-07-09T09:00:00-03:00'],
-      ['lot-sd-407', '2026-07-09T09:30:00-03:00', '2026-07-09T10:40:00-03:00'],
-      ['lot-sd-408', '2026-07-09T11:10:00-03:00', '2026-07-09T12:20:00-03:00'],
-      ['lot-sd-409', '2026-07-09T12:50:00-03:00', '2026-07-09T14:00:00-03:00'],
-      ['lot-sd-410', '2026-07-09T15:25:00-03:00', '2026-07-09T16:35:00-03:00'], // locked — unchanged from baseline
+      ['lot-sd-502', '2026-07-10T00:30:00-03:00', '2026-07-10T01:13:00-03:00'],
+      ['lot-sd-503', '2026-07-10T01:43:00-03:00', '2026-07-10T02:16:00-03:00'],
+      ['lot-sd-504', '2026-07-10T02:46:00-03:00', '2026-07-10T03:29:00-03:00'],
+      ['lot-sd-505', '2026-07-10T03:59:00-03:00', '2026-07-10T05:36:00-03:00'],
+      ['lot-sd-501', '2026-07-10T06:06:00-03:00', '2026-07-10T06:39:00-03:00'],
+      ['lot-sd-506', '2026-07-10T07:09:00-03:00', '2026-07-10T08:19:00-03:00'], // untouched — the freed slack exactly matches, coincidence of a tightly-packed baseline
+      ['lot-sd-507', '2026-07-10T08:19:00-03:00', '2026-07-10T09:29:00-03:00'],
+      ['lot-sd-508', '2026-07-10T09:29:00-03:00', '2026-07-10T10:39:00-03:00'],
+      ['lot-sd-509', '2026-07-10T11:09:00-03:00', '2026-07-10T12:46:00-03:00'],
+      ['lot-sd-510', '2026-07-10T12:46:00-03:00', '2026-07-10T14:23:00-03:00'], // locked — unchanged from baseline
     ];
     expect(ordered.map((lot) => lot.id)).toEqual(expected.map(([id]) => id));
     ordered.forEach((lot, index) => {

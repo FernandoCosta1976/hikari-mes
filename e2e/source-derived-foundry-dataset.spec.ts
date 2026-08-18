@@ -7,6 +7,8 @@ import { expect, test } from './fixtures';
  * baseline demonstrativo oficial da Fundição DC — ver ADR-002. O cenário
  * sintético anterior (Material A/B/C) é preservado só como fixture de teste
  * em `fundicao-dc-legacy` (ver e2e/wf001-production-scheduling.spec.ts etc.).
+ *
+ * BUSINESS DATE: 2026-07-10 · SCENARIO CLOCK: 09:15 (lot-sd-501..523).
  */
 
 test('captures the source-derived Plano Hora-Hora with real component codes', async ({ page }) => {
@@ -21,12 +23,12 @@ test('captures the source-derived Plano Hora-Hora with real component codes', as
 test('captures the Lot Context modal with LINHA C traceability and real component code', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-scheduling');
-  await page.locator('[data-lot-id="lot-sd-401"]').click();
-  const modal = page.getByRole('dialog', { name: 'Lote 401' });
+  await page.locator('[data-lot-id="lot-sd-501"]').click();
+  const modal = page.getByRole('dialog', { name: 'Lote 501' });
   await expect(modal).toBeVisible();
   await expect(modal).toContainText('Lote Linha C');
-  await expect(modal).toContainText('249');
-  await expect(modal).toContainText('B3GB00010D');
+  await expect(modal).toContainText('3');
+  await expect(modal).toContainText('BSRP00030A');
   await expect(page).toHaveScreenshot('WF-001-REAL-COMPONENT-LOT-CONTEXT-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 
@@ -34,8 +36,8 @@ test('captures Primary/Reserve machine roles for a component with a confirmed re
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
-  await page.locator('[data-lot-id="lot-sd-407"]').click();
-  const modal = page.getByRole('dialog', { name: 'Lote 407' });
+  await page.locator('[data-lot-id="lot-sd-502"]').click();
+  const modal = page.getByRole('dialog', { name: 'Lote 502' });
   await expect(modal).toBeVisible();
   await expect(modal).toContainText('Máquina titular');
   await expect(modal).toContainText('DC01');
@@ -65,8 +67,8 @@ test('Capability 04 — Ready For Release → Released, deterministic and tracea
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
-  await page.locator('[data-lot-id="lot-sd-407"]').click();
-  const modal = page.getByRole('dialog', { name: 'Lote 407' });
+  await page.locator('[data-lot-id="lot-sd-508"]').click(); // NOT_STARTED at 09:15, READY readiness — not pre-released
+  const modal = page.getByRole('dialog', { name: 'Lote 508' });
   await modal.getByRole('button', { name: 'Liberação' }).click();
   await expect(modal).toContainText('PRONTO PARA LIBERAR');
   await expect(modal).toContainText('Máquina titular');
@@ -75,18 +77,18 @@ test('Capability 04 — Ready For Release → Released, deterministic and tracea
   await modal.getByRole('button', { name: 'Liberar para produção' }).click();
   await expect(modal).toContainText('LIBERADO');
   await expect(modal).toContainText('Supervisor da Fundição · demonstrativo');
-  await expect(modal).toContainText('09/07/2026, 17:23');
+  await expect(modal).toContainText('10/07/2026, 09:15');
   await expect(page).toHaveScreenshot('CAP-04-RELEASED-LOT-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
   await modal.getByRole('button', { name: 'Fechar contexto do Lote' }).click();
-  await expect(page.locator('[data-lot-id="lot-sd-407"]')).toContainText('Liberado');
+  await expect(page.locator('[data-lot-id="lot-sd-508"]')).toContainText('Liberado');
 });
 
 test('Capability 04 — Attention Lot shows the dominant reason and an explicit "Revisar condições" action', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
-  await page.locator('[data-lot-id="lot-sd-418"]').click();
-  const modal = page.getByRole('dialog', { name: 'Lote 418' });
+  await page.locator('[data-lot-id="lot-sd-522"]').click(); // NOT_STARTED, ATTENTION readiness (1ST-E1310-W0 · Cilindro, no confirmed Reserve) — not pre-released
+  const modal = page.getByRole('dialog', { name: 'Lote 522' });
   await modal.getByRole('button', { name: 'Liberação' }).click();
   await expect(modal).toContainText('REQUER REVISÃO');
   await expect(modal).toContainText('Existem condições que exigem avaliação antes da liberação.');
@@ -103,15 +105,15 @@ test('Capability 04 — Preparação queue flags the released Lot without becomi
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
-  await page.locator('[data-lot-id="lot-sd-407"]').click();
-  const modal = page.getByRole('dialog', { name: 'Lote 407' });
+  await page.locator('[data-lot-id="lot-sd-508"]').click();
+  const modal = page.getByRole('dialog', { name: 'Lote 508' });
   await modal.getByRole('button', { name: 'Liberação' }).click();
   await modal.getByRole('button', { name: 'Liberar para produção' }).click();
   await modal.getByRole('button', { name: 'Fechar contexto do Lote' }).click();
 
   await page.goto('/demo/fundicao-dc/production-readiness');
   await page.getByText(/Prontos \(\d+\)/).click();
-  await expect(page.getByRole('button', { name: /Lote 407/ })).toContainText('Liberado');
+  await expect(page.getByRole('button', { name: /Lote 508/ })).toContainText('Liberado');
 });
 
 /**
@@ -133,10 +135,10 @@ test('Product Gate — real component codes are dominant in the Plano Hora-Hora 
   await expect(page.getByText('1ST-E1310-W0').first()).toBeVisible();
 
   // Each visible block carries piece code + family + quantity + Lote Linha C — never only the internal MES lot number.
-  const firstBlock = page.locator('[data-lot-id="lot-sd-401"]');
-  await expect(firstBlock).toContainText('44C-E5421-W0');
-  await expect(firstBlock).toContainText('Tampa Direita · 100 peças');
-  await expect(firstBlock).toContainText('Lote Linha C 249');
+  const firstBlock = page.locator('[data-lot-id="lot-sd-501"]');
+  await expect(firstBlock).toContainText('5LX-E5421-X0');
+  await expect(firstBlock).toContainText('Tampa Direita · 50 peças');
+  await expect(firstBlock).toContainText('Lote Linha C 3');
 
   // The legacy synthetic dataset must have zero visual occurrence in the official scenario.
   await expect(page.getByText('Material A', { exact: true })).toHaveCount(0);
@@ -150,8 +152,8 @@ test('Product Gate — Lot Context modal surfaces Peça/Família/Quantidade/Orig
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
-  await page.locator('[data-lot-id="lot-sd-407"]').click();
-  const modal = page.getByRole('dialog', { name: 'Lote 407' });
+  await page.locator('[data-lot-id="lot-sd-502"]').click();
+  const modal = page.getByRole('dialog', { name: 'Lote 502' });
   await expect(modal).toBeVisible();
   await expect(modal).toContainText('Peça');
   await expect(modal).toContainText('1B2-E5411-W0');

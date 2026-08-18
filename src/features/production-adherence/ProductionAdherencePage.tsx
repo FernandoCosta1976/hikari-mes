@@ -3,12 +3,11 @@ import { createPortal } from 'react-dom';
 import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSummaries, rankedExceptions, type FundicaoDcAdherenceRow } from '../../demo/adapters/adherenceSummaryAdapter';
-import { fundicaoDcIdealCycleTimeSecondsFixture } from '../../demo/fixtures/fundicaoDcIdealCycleTime';
-import { fundicaoDcProductionEventsFixture } from '../../demo/fixtures/fundicaoDcProductionEvents';
+import { eventsForScenario, idealCycleTimeSecondsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
 import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DeviationClassification } from '../../domain/production-adherence/models';
 import { assessLotExecutionHealth } from '../../domain/production-execution/lotHealth';
-import { eventDurationMinutes, type ProductionEventType } from '../../domain/production-monitoring/models';
+import { eventDurationMinutes, type ProductionEvent, type ProductionEventType } from '../../domain/production-monitoring/models';
 import { timelinePosition, timelineWidth } from '../../domain/production-scheduling/temporalMath';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Bar } from '../../shared/ui/Bar/Bar';
@@ -24,15 +23,13 @@ const classificationIcon: Record<DeviationClassification, string> = { ON_PLAN: '
 const classificationTone: Record<DeviationClassification, 'positive' | 'attention' | 'neutral'> = { ON_PLAN: 'positive', STOPPED: 'attention', LATE: 'attention', AT_RISK: 'attention', EARLY: 'neutral' };
 const eventLabel: Record<ProductionEventType, string> = { MATERIAL: 'Falta de material', MACHINE_ADJUSTMENT: 'Ajuste de máquina', TOOLING: 'Ferramental', QUALITY: 'Qualidade', OTHER: 'Outro' };
 const shiftStatusLabel = { COMPLETED: 'CONCLUÍDO', IN_PROGRESS: 'EM ANDAMENTO', UPCOMING: 'AINDA NÃO INICIADO' } as const;
-const rangeStart = '2025-05-15T09:00:00-03:00';
-const rangeFinish = '2025-05-15T22:00:00-03:00';
 
-function AdherenceDialog({ row, currentTime, onClose }: { row: FundicaoDcAdherenceRow; currentTime: string; onClose: () => void }) {
+function AdherenceDialog({ row, events, idealCycleTimeSecondsByMaterialId, currentTime, onClose }: { row: FundicaoDcAdherenceRow; events: readonly ProductionEvent[]; idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>>; currentTime: string; onClose: () => void }) {
   const close = useRef<HTMLButtonElement>(null);
   useEffect(() => { close.current?.focus(); const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [onClose]);
   const { lot, execution, classification, deviationMinutes, impact, resourceId } = row;
-  const activeEvent = fundicaoDcProductionEventsFixture.find((event) => event.lotId === lot.id && event.status === 'ACTIVE');
-  const health = assessLotExecutionHealth(execution, lot.scheduledStart, lot.scheduledFinish, fundicaoDcIdealCycleTimeSecondsFixture[lot.materialId], currentTime);
+  const activeEvent = events.find((event) => event.lotId === lot.id && event.status === 'ACTIVE');
+  const health = assessLotExecutionHealth(execution, lot.scheduledStart, lot.scheduledFinish, idealCycleTimeSecondsByMaterialId[lot.materialId], currentTime);
   return createPortal(<div className={styles.modalLayer}><button className={styles.backdrop} aria-label="Fechar contexto" onClick={onClose} /><section role="dialog" aria-modal="true" aria-labelledby="adherence-context-title" className={styles.modal}>
     <header><div><small>ADERÊNCIA</small><h2 id="adherence-context-title">{resourceId} · Lote {lot.lotNumber}</h2><LotHealthIndicator health={health} context={{ lotLabel: lot.lotNumber, material: '', quantity: lot.quantity, resourceId, scheduledStart: formatTime(lot.scheduledStart), scheduledFinish: formatTime(lot.scheduledFinish) }} /></div><Button ref={close} aria-label="Fechar contexto de aderência" onClick={onClose}>×</Button></header>
     <p>{classificationLabel[classification]}{deviationMinutes !== null ? ` · ${deviationMinutes > 0 ? '+' : ''}${deviationMinutes} min` : ''}</p>
@@ -56,7 +53,12 @@ export function ProductionAdherencePage() {
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const [openRow, setOpenRow] = useState<FundicaoDcAdherenceRow | null>(null);
   const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
+  const events = eventsForScenario(scenario?.id);
+  const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   if (!definition || !scenario) return <p>Preparando aderência demonstrativa…</p>;
+  const businessDate = currentTime.slice(0, 10);
+  const rangeStart = `${businessDate}T00:00:00-03:00`;
+  const rangeFinish = `${businessDate}T23:59:59-03:00`;
   const currentPosition = timelinePosition(currentTime, rangeStart, rangeFinish);
 
   const day = computeFundicaoDcAdherenceSummary(definition, executionsByLot, currentTime);
@@ -67,7 +69,7 @@ export function ProductionAdherencePage() {
   const mainException = shiftExceptions[0];
   const dayException = rankedExceptions(day.rows)[0];
 
-  return <OperationalWorkspace perspective="ADHERENCE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Aderência</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Classificação demonstrativa" tip="Classificação demonstrativa · requer validação de negócio" /></div>}>
+  return <OperationalWorkspace perspective="ADHERENCE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Aderência</strong><IconTip icon="◷" label="Data de referência" value={`${businessDate.slice(8, 10)}/${businessDate.slice(5, 7)}`} tip={`Data de referência · ${businessDate}`} /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Classificação demonstrativa" tip="Classificação demonstrativa · requer validação de negócio" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
         <div><span>Capacidade 07 · Núcleo + Essencial</span><h1>Estamos executando conforme o planejado?</h1></div>
@@ -96,7 +98,7 @@ export function ProductionAdherencePage() {
       <section className={styles.resources} aria-labelledby="resources-title">
         <header><h2 id="resources-title">Situação das Máquinas</h2><p>DC01–DC05 · classificação de aderência · acumulado do dia</p></header>
         <div className={styles.machines}>
-          {day.rows.map((row) => { const health = assessLotExecutionHealth(row.execution, row.lot.scheduledStart, row.lot.scheduledFinish, fundicaoDcIdealCycleTimeSecondsFixture[row.lot.materialId], currentTime); return <button key={row.resourceId} className={styles.machineRow} data-tone={classificationTone[row.classification]} onClick={() => setOpenRow(row)}>
+          {day.rows.map((row) => { const health = assessLotExecutionHealth(row.execution, row.lot.scheduledStart, row.lot.scheduledFinish, idealCycleTimeSecondsByMaterialId[row.lot.materialId], currentTime); return <button key={row.resourceId} className={styles.machineRow} data-tone={classificationTone[row.classification]} onClick={() => setOpenRow(row)}>
             <span className={styles.machineIcon} aria-hidden="true">{classificationIcon[row.classification]}</span>
             <span className={styles.machineId}>{row.resourceId}</span>
             <span className={styles.machineStatus}><small>Lote {row.lot.lotNumber}</small><strong>{classificationLabel[row.classification]}</strong></span>
@@ -111,7 +113,7 @@ export function ProductionAdherencePage() {
         <summary>Planejado × Realizado <span>Ver linha do tempo</span></summary>
         <div className={monitoringStyles.timeline} data-testid="adherence-timeline">
           <div className={monitoringStyles.axisCorner}>Máquina</div>
-          <div className={monitoringStyles.axis}>{[9,11,13,15,17,19,21].map((hour) => <span key={hour} style={{ left: `${((hour - 9) / 13) * 100}%` }}>{String(hour).padStart(2,'0')}:00</span>)}</div>
+          <div className={monitoringStyles.axis}>{[0, 3, 6, 9, 12, 15, 18, 21].map((hour) => <span key={hour} style={{ left: `${(hour / 24) * 100}%` }}>{String(hour).padStart(2, '0')}:00</span>)}</div>
           <div className={monitoringStyles.timeLine} style={{ left: `calc(8rem + (100% - 8rem) * ${currentPosition / 100})` }}><span>{formatTime(currentTime)}</span></div>
           <div className={monitoringStyles.lanes}>{day.rows.map((row) => { const { resourceId, lot, execution, classification, deviationMinutes } = row; const actualFinish = execution.actualFinish ?? (execution.status === 'NOT_STARTED' ? execution.scheduledStart : currentTime); return <section className={monitoringStyles.lane} key={resourceId} data-state={execution.status}>
             <button className={monitoringStyles.resource} onClick={() => setOpenRow(row)}><strong>{resourceId}</strong><span className={styles.badge} data-classification={classification}>{classificationLabel[classification]}</span><small>{execution.producedQuantity}/{execution.plannedQuantity} · {Math.round(execution.producedQuantity/execution.plannedQuantity*100)}%</small></button>
@@ -123,6 +125,6 @@ export function ProductionAdherencePage() {
         </div>
       </details>
     </div>
-    {openRow ? <AdherenceDialog row={openRow} currentTime={currentTime} onClose={() => setOpenRow(null)} /> : null}
+    {openRow ? <AdherenceDialog row={openRow} events={events} idealCycleTimeSecondsByMaterialId={idealCycleTimeSecondsByMaterialId} currentTime={currentTime} onClose={() => setOpenRow(null)} /> : null}
   </OperationalWorkspace>;
 }

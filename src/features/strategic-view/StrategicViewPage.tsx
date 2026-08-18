@@ -5,9 +5,7 @@ import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSummaries } from '../../demo/adapters/adherenceSummaryAdapter';
 import { computeFundicaoDcOeeSummary } from '../../demo/adapters/oeeSummaryAdapter';
 import { computeFundicaoDcQualitySummary } from '../../demo/adapters/qualitySummaryAdapter';
-import { fundicaoDcIdealCycleTimeSecondsFixture } from '../../demo/fixtures/fundicaoDcIdealCycleTime';
-import { fundicaoDcUsinagemHealthFixture } from '../../demo/fixtures/fundicaoDcDownstreamHealth';
-import { fundicaoDcMoldsFixture } from '../../demo/fixtures/fundicaoDcMolds';
+import { downstreamHealthForScenario, idealCycleTimeSecondsForScenario, moldsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
 import { selectProductionExecutions, selectProductionReadiness, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DownstreamAreaStatus } from '../../domain/downstream/models';
 import { mostCriticalMold } from '../../domain/mold/models';
@@ -55,17 +53,20 @@ export function StrategicViewPage() {
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const readinessAssessments = useScenarioStore(selectProductionReadiness);
   const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
+  const qualityConfirmations = qualityConfirmationsForScenario(scenario?.id);
+  const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
+  const downstream = downstreamHealthForScenario(scenario?.id);
+  const criticalMold = mostCriticalMold(moldsForScenario(scenario?.id));
   if (!definition || !scenario) return <p>Preparando visão estratégica…</p>;
+  const businessDate = currentTime.slice(0, 10);
 
-  const oeeDay = computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime);
+  const oeeDay = computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
   const adherenceDay = computeFundicaoDcAdherenceSummary(definition, executionsByLot, currentTime);
   const adherenceShifts = computeFundicaoDcShiftAdherenceSummaries(definition, executionsByLot, currentTime);
   const currentShift = adherenceShifts.find((shift) => shift.status === 'IN_PROGRESS') ?? adherenceShifts[adherenceShifts.length - 1];
-  const qualityDay = computeFundicaoDcQualitySummary(definition, executionsByLot, currentTime);
-  const downstream = fundicaoDcUsinagemHealthFixture;
-  const criticalMold = mostCriticalMold(fundicaoDcMoldsFixture);
+  const qualityDay = computeFundicaoDcQualitySummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
 
-  const todaySchedule = definition.schedules.find((item) => item.id === 'schedule-2025-05-15-v08') ?? definition.schedules[0];
+  const todaySchedule = definition.schedules[0];
   const todayLots = todaySchedule.lotIds.map((id) => definition.lots.find((lot) => lot.id === id)!).filter(Boolean);
   const meta = todayLots.reduce((sum, lot) => sum + lot.quantity, 0);
   const producedTotal = qualityDay.produced;
@@ -76,7 +77,7 @@ export function StrategicViewPage() {
   const healthByResource = Object.fromEntries(FOUNDRY_RESOURCE_IDS.map((resourceId) => {
     const execution = currentExecutionForResource(Object.values(executionsByLot), resourceId)!;
     const lot = definition.lots.find((item) => item.id === execution.lotId)!;
-    const cycleTimeSeconds = fundicaoDcIdealCycleTimeSecondsFixture[lot.materialId];
+    const cycleTimeSeconds = idealCycleTimeSecondsByMaterialId[lot.materialId];
     const health = assessLotExecutionHealth(execution, lot.scheduledStart, lot.scheduledFinish, cycleTimeSeconds, currentTime);
     return [resourceId, { health, lot }] as const;
   })) as Record<FoundryResourceId, { health: LotHealthProjection; lot: Lot }>;
@@ -99,7 +100,7 @@ export function StrategicViewPage() {
     ? (downstream.status !== 'PROTECTED' ? 'Usinagem em atenção de cobertura' : `${healthCounts.AT_RISK + healthCounts.STARTED_LATE} máquina(s) em risco de atraso`)
     : 'Nenhum desvio relevante identificado';
 
-  return <OperationalWorkspace perspective="STRATEGIC" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Visão Estratégica</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Cockpit demonstrativo" tip="Cockpit demonstrativo · requer validação de negócio" /></div>}>
+  return <OperationalWorkspace perspective="STRATEGIC" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Visão Estratégica</strong><IconTip icon="◷" label="Data de referência" value={`${businessDate.slice(8, 10)}/${businessDate.slice(5, 7)}`} tip={`Data de referência · ${businessDate}`} /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Cockpit demonstrativo" tip="Cockpit demonstrativo · requer validação de negócio" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero} aria-labelledby="strategic-title">
         <span className={styles.eyebrow}>Fundição DC · {currentShift.shiftName.toUpperCase()} · {formatTime(currentTime)}</span>

@@ -33,7 +33,7 @@ describe('computeFundicaoDcShiftOeeSummaries', () => {
     expect(turno1.rows.map((r) => r.resourceId)).toEqual(['DC02']);
     expect(turno2.rows.map((r) => r.resourceId).sort()).toEqual(['DC01', 'DC03', 'DC04', 'DC05']);
     expect(turno1.areaOee).toBeCloseTo(0.7510, 3);
-    expect(turno2.areaOee).toBeCloseTo(0.6831, 3);
+    expect(turno2.areaOee).toBeCloseTo(0.6692, 3);
   });
 
   it('sums Shift Availability/Performance/Quality from the same per-Resource facts as the day summary, not a duplicated formula', () => {

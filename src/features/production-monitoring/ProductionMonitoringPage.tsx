@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useApplicationScenarioTime } from '../../app/clock/applicationClock';
+import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
-import { monitoringBusinessDate, monitoringDowntimeMinutesByLotId, monitoringEvents, monitoringExecutionsByLotId, monitoringLots, monitoringTraceabilityByLotId } from '../../demo/scenarios/fundicaoDcMonitoring1007';
-import { sourceDerivedMaterials } from '../../demo/scenarios/fundicaoDcSourceDerivedScenario';
+import { sourceDerivedTraceabilityByLotId } from '../../demo/scenarios/fundicaoDcSourceDerivedScenario';
 import { componentResourceMappingByCode } from '../../demo/reference-data/foundry/componentResourceMappings';
+import { eventsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
+import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { buildRequirementSnapshots, summarizeDay, type RequirementSnapshot, type RequirementStatus } from '../../domain/production-monitoring/executionStatus';
 import { eventDurationMinutes, eventsNewestFirst, type ProductionEvent } from '../../domain/production-monitoring/models';
+import type { Material } from '../../domain/production-scheduling/models';
 import { timelinePosition, timelineWidth } from '../../domain/production-scheduling/temporalMath';
 import { FOUNDRY_RESOURCE_IDS } from '../../domain/resource/models';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
@@ -15,21 +17,13 @@ import { IconTip } from '../../shared/ui/IconTip/IconTip';
 import { destinationLabels, formatTime, materialFamilyLabel } from '../production-scheduling/productionSchedulingViewModel';
 import styles from './ProductionMonitoringPage.module.css';
 
-const rangeStart = `${monitoringBusinessDate}T00:00:00-03:00`;
-const rangeFinish = `${monitoringBusinessDate}T23:59:59-03:00`;
-
 const statusLabel: Record<RequirementStatus, string> = { COMPLETED: 'Concluído', RUNNING: 'Em execução', DELAYED: 'Atrasado', NOT_STARTED: 'Não iniciado', SCHEDULED: 'A executar' };
 const eventTypeLabel: Record<ProductionEvent['eventType'], string> = { MATERIAL: 'Falta de material', MACHINE_ADJUSTMENT: 'Parada não planejada', TOOLING: 'Ferramental', QUALITY: 'Qualidade', OTHER: 'Outro' };
 
-function materialOf(materialId: string) {
-  return sourceDerivedMaterials.find((item) => item.id === materialId)!;
-}
-
-function ContextDialog({ snapshot, events, currentTime, onClose }: { snapshot: RequirementSnapshot; events: readonly ProductionEvent[]; currentTime: string; onClose: () => void }) {
+function ContextDialog({ snapshot, events, material, currentTime, onClose }: { snapshot: RequirementSnapshot; events: readonly ProductionEvent[]; material: Material; currentTime: string; onClose: () => void }) {
   const close = useRef<HTMLButtonElement>(null);
   useEffect(() => { close.current?.focus(); const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [onClose]);
-  const material = materialOf(snapshot.lot.materialId);
-  const traceability = monitoringTraceabilityByLotId[snapshot.lot.id];
+  const traceability = sourceDerivedTraceabilityByLotId[snapshot.lot.id];
   const resourceRole = componentResourceMappingByCode[material.code];
   const relevantEvents = events.filter((event) => event.lotId === snapshot.lot.id);
   return createPortal(<div className={styles.modalLayer}><button className={styles.backdrop} aria-label="Fechar contexto" onClick={onClose} /><section role="dialog" aria-modal="true" aria-labelledby="monitoring-context-title" className={styles.modal}>
@@ -57,25 +51,50 @@ function ContextDialog({ snapshot, events, currentTime, onClose }: { snapshot: R
 }
 
 export function ProductionMonitoringPage() {
-  const currentTime = useApplicationScenarioTime(monitoringBusinessDate);
+  const definition = useScenarioStore(selectProductionScheduling);
+  const scenario = useScenarioStore(selectScenarioDefinition);
+  const executionsByLot = useScenarioStore(selectProductionExecutions);
+  const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
   const [openLotId, setOpenLotId] = useState<string | null>(null);
-  const snapshots = useMemo(() => buildRequirementSnapshots(monitoringLots, monitoringExecutionsByLotId, currentTime, monitoringDowntimeMinutesByLotId), [currentTime]);
+
+  const events = useMemo(() => eventsForScenario(scenario?.id), [scenario?.id]);
+  // Only counts downtime that happened DURING an already-started run — an Event that precedes actualStart
+  // delayed the start itself, which actualStart already reflects; adding it again here would double-count it.
+  const downtimeMinutesByLotId = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const event of events) {
+      const actualStart = executionsByLot[event.lotId]?.actualStart;
+      if (actualStart && Date.parse(event.startedAt) < Date.parse(actualStart)) continue;
+      map[event.lotId] = (map[event.lotId] ?? 0) + eventDurationMinutes(event, currentTime);
+    }
+    return map;
+  }, [events, executionsByLot, currentTime]);
+
+  const lots = definition?.lots ?? [];
+  const materialOf = (materialId: string) => definition!.materials.find((item) => item.id === materialId)!;
+  const businessDate = currentTime.slice(0, 10);
+  const rangeStart = `${businessDate}T00:00:00-03:00`;
+  const rangeFinish = `${businessDate}T23:59:59-03:00`;
+
+  const snapshots = useMemo(() => definition ? buildRequirementSnapshots(lots, executionsByLot, currentTime, downtimeMinutesByLotId) : [], [definition, lots, executionsByLot, currentTime, downtimeMinutesByLotId]);
   const totals = useMemo(() => summarizeDay(snapshots), [snapshots]);
   const plannedUntilNow = snapshots.filter((snapshot) => snapshot.status !== 'SCHEDULED').reduce((sum, snapshot) => sum + snapshot.lot.quantity, 0);
   const runningCount = snapshots.filter((snapshot) => snapshot.status === 'RUNNING' || snapshot.status === 'DELAYED').length;
-  const feed = useMemo(() => eventsNewestFirst(monitoringEvents), []);
+  const feed = useMemo(() => eventsNewestFirst(events), [events]);
   const currentPosition = timelinePosition(currentTime, rangeStart, rangeFinish);
   const openSnapshot = openLotId ? snapshots.find((snapshot) => snapshot.lot.id === openLotId) : undefined;
   const endOfDayStatus = totals.atRiskLotIds.length === 0 ? 'NO RITMO' : totals.atRiskLotIds.length <= 2 ? 'ATENÇÃO' : 'RISCO DE NÃO CUMPRIMENTO';
-  const dc03Delayed = snapshots.find((snapshot) => snapshot.status === 'DELAYED');
+  const firstDelayed = snapshots.find((snapshot) => snapshot.status === 'DELAYED');
 
-  return <OperationalWorkspace perspective="MONITORING" sidebarContent={<div className={styles.sidebar}><strong>Acompanhamento</strong><IconTip icon="◷" label="Data de referência" value={`${monitoringBusinessDate.slice(8, 10)}/${monitoringBusinessDate.slice(5, 7)}`} tip={`Data de referência · ${monitoringBusinessDate}`} /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Dados de execução" tip="Fatos de execução demonstrativos · requerem validação de negócio" /></div>}>
+  if (!definition) return <p>Preparando Acompanhamento demonstrativo…</p>;
+
+  return <OperationalWorkspace perspective="MONITORING" sidebarContent={<div className={styles.sidebar}><strong>Acompanhamento</strong><IconTip icon="◷" label="Data de referência" value={`${businessDate.slice(8, 10)}/${businessDate.slice(5, 7)}`} tip={`Data de referência · ${businessDate}`} /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Dados de execução" tip="Fatos de execução demonstrativos · requerem validação de negócio" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
         <div>
           <span>Capacidade 06 · Núcleo + Essencial</span>
           <h1>O que está acontecendo em relação ao plano?</h1>
-          <p className={styles.dateContext}>{monitoringBusinessDate.split('-').reverse().join('/')} · Dados simulados até {formatTime(currentTime)} · Futuro projetado</p>
+          <p className={styles.dateContext}>{businessDate.split('-').reverse().join('/')} · Dados simulados até {formatTime(currentTime)} · Futuro projetado</p>
         </div>
         <aside><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} tip="Horário de referência do cenário · passado, agora e futuro" className={styles.currentTimeTip} /></aside>
       </header>
@@ -115,7 +134,7 @@ export function ProductionMonitoringPage() {
                       <button className={styles.actual} data-status={snapshot.status} title={`${materialOf(snapshot.lot.materialId).code} · ${statusLabel[snapshot.status]} · ${snapshot.execution.producedQuantity}/${snapshot.lot.quantity}`} style={{ left: `${timelinePosition(snapshot.execution.actualStart!, rangeStart, rangeFinish)}%`, width: `${timelineWidth(snapshot.execution.actualStart!, actualFinish, rangeStart, rangeFinish)}%` }} onClick={() => setOpenLotId(snapshot.lot.id)}>{materialOf(snapshot.lot.materialId).code} · {snapshot.execution.producedQuantity}/{snapshot.lot.quantity}</button>
                       {snapshot.projectedFinish && snapshot.status !== 'COMPLETED' ? <span className={styles.projected} style={{ left: `${timelinePosition(actualFinish, rangeStart, rangeFinish)}%`, width: `${timelineWidth(actualFinish, snapshot.projectedFinish, rangeStart, rangeFinish)}%` }} /> : null}
                     </span>;
-                  })}{monitoringEvents.filter((event) => event.resourceId === resourceId).map((event) => <button key={event.eventId} className={styles.eventBlock} aria-label={`Evento na ${resourceId}: ${eventTypeLabel[event.eventType]}`} style={{ left: `${timelinePosition(event.startedAt, rangeStart, rangeFinish)}%`, width: `${timelineWidth(event.startedAt, event.endedAt ?? currentTime, rangeStart, rangeFinish)}%` }} onClick={() => setOpenLotId(event.lotId)}>Evento</button>)}</div>
+                  })}{events.filter((event) => event.resourceId === resourceId).map((event) => <button key={event.eventId} className={styles.eventBlock} aria-label={`Evento na ${resourceId}: ${eventTypeLabel[event.eventType]}`} style={{ left: `${timelinePosition(event.startedAt, rangeStart, rangeFinish)}%`, width: `${timelineWidth(event.startedAt, event.endedAt ?? currentTime, rangeStart, rangeFinish)}%` }} onClick={() => setOpenLotId(event.lotId)}>Evento</button>)}</div>
                 </div>
               </section>;
             })}
@@ -124,7 +143,7 @@ export function ProductionMonitoringPage() {
       </section>
 
       <section className={styles.narrative} aria-label="Leitura executiva do dia">
-        <p>Hoje tínhamos <b>{totals.plannedQuantity.toLocaleString('pt-BR')}</b> peças programadas em {monitoringLots.length} requirements reais. Até {formatTime(currentTime)} já concluímos <b>{totals.actualQuantity.toLocaleString('pt-BR')}</b>. Neste momento <b>{runningCount}</b> máquina(s) estão produzindo{dc03Delayed ? <> — a <b>{dc03Delayed.lot.scheduledResourceId}</b> sofreu uma parada não planejada de {monitoringDowntimeMinutesByLotId[dc03Delayed.lot.id] ?? 0} minutos e está com atraso projetado de {dc03Delayed.varianceMinutes} min</> : null}. <b>{totals.delayedOrNotStartedCount}</b> requirement(s) precisam de atenção — {totals.atRiskLotIds.length} em risco de não cumprir o horário planejado. Mantidas as condições atuais, a projeção de fechamento é <b>{totals.projectedFinalQuantity.toLocaleString('pt-BR')}</b> peças.</p>
+        <p>Hoje tínhamos <b>{totals.plannedQuantity.toLocaleString('pt-BR')}</b> peças programadas em {lots.length} requirements reais. Até {formatTime(currentTime)} já concluímos <b>{totals.actualQuantity.toLocaleString('pt-BR')}</b>. Neste momento <b>{runningCount}</b> máquina(s) estão produzindo{firstDelayed ? <> — a <b>{firstDelayed.lot.scheduledResourceId}</b> sofreu uma parada não planejada de {downtimeMinutesByLotId[firstDelayed.lot.id] ?? 0} minutos e está com atraso projetado de {firstDelayed.varianceMinutes} min</> : null}. <b>{totals.delayedOrNotStartedCount}</b> requirement(s) precisam de atenção — {totals.atRiskLotIds.length} em risco de não cumprir o horário planejado. Mantidas as condições atuais, a projeção de fechamento é <b>{totals.projectedFinalQuantity.toLocaleString('pt-BR')}</b> peças.</p>
       </section>
 
       <section className={styles.endOfDay} aria-label="Projeção de fechamento do dia" data-status={endOfDayStatus}>
@@ -140,10 +159,10 @@ export function ProductionMonitoringPage() {
         <p>Cálculo determinístico: Planejado − Realizado − Em execução = Restante ({totals.plannedQuantity.toLocaleString('pt-BR')} − {totals.actualQuantity.toLocaleString('pt-BR')} − {totals.runningQuantity.toLocaleString('pt-BR')} = {totals.remainingQuantity.toLocaleString('pt-BR')}). Projeção assume que os requirements em risco iniciam nos próximos minutos; nenhuma máquina é reprogramada ou reatribuída automaticamente.</p>
       </section>
 
-      <section className={styles.feed} aria-labelledby="feed-title"><header><div><h2 id="feed-title">Registro de Eventos</h2><p>Mais recente primeiro · fatos operacionais demonstrativos</p></div><span>ATIVO / ENCERRADO</span></header><div>{feed.map((event) => <button key={event.eventId} data-status={event.status} onClick={() => setOpenLotId(event.lotId)}><time>{formatTime(event.startedAt)}</time><strong>{event.resourceId}</strong><span>{materialOf(monitoringLots.find((lot) => lot.id === event.lotId)!.materialId).code}</span><b>{eventTypeLabel[event.eventType]}</b><em>{event.status === 'ACTIVE' ? `ATIVO · ${eventDurationMinutes(event, currentTime)} min` : `${eventDurationMinutes(event, currentTime)} min · ENCERRADO`}</em></button>)}</div></section>
+      <section className={styles.feed} aria-labelledby="feed-title"><header><div><h2 id="feed-title">Registro de Eventos</h2><p>Mais recente primeiro · fatos operacionais demonstrativos</p></div><span>ATIVO / ENCERRADO</span></header><div>{feed.map((event) => <button key={event.eventId} data-status={event.status} onClick={() => setOpenLotId(event.lotId)}><time>{formatTime(event.startedAt)}</time><strong>{event.resourceId}</strong><span>{materialOf(lots.find((lot) => lot.id === event.lotId)!.materialId).code}</span><b>{eventTypeLabel[event.eventType]}</b><em>{event.status === 'ACTIVE' ? `ATIVO · ${eventDurationMinutes(event, currentTime)} min` : `${eventDurationMinutes(event, currentTime)} min · ENCERRADO`}</em></button>)}</div></section>
 
       <details className={styles.disclosure}><summary>Como esses fatos preparam o OEE? <span>Ver detalhes</span></summary><div className={styles.oeeChain}><strong>Fatos de execução + Eventos + Tempo</strong><span>→ Tempo de Produção Planejado / Tempo em Operação / Tempo Parado</span><strong>Produzido (Quantidade Total)</strong><span>→ Quantidade Boa permanece desconhecida até haver dado de qualidade governado</span><strong>OEE</strong><span>não calculado nesta capacidade</span></div></details>
     </div>
-    {openSnapshot ? <ContextDialog snapshot={openSnapshot} events={monitoringEvents} currentTime={currentTime} onClose={() => setOpenLotId(null)} /> : null}
+    {openSnapshot ? <ContextDialog snapshot={openSnapshot} events={events} material={materialOf(openSnapshot.lot.materialId)} currentTime={currentTime} onClose={() => setOpenLotId(null)} /> : null}
   </OperationalWorkspace>;
 }

@@ -21,7 +21,8 @@ export function scenarioStorageKey(scenarioId: string): string {
   return `hikari:demo:${scenarioId}:v1`;
 }
 export const SCENARIO_STORAGE_KEY = scenarioStorageKey('fundicao-dc');
-const SCENARIO_SCHEMA_VERSION = 1;
+/** Bumped for the 2026-07-10/09:15 canonical dataset rewrite (lot-sd-401..421 -> lot-sd-501..523) — any persisted decisions from the previous lot-id range must fall back to the fixture baseline instead of crashing on a now-nonexistent lotId. */
+const SCENARIO_SCHEMA_VERSION = 2;
 
 interface PersistedScenarioDecisions {
   schemaVersion: number;
@@ -152,7 +153,10 @@ const baseline = (definition: ScenarioDefinition | null, revision: number): Scen
     activeWf001ScenarioId: 'SCN-WF001-01',
     resetRevision: revision,
     journeyContext: null,
-    productionReleases: persisted?.productionReleases ?? Object.fromEntries(executionSeed.map((execution) => [execution.lotId, { lotId: execution.lotId, productionOrderId: execution.productionOrderId, resourceId: execution.resourceId, scheduleVersionId: execution.scheduleVersionId, readiness: 'READY', status: 'RELEASED', reason: 'Liberação demonstrativa anterior ao estado inicial da execução.', releasedAt: execution.actualStart ?? '2025-05-15T17:00:00-03:00', releasedBy: 'Supervisor da Fundição · demonstrativo', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }])),
+    // Cada requirement do dataset canônico já tem seu próprio apontamento de execução (Section 14) — pré-liberar os
+    // ainda NOT_STARTED apagaria a decisão de Liberação demonstrativa (Capability 04) que essas telas existem para
+    // exercitar. O cenário legado mantém o comportamento anterior (todo apontamento pré-liberado).
+    productionReleases: persisted?.productionReleases ?? Object.fromEntries((definition?.id === 'fundicao-dc' ? executionSeed.filter((execution) => execution.status !== 'NOT_STARTED') : executionSeed).map((execution) => [execution.lotId, { lotId: execution.lotId, productionOrderId: execution.productionOrderId, resourceId: execution.resourceId, scheduleVersionId: execution.scheduleVersionId, readiness: 'READY', status: 'RELEASED', reason: 'Liberação demonstrativa anterior ao estado inicial da execução.', releasedAt: execution.actualStart ?? '2025-05-15T17:00:00-03:00', releasedBy: 'Supervisor da Fundição · demonstrativo', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }])),
     productionExecutions: persisted?.productionExecutions ?? Object.fromEntries(executionSeed.map((record) => [record.lotId, record])),
     organizationsByLotId: persisted?.organizationsByLotId ?? {},
     preparationConfirmedByLotId: persisted?.preparationConfirmedByLotId ?? {},

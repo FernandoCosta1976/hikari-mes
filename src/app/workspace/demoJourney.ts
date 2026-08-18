@@ -11,12 +11,12 @@ export interface DemoJourneyStep {
  * registra o seu aqui em vez de um id fixo hardcoded no journey.
  */
 const journeyLotIdByScenario: Readonly<Record<string, string>> = {
-  'fundicao-dc': 'lot-sd-401',
+  'fundicao-dc': 'lot-sd-501',
   'fundicao-dc-legacy': 'lot-251',
 };
 const defaultJourneyLotId = journeyLotIdByScenario['fundicao-dc'];
 const preparationLotIdByScenario: Readonly<Record<string, string>> = {
-  'fundicao-dc': 'lot-sd-407',
+  'fundicao-dc': 'lot-sd-502',
   'fundicao-dc-legacy': 'lot-252',
 };
 

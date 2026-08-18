@@ -37,12 +37,12 @@ describe('Canonical Fundição DC baseline (Section 19.5–19.13)', () => {
   });
 
   it('7. Primary/Reserve on a scheduled Lot come from the source resource master, not an invented assignment', () => {
-    const lot407 = sourceDerivedLots.find((lot) => lot.id === 'lot-sd-407')!;
-    const material = sourceDerivedMaterials.find((item) => item.id === lot407.materialId)!;
+    const lot502 = sourceDerivedLots.find((lot) => lot.id === 'lot-sd-502')!;
+    const material = sourceDerivedMaterials.find((item) => item.id === lot502.materialId)!;
     const mapping = componentResourceMappingByCode[material.code];
     expect(mapping.primaryResource).toBe('DC01');
     expect(mapping.reserveResources).toEqual(['DC03']);
-    expect(lot407.scheduledResourceId).toBe(mapping.primaryResource);
+    expect(lot502.scheduledResourceId).toBe(mapping.primaryResource);
   });
 
   it('11. Plano and Preparação consume the exact same canonical Lot set', () => {
@@ -53,7 +53,7 @@ describe('Canonical Fundição DC baseline (Section 19.5–19.13)', () => {
 
   it('12. Business Date filters the canonical dataset to exactly the scheduled Fundição DC requirements', () => {
     const businessDate = fundicaoDcSourceDerivedScenario.productionScheduling.schedules[0].businessDate;
-    expect(businessDate).toBe('2026-07-09');
+    expect(businessDate).toBe('2026-07-10');
     const dcRequirementsOnDate = foundryComponentRequirements.filter((requirement) => requirement.sourceBusinessDate === businessDate && requirement.productiveArea === 'FOUNDRY_DC');
     expect(dcRequirementsOnDate).toHaveLength(sourceDerivedLots.length);
   });

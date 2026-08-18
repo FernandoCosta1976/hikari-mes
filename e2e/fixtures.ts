@@ -1,12 +1,10 @@
-import { test as base, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
-export const FIXED_CLOCK_ISO = '2025-05-15T17:23:00-03:00';
+// No global clock override here: each Scenario now owns its own deterministic clock via
+// `currentScenarioTime` (see src/app/clock/applicationClock.ts) — a blanket override would
+// win over every Scenario's own time (including the canonical 2026-07-10 · 09:15 one) and
+// silently show the wrong clock. Before any Scenario has loaded, `useApplicationScenarioTime`'s
+// own DETERMINISTIC_SCENARIO_TIME fallback already provides the same
+// '2025-05-15T17:23:00-03:00' default that the legacy Scenario's own `currentScenarioTime` uses.
 
-export const test = base.extend({
-  page: async ({ page }, use) => {
-    await page.addInitScript((iso) => { (window as unknown as { __HIKARI_CLOCK_FIXED_AT__?: string }).__HIKARI_CLOCK_FIXED_AT__ = iso; }, FIXED_CLOCK_ISO);
-    await use(page);
-  },
-});
-
-export { expect };
+export { test, expect };

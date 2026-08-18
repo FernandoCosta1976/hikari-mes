@@ -4,6 +4,7 @@ import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcShiftOeeSummaries } from '../../demo/adapters/oeeSummaryAdapter';
 import { computeFundicaoDcQualitySummary, computeFundicaoDcShiftQualitySummaries, type FundicaoDcQualityRow } from '../../demo/adapters/qualitySummaryAdapter';
+import { idealCycleTimeSecondsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
 import { selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import { isValidQualityConfirmation, qualityRate, type QualityLossReason } from '../../domain/production-quality/models';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
@@ -58,17 +59,20 @@ export function ProductionQualityPage() {
   const executionsByLot = useScenarioStore(selectProductionExecutions);
   const [openRow, setOpenRow] = useState<Row | null>(null);
   const currentTime = useLiveScenarioTime(scenario?.currentScenarioTime);
+  const qualityConfirmations = qualityConfirmationsForScenario(scenario?.id);
+  const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   if (!definition || !scenario) return <p>Preparando qualidade demonstrativa…</p>;
+  const businessDate = currentTime.slice(0, 10);
 
-  const day = computeFundicaoDcQualitySummary(definition, executionsByLot, currentTime);
-  const shifts = computeFundicaoDcShiftQualitySummaries(definition, executionsByLot, currentTime);
-  const oeeShifts = computeFundicaoDcShiftOeeSummaries(definition, executionsByLot, currentTime);
+  const day = computeFundicaoDcQualitySummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
+  const shifts = computeFundicaoDcShiftQualitySummaries(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
+  const oeeShifts = computeFundicaoDcShiftOeeSummaries(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId);
   const currentShift = shifts.find((shift) => shift.status === 'IN_PROGRESS') ?? shifts[shifts.length - 1];
   const currentShiftPerformance = oeeShifts.find((shift) => shift.shiftId === currentShift.shiftId)?.areaPerformance ?? null;
   const completedShifts = shifts.filter((shift) => shift.status === 'COMPLETED');
   const invariantsHold = day.rows.every((row) => !row.confirmation || isValidQualityConfirmation(row.confirmation));
 
-  return <OperationalWorkspace perspective="QUALITY" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Qualidade &amp; Desempenho</strong><IconTip icon="◷" label="Data de referência" value="15/05" tip="Data de referência · 15/05/2025" /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Confirmações demonstrativas" tip={`Confirmações demonstrativas · requer validação de negócio${!invariantsHold ? ' · INVARIANTE VIOLADA' : ''}`} /></div>}>
+  return <OperationalWorkspace perspective="QUALITY" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Qualidade &amp; Desempenho</strong><IconTip icon="◷" label="Data de referência" value={`${businessDate.slice(8, 10)}/${businessDate.slice(5, 7)}`} tip={`Data de referência · ${businessDate}`} /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Confirmações demonstrativas" tip={`Confirmações demonstrativas · requer validação de negócio${!invariantsHold ? ' · INVARIANTE VIOLADA' : ''}`} /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
         <div><span>Capacidade 08 · Núcleo + Essencial</span><h1>Quanto produzimos e quanto foi bom?</h1></div>
