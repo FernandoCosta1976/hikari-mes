@@ -4,10 +4,10 @@ import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { withBase } from '../../app/routing/basePath';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcOeeSummary, computeFundicaoDcShiftOeeSummaries, type FundicaoDcOeeRow } from '../../demo/adapters/oeeSummaryAdapter';
-import { eventsForScenario, idealCycleTimeSecondsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectProductionConfirmations, selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { idealCycleTimeSecondsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
+import { selectAllProductionEvents, selectProductionConfirmations, selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { OeeDimension } from '../../domain/oee/calculations';
-import type { ProductionEvent } from '../../domain/production-monitoring/models';
+import { eventTypeLabel, type ProductionEvent } from '../../domain/production-monitoring/models';
 import type { QualityConfirmation } from '../../domain/production-quality/models';
 import type { FoundryResourceId } from '../../domain/resource/models';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
@@ -21,7 +21,6 @@ const dimensionIcon: Record<OeeDimension, string> = { AVAILABILITY: '⏱', PERFO
 
 const dimensionLabel: Record<OeeDimension, string> = { AVAILABILITY: 'Disponibilidade', PERFORMANCE: 'Desempenho', QUALITY: 'Qualidade' };
 const lossReasonLabel: Record<string, string> = { SCRAP: 'Sucateamento', PROCESS_DEFECT: 'Defeito de processo', DIMENSIONAL: 'Desvio dimensional', SURFACE: 'Defeito superficial', OTHER: 'Outro' };
-const eventTypeLabel: Record<string, string> = { MATERIAL: 'Falta de material', MACHINE_ADJUSTMENT: 'Ajuste de máquina', TOOLING: 'Ferramental', QUALITY: 'Qualidade', OTHER: 'Evento' };
 const pct = (value: number | null) => value === null ? 'N/A' : `${Math.round(value * 100)}%`;
 
 type Row = FundicaoDcOeeRow;
@@ -94,15 +93,15 @@ export function OeePage() {
   const [focus, setFocus] = useState<Focus | null>(null);
   const sessionClock = useScenarioStore(selectSessionClock);
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
-  const events = eventsForScenario(scenario?.id);
+  const events = useScenarioStore(selectAllProductionEvents);
   const qualityConfirmations = qualityConfirmationsForScenario(scenario?.id);
   const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   if (!definition || !scenario) return <p>Preparando OEE demonstrativo…</p>;
   const businessDate = currentTime.slice(0, 10);
   const productionConfirmations = Object.values(productionConfirmationsByLot).flat();
 
-  const day = computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations);
-  const shifts = computeFundicaoDcShiftOeeSummaries(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations);
+  const day = computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations, events);
+  const shifts = computeFundicaoDcShiftOeeSummaries(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations, events);
   const currentShift = shifts.find((shift) => shift.status === 'IN_PROGRESS') ?? shifts[shifts.length - 1];
   const completedShifts = shifts.filter((shift) => shift.status === 'COMPLETED');
   const { rows, mainImpact: dayMainImpact } = day;

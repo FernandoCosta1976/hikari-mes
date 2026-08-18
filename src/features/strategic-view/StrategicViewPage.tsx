@@ -7,11 +7,12 @@ import { computeFundicaoDcOeeSummary } from '../../demo/adapters/oeeSummaryAdapt
 import { computeFundicaoDcQualitySummary } from '../../demo/adapters/qualitySummaryAdapter';
 import { buildOperationalStatusByLotId } from '../../demo/adapters/operationalStatusResolution';
 import { downstreamHealthForScenario, idealCycleTimeSecondsForScenario, moldsForScenario, qualityConfirmationsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectAllProductionEvents, selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DownstreamAreaStatus } from '../../domain/downstream/models';
 import { mostCriticalMold } from '../../domain/mold/models';
 import { assessLotExecutionHealth, byLotHealthAttention, lotHealthIcon, lotHealthLabel, type LotHealthProjection, type LotHealthStatus } from '../../domain/production-execution/lotHealth';
 import { currentExecutionForResource } from '../../domain/production-execution/models';
+import { eventTypeLabel, unplannedDowntimeMinutes } from '../../domain/production-monitoring/models';
 import { deriveResourceStatusEntries, summarizeOperationalSnapshot } from '../../domain/production-status/models';
 import { FOUNDRY_RESOURCE_IDS, type FoundryResourceId } from '../../domain/resource/models';
 import type { Lot } from '../../domain/production-scheduling/models';
@@ -60,6 +61,7 @@ export function StrategicViewPage() {
   const preparationConfirmedByLotId = useScenarioStore(selectPreparationConfirmedByLotId);
   const organizationsByLotId = useScenarioStore(selectOrganizationsByLotId);
   const activeScheduleVersionId = useScenarioStore((state) => state.activeScheduleVersionId);
+  const events = useScenarioStore(selectAllProductionEvents);
   const sessionClock = useScenarioStore(selectSessionClock);
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
   const qualityConfirmations = qualityConfirmationsForScenario(scenario?.id);
@@ -70,7 +72,7 @@ export function StrategicViewPage() {
   const businessDate = currentTime.slice(0, 10);
   const productionConfirmations = Object.values(productionConfirmationsByLot).flat();
 
-  const oeeDay = computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations);
+  const oeeDay = computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations, events);
   const adherenceDay = computeFundicaoDcAdherenceSummary(definition, executionsByLot, currentTime);
   const adherenceShifts = computeFundicaoDcShiftAdherenceSummaries(definition, executionsByLot, currentTime);
   const currentShift = adherenceShifts.find((shift) => shift.status === 'IN_PROGRESS') ?? adherenceShifts[adherenceShifts.length - 1];
@@ -118,6 +120,17 @@ export function StrategicViewPage() {
     .map(([resourceId, { health, lot }]) => ({ resourceId, health, lot }));
 
   const oeeRow = (resourceId: string) => oeeDay.rows.find((row) => row.resourceId === resourceId)!;
+
+  /**
+   * Capability 08 — Section 23: Resources with downtime, tempo perdido and
+   * o principal evento, derived from the SAME Production Events every other
+   * screen reads — never an independently computed number.
+   */
+  const downtimeMinutesByResource = Object.fromEntries(oeeDay.rows.map((row) => [row.resourceId, unplannedDowntimeMinutes(events, row.lot.id, currentTime)]));
+  const resourcesWithDowntime = Object.entries(downtimeMinutesByResource).filter(([, minutes]) => minutes > 0);
+  const totalDowntimeMinutes = resourcesWithDowntime.reduce((sum, [, minutes]) => sum + minutes, 0);
+  const activeEvent = events.find((event) => event.status === 'ACTIVE');
+  const activeEventResourceId = activeEvent ? oeeDay.rows.find((row) => row.lot.id === activeEvent.lotId)?.resourceId : undefined;
 
   const statusReason = status === 'RISCO'
     ? `${healthCounts.LATE_NOT_STARTED + healthCounts.BEHIND_PLAN} máquina(s) atrasada(s) ou abaixo do plano`
@@ -180,6 +193,7 @@ export function StrategicViewPage() {
       <section className={styles.machines} aria-labelledby="machines-title">
         <div className={styles.machinesHead}><h2 id="machines-title">Situação das Máquinas</h2><StackedBar segments={(Object.entries(healthCounts) as [LotHealthStatus, number][]).filter(([, count]) => count > 0).map(([statusKey, count]) => ({ value: count, tone: statusKey === 'BEHIND_PLAN' || statusKey === 'LATE_NOT_STARTED' || statusKey === 'AT_RISK' ? 'attention' : statusKey === 'ON_TRACK' || statusKey === 'COMPLETED' ? 'positive' : 'neutral', label: `${lotHealthIcon[statusKey]} ${lotHealthLabel[statusKey]}: ${count}` }))} className={styles.machinesSummaryBar} /></div>
         <p className={styles.operationalStatusSummary} data-testid="strategic-operational-summary">Situação operacional (demonstrativo): {operationalCounts.running} em execução · {operationalCounts.paused} pausados · {operationalCounts.late} atrasados · {operationalCounts.completed} concluídos · {operationalCounts.atRisk} em risco</p>
+        <p className={styles.operationalStatusSummary} data-testid="strategic-downtime-summary">Paradas (demonstrativo): {resourcesWithDowntime.length} máquina(s) com tempo perdido · {totalDowntimeMinutes} min no requirement atual{activeEvent && activeEventResourceId ? ` · Evento ativo: ${eventTypeLabel[activeEvent.eventType]} em ${activeEventResourceId}` : ''}</p>
         <div className={styles.machineGrid}>{FOUNDRY_RESOURCE_IDS.map((resourceId) => { const { health } = healthByResource[resourceId]; const row = oeeRow(resourceId); return <a key={resourceId} className={styles.machineTile} href={withBase(scenarioPath('/production-execution'))}>
           <strong>{resourceId}</strong>
           <LotHealthIndicator health={health} compact />

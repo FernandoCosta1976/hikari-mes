@@ -4,6 +4,7 @@ import { fundicaoDcProductionExecutionFixture } from '../../demo/fixtures/fundic
 import { fundicaoDcQualityConfirmationsFixture } from '../../demo/fixtures/fundicaoDcQualityConfirmations';
 import { fundicaoDcScenario } from '../../demo/scenarios/fundicaoDcScenario';
 import { assessPerformanceFoundation, isValidQualityConfirmation, knownRunTimeMinutes, mainLosses, qualityRate, qualitySummary } from './models';
+import type { ProductionEvent } from '../production-monitoring/models';
 
 const currentTime = fundicaoDcScenario.currentScenarioTime;
 const executionByLot = Object.fromEntries(fundicaoDcProductionExecutionFixture.map((execution) => [execution.lotId, execution]));
@@ -47,6 +48,31 @@ describe('knownRunTimeMinutes', () => {
   });
   it('returns null before a Lot has started (DC05)', () => {
     expect(knownRunTimeMinutes(executionByLot['lot-271'], currentTime)).toBeNull();
+  });
+
+  describe('Capability 08 — Section 17/18: with `events` supplied, Run Time subtracts governed Unplanned Downtime, never every execution pause blindly', () => {
+    const execution = { ...executionByLot['lot-265'], lotId: 'lot-265', actualStart: '2025-05-15T15:00:00-03:00', actualFinish: undefined, pauses: [] };
+    const now = '2025-05-15T16:00:00-03:00'; // 60 min elapsed window
+
+    const event = (overrides: Partial<ProductionEvent>): ProductionEvent => ({ eventId: 'e1', resourceId: execution.resourceId, lotId: 'lot-265', eventType: 'EQUIPMENT_FAILURE', startedAt: '2025-05-15T15:10:00-03:00', endedAt: '2025-05-15T15:20:00-03:00', status: 'CLOSED', dataOrigin: 'USER_SIMULATION', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED', ...overrides });
+
+    it('an Unplanned event (e.g. Falha de equipamento) reduces Run Time', () => {
+      expect(knownRunTimeMinutes(execution, now, [event({ eventType: 'EQUIPMENT_FAILURE' })])).toBe(50);
+    });
+
+    it('a Planned Stop (Setup/Pausa programada/Refeição) does NOT reduce Run Time', () => {
+      expect(knownRunTimeMinutes(execution, now, [event({ eventType: 'SETUP' })])).toBe(60);
+      expect(knownRunTimeMinutes(execution, now, [event({ eventType: 'SCHEDULED_BREAK' })])).toBe(60);
+      expect(knownRunTimeMinutes(execution, now, [event({ eventType: 'MEAL_BREAK' })])).toBe(60);
+    });
+
+    it('an Event for a different Requirement is never subtracted from this one', () => {
+      expect(knownRunTimeMinutes(execution, now, [event({ lotId: 'lot-other' })])).toBe(60);
+    });
+
+    it('omitting `events` entirely preserves the original pause-based behavior (backward compatible for Lot Health)', () => {
+      expect(knownRunTimeMinutes(executionByLot['lot-266'], currentTime)).toBe(77);
+    });
   });
 });
 

@@ -43,12 +43,12 @@ test('completes the governed cross-screen journey: Start → Pause → Resume �
   await expect(page.locator('[data-lot-id="lot-sd-509"]').first()).toHaveAttribute('data-status', 'RUNNING');
 
   await openContext(page, 'lot-sd-509');
-  await expect(dialog).toContainText('Pausar produção');
-  await dialog.getByRole('button', { name: 'Pausar produção' }).click();
-  await dialog.getByRole('button', { name: 'Parada operacional' }).click();
+  await expect(dialog).toContainText('Registrar parada');
+  await dialog.getByRole('button', { name: 'Registrar parada' }).click();
+  await dialog.getByRole('button', { name: 'Registrar parada' }).click();
   await expect(dialog).toContainText('Retomar produção');
   await dialog.getByRole('button', { name: 'Retomar produção' }).click();
-  await expect(dialog).toContainText('Pausar produção');
+  await expect(dialog).toContainText('Registrar parada');
   await dialog.getByRole('button', { name: 'Fechar contexto de acompanhamento' }).click();
 
   await page.getByRole('button', { name: 'Reiniciar cenário' }).click();
@@ -90,7 +90,7 @@ test('Complete becomes available once the confirmed Production total reaches Pla
   await expect(dialog.getByRole('button', { name: 'Finalizar execução' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Finalizar execução' }).click();
   await expect(dialog).toContainText('Quantidade executada100 peças');
-  await expect(dialog).not.toContainText('Pausar produção');
+  await expect(dialog).not.toContainText('Registrar parada');
 });
 
 test('a historical COMPLETED requirement is read-only — no execution action offered', async ({ page }) => {
@@ -99,7 +99,7 @@ test('a historical COMPLETED requirement is read-only — no execution action of
   const dialog = page.getByRole('dialog', { name: '5LX-E5421-X0' });
   await expect(dialog).toContainText('Quantidade executada50 peças');
   await expect(dialog.getByRole('button', { name: 'Iniciar produção' })).toHaveCount(0);
-  await expect(dialog.getByRole('button', { name: 'Pausar produção' })).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: 'Registrar parada' })).toHaveCount(0);
   await expect(dialog.getByRole('button', { name: 'Retomar produção' })).toHaveCount(0);
   await expect(dialog.getByRole('button', { name: 'Finalizar execução' })).toHaveCount(0);
 });
@@ -146,13 +146,13 @@ test('captures Capability 05 screenshots', async ({ page }) => {
   await expect(startDialog).toContainText('SituaçãoEm execução');
   await expect(page).toHaveScreenshot('CAP-05-0915-RUNNING-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 
-  await startDialog.getByRole('button', { name: 'Pausar produção' }).click();
-  await startDialog.getByRole('button', { name: 'Parada operacional' }).click();
+  await startDialog.getByRole('button', { name: 'Registrar parada' }).click();
+  await startDialog.getByRole('button', { name: 'Registrar parada' }).click();
   await expect(startDialog).toContainText('Retomar produção');
   await expect(page).toHaveScreenshot('CAP-05-0915-PAUSED-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 
   await startDialog.getByRole('button', { name: 'Retomar produção' }).click();
-  await expect(startDialog).toContainText('Pausar produção');
+  await expect(startDialog).toContainText('Registrar parada');
   await expect(page).toHaveScreenshot('CAP-05-0915-RESUMED-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 
   await startDialog.getByRole('button', { name: 'Fechar contexto de acompanhamento' }).click();
@@ -174,7 +174,7 @@ test('has no automatically detectable accessibility violations and no forbidden 
   await openContext(page, 'lot-sd-509');
   const dialog = page.getByRole('dialog', { name: '1ST-E5421-W0' });
   await dialog.getByRole('button', { name: 'Iniciar produção' }).click();
-  await dialog.getByRole('button', { name: 'Pausar produção' }).click();
+  await dialog.getByRole('button', { name: 'Registrar parada' }).click();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   const redUsages = await page.locator('body *').evaluateAll((elements) => {
     const forbidden = new Set(['rgb(255, 0, 0)', 'rgb(220, 38, 38)', 'rgb(239, 68, 68)']);

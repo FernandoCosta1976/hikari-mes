@@ -1,5 +1,5 @@
 export type ProductionExecutionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED';
-export type DemonstrativePauseReason = 'MATERIAL_SHORTAGE' | 'MACHINE_ADJUSTMENT' | 'TOOLING' | 'QUALITY' | 'OTHER';
+export type DemonstrativePauseReason = 'MATERIAL_SHORTAGE' | 'MACHINE_ADJUSTMENT' | 'TOOLING' | 'QUALITY' | 'OTHER' | 'EQUIPMENT_FAILURE';
 
 /**
  * Capability 05 granularity is the Production Requirement, the same

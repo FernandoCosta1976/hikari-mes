@@ -1,4 +1,5 @@
 import type { ExecutionPause, ProductionExecutionRecord } from '../production-execution/models';
+import { unplannedDowntimeMinutes, type ProductionEvent } from '../production-monitoring/models';
 
 export type QualityLossReason = 'SCRAP' | 'PROCESS_DEFECT' | 'DIMENSIONAL' | 'SURFACE' | 'OTHER';
 
@@ -47,11 +48,21 @@ function pauseMinutes(pauses: readonly ExecutionPause[], referenceEnd: string): 
   return pauses.reduce((total, pause) => total + Math.max(0, (Date.parse(pause.resumedAt ?? referenceEnd) - Date.parse(pause.pausedAt)) / 60_000), 0);
 }
 
-export function knownRunTimeMinutes(execution: ProductionExecutionRecord, currentTime: string): number | null {
+/**
+ * Run Time = elapsed window minus downtime. When `events` is supplied
+ * (Capability 08), downtime is the governed Unplanned Downtime derived
+ * exclusively from Production Events classified UNPLANNED_DOWNTIME for this
+ * Requirement (Section 9/17) — never every execution pause blindly, since a
+ * Planned Stop must not count against Availability. Omitting `events`
+ * preserves the original pause-based behavior for callers outside OEE
+ * (e.g. Lot Health), which this round does not redesign.
+ */
+export function knownRunTimeMinutes(execution: ProductionExecutionRecord, currentTime: string, events?: readonly ProductionEvent[]): number | null {
   if (!execution.actualStart) return null;
   const referenceEnd = execution.actualFinish ?? currentTime;
   const elapsed = (Date.parse(referenceEnd) - Date.parse(execution.actualStart)) / 60_000;
-  return Math.max(0, Math.round(elapsed - pauseMinutes(execution.pauses, referenceEnd)));
+  const downtimeMinutes = events ? unplannedDowntimeMinutes(events, execution.lotId, referenceEnd) : pauseMinutes(execution.pauses, referenceEnd);
+  return Math.max(0, Math.round(elapsed - downtimeMinutes));
 }
 
 export type PerformanceFoundationStatus = 'NOT_STARTED' | 'PREPARED' | 'BLOCKED';

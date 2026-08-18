@@ -7,6 +7,7 @@ import { selectConfirmedQuantityByLotId, selectProductionExecutions, selectProdu
 import { operationalFactOriginLabel, type OperationalFactOrigin } from '../../domain/automation/models';
 import { classifyMoldLife, moldForResource } from '../../domain/mold/models';
 import { canCompleteExecution, currentExecutionForResource, type DemonstrativePauseReason, type ProductionExecutionStatus } from '../../domain/production-execution/models';
+import { eventTypeLabel, pauseReasonToEventType } from '../../domain/production-monitoring/models';
 import { validateConfirmationIncrement } from '../../domain/production-confirmation/models';
 import { assessLotExecutionHealth } from '../../domain/production-execution/lotHealth';
 import { reportsForLot } from '../../domain/production-execution/productionReport';
@@ -19,7 +20,7 @@ import { formatTime } from '../production-scheduling/productionSchedulingViewMod
 import styles from './ProductionExecutionPage.module.css';
 
 const statusLabel: Record<ProductionExecutionStatus, string> = { NOT_STARTED: 'Aguardando início', IN_PROGRESS: 'Em produção', PAUSED: 'Pausada', COMPLETED: 'Concluída' };
-const reasonLabel: Record<DemonstrativePauseReason, string> = { MATERIAL_SHORTAGE: 'Falta de material', MACHINE_ADJUSTMENT: 'Ajuste de máquina', TOOLING: 'Ferramental', QUALITY: 'Qualidade', OTHER: 'Outro' };
+const reasonLabel: Record<DemonstrativePauseReason, string> = { MATERIAL_SHORTAGE: eventTypeLabel[pauseReasonToEventType('MATERIAL_SHORTAGE')], MACHINE_ADJUSTMENT: eventTypeLabel.MACHINE_ADJUSTMENT, TOOLING: eventTypeLabel.TOOLING, QUALITY: eventTypeLabel.QUALITY, OTHER: eventTypeLabel.OTHER, EQUIPMENT_FAILURE: eventTypeLabel.EQUIPMENT_FAILURE };
 const moldStatusLabel = { NORMAL: 'Normal', ATTENTION: 'Atenção', MAINTENANCE_RECOMMENDED: 'Manutenção recomendada' } as const;
 const originIcon: Record<OperationalFactOrigin, string> = { AUTOMATION: '⚙', OPERATOR: '✎', MES: '▤', EXTERNAL_SYSTEM: '↔' };
 

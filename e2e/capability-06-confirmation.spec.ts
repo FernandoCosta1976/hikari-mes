@@ -70,8 +70,8 @@ test('Registrar produção requires the Requirement to be RUNNING — a NOT_STAR
   await openContext(page, 'lot-sd-512'); // real, RUNNING at baseline
   const dialog = page.getByRole('dialog', { name: '1ST-E5111-W0' });
   await expect(dialog.getByRole('button', { name: 'Registrar produção' })).toBeVisible();
-  await dialog.getByRole('button', { name: 'Pausar produção' }).click();
-  await dialog.getByRole('button', { name: 'Parada operacional' }).click();
+  await dialog.getByRole('button', { name: 'Registrar parada' }).click();
+  await dialog.getByRole('button', { name: 'Registrar parada' }).click();
   await expect(dialog.getByRole('button', { name: 'Retomar produção' })).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Registrar produção' })).toHaveCount(0);
 });

@@ -4,11 +4,11 @@ import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSummaries, rankedExceptions, type FundicaoDcAdherenceRow } from '../../demo/adapters/adherenceSummaryAdapter';
 import { buildOperationalStatusByLotId } from '../../demo/adapters/operationalStatusResolution';
-import { eventsForScenario, idealCycleTimeSecondsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { idealCycleTimeSecondsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
+import { selectAllProductionEvents, selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DeviationClassification } from '../../domain/production-adherence/models';
 import { assessLotExecutionHealth } from '../../domain/production-execution/lotHealth';
-import { eventDurationMinutes, type ProductionEvent, type ProductionEventType } from '../../domain/production-monitoring/models';
+import { eventDurationMinutes, eventTypeLabel, type ProductionEvent } from '../../domain/production-monitoring/models';
 import { adherenceQualifierLabel, operationalStatusLabel, type ProductionOperationalStatus } from '../../domain/production-status/models';
 import { timelinePosition, timelineWidth } from '../../domain/production-scheduling/temporalMath';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
@@ -23,7 +23,7 @@ import styles from './ProductionAdherencePage.module.css';
 const classificationLabel: Record<DeviationClassification, string> = { ON_PLAN: 'Conforme plano', EARLY: 'Início antecipado', LATE: 'Atraso', STOPPED: 'Parado', AT_RISK: 'Risco de atraso' };
 const classificationIcon: Record<DeviationClassification, string> = { ON_PLAN: '✓', STOPPED: '⚠', LATE: '◷', EARLY: '↗', AT_RISK: '?' };
 const classificationTone: Record<DeviationClassification, 'positive' | 'attention' | 'neutral'> = { ON_PLAN: 'positive', STOPPED: 'attention', LATE: 'attention', AT_RISK: 'attention', EARLY: 'neutral' };
-const eventLabel: Record<ProductionEventType, string> = { MATERIAL: 'Falta de material', MACHINE_ADJUSTMENT: 'Ajuste de máquina', TOOLING: 'Ferramental', QUALITY: 'Qualidade', OTHER: 'Outro' };
+const eventLabel = eventTypeLabel;
 const shiftStatusLabel = { COMPLETED: 'CONCLUÍDO', IN_PROGRESS: 'EM ANDAMENTO', UPCOMING: 'AINDA NÃO INICIADO' } as const;
 
 function AdherenceDialog({ row, operationalStatus, events, idealCycleTimeSecondsByMaterialId, confirmedQuantityByLotId, currentTime, onClose }: { row: FundicaoDcAdherenceRow; operationalStatus?: ProductionOperationalStatus; events: readonly ProductionEvent[]; idealCycleTimeSecondsByMaterialId: Readonly<Record<string, number>>; confirmedQuantityByLotId: Readonly<Record<string, number>>; currentTime: string; onClose: () => void }) {
@@ -63,7 +63,7 @@ export function ProductionAdherencePage() {
   const [openRow, setOpenRow] = useState<FundicaoDcAdherenceRow | null>(null);
   const sessionClock = useScenarioStore(selectSessionClock);
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
-  const events = eventsForScenario(scenario?.id);
+  const events = useScenarioStore(selectAllProductionEvents);
   const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   if (!definition || !scenario) return <p>Preparando aderência demonstrativa…</p>;
   const businessDate = currentTime.slice(0, 10);

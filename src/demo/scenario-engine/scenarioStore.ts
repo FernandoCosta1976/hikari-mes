@@ -6,12 +6,14 @@ import type { ScenarioDefinition } from '../../domain/scenario/ScenarioDefinitio
 import { assessDemonstrativeRelease, releaseDemonstratively, revokeRelease, type ProductionReleaseRecord, type RevocationReason } from '../../domain/production-release/models';
 import { canCompleteExecution, completeExecution, pauseExecution, resumeExecution, startExecution, type DemonstrativePauseReason, type ProductionExecutionRecord } from '../../domain/production-execution/models';
 import { accumulatedProducedQuantity, buildProductionConfirmation, confirmedQuantityByLot, groupConfirmationsByRequirement, validateConfirmationIncrement, type ConfirmationRejection, type ProductionConfirmation } from '../../domain/production-confirmation/models';
+import { closeEvent, groupEventsByLot, openEvent, pauseReasonToEventType, type ProductionEvent } from '../../domain/production-monitoring/models';
 import { resolveDemonstrativeRelease } from '../adapters/releaseResolution';
 import { demonstrativeOperatorForResource } from '../fixtures/demonstrativeOperators';
 import { fundicaoDcProductionConfirmationsFixture } from '../fixtures/fundicaoDcProductionConfirmations';
 import { fundicaoDcProductionExecutionFixture } from '../fixtures/fundicaoDcProductionExecution';
 import { fundicaoDcSourceDerivedProductionConfirmationsFixture } from '../fixtures/fundicaoDcSourceDerivedProductionConfirmations';
 import { fundicaoDcSourceDerivedProductionExecutionFixture } from '../fixtures/fundicaoDcSourceDerivedProductionExecution';
+import { eventsForScenario } from './scenarioFixtures';
 import { sourceDerivedTraceabilityByLotId } from '../scenarios/fundicaoDcSourceDerivedScenario';
 
 /**
@@ -26,6 +28,15 @@ const SESSION_CLOCK_STEP_MINUTES = 15;
 function advanceClock(iso: string, minutes: number): string {
   return new Date(Date.parse(iso) + minutes * 60_000).toISOString();
 }
+/**
+ * Defensive-only fallback (Section 31 audit — zero wall-clock dependence):
+ * every action below already reads `state.definition?.currentScenarioTime`
+ * first, which is always set once a Scenario has loaded — this constant is
+ * unreachable in practice, but pins the type to a fixed demonstrative
+ * instant instead of `new Date()` so no code path can ever read the real
+ * wall clock, even before initialization.
+ */
+const UNINITIALIZED_SCENARIO_FALLBACK_TIME = '2026-07-10T09:15:00-03:00';
 
 /**
  * Persists only decision FACTS made during the demonstration (Preparação,
@@ -39,14 +50,15 @@ export function scenarioStorageKey(scenarioId: string): string {
   return `hikari:demo:${scenarioId}:v1`;
 }
 export const SCENARIO_STORAGE_KEY = scenarioStorageKey('fundicao-dc');
-/** Bumped for the 2026-07-10/09:15 operational reference dataset rewrite (lot-sd-401..421 -> lot-sd-501..523) — any persisted decisions from the previous lot-id range must fall back to the fixture baseline instead of crashing on a now-nonexistent lotId. */
-const SCENARIO_SCHEMA_VERSION = 2;
+/** Bumped for Capability 08's productionEvents slice — any persisted decisions from before it must fall back to the fixture baseline instead of missing the new field. */
+const SCENARIO_SCHEMA_VERSION = 3;
 
 interface PersistedScenarioDecisions {
   schemaVersion: number;
   productionReleases: Record<string, ProductionReleaseRecord>;
   productionExecutions: Record<string, ProductionExecutionRecord>;
   productionConfirmations: Record<string, readonly ProductionConfirmation[]>;
+  productionEvents: Record<string, readonly ProductionEvent[]>;
   organizationsByLotId: Record<string, LotOrganization>;
   preparationConfirmedByLotId: Record<string, boolean>;
   postponedLotIds: Record<string, { targetLabel: string; postponedAt: string }>;
@@ -61,6 +73,7 @@ function isPersistedScenarioDecisions(value: unknown): value is PersistedScenari
     && typeof record.productionReleases === 'object' && record.productionReleases !== null
     && typeof record.productionExecutions === 'object' && record.productionExecutions !== null
     && typeof record.productionConfirmations === 'object' && record.productionConfirmations !== null
+    && typeof record.productionEvents === 'object' && record.productionEvents !== null
     && typeof record.organizationsByLotId === 'object' && record.organizationsByLotId !== null
     && typeof record.preparationConfirmedByLotId === 'object' && record.preparationConfirmedByLotId !== null
     && typeof record.postponedLotIds === 'object' && record.postponedLotIds !== null
@@ -95,6 +108,7 @@ function writePersistedScenarioDecisions(state: ScenarioState): void {
     productionReleases: state.productionReleases,
     productionExecutions: state.productionExecutions,
     productionConfirmations: state.productionConfirmations,
+    productionEvents: state.productionEvents,
     organizationsByLotId: state.organizationsByLotId,
     preparationConfirmedByLotId: state.preparationConfirmedByLotId,
     postponedLotIds: state.postponedLotIds,
@@ -129,6 +143,8 @@ interface ScenarioState {
   productionExecutions: Readonly<Record<string, ProductionExecutionRecord>>;
   /** Capability 06 — Production Confirmation, grouped by Requirement. Each Requirement's confirmed produced quantity is always SUM(this array), never a field on Execution. */
   productionConfirmations: Readonly<Record<string, readonly ProductionConfirmation[]>>;
+  /** Capability 08 — Production Events, grouped by Requirement. The ONLY Event source — seeded facts and live Registrar-parada/Retomar events live in the SAME array, never a separate store (Section 24). */
+  productionEvents: Readonly<Record<string, readonly ProductionEvent[]>>;
   organizationsByLotId: Readonly<Record<string, LotOrganization>>;
   preparationConfirmedByLotId: Readonly<Record<string, boolean>>;
   postponedLotIds: Readonly<Record<string, { targetLabel: string; postponedAt: string }>>;
@@ -152,7 +168,7 @@ interface ScenarioActions {
   confirmPreparation: (lotId: string) => void;
   postponeLot: (lotId: string, targetLabel: string) => void;
   startLotExecution: (lotId: string) => void;
-  pauseLotExecution: (lotId: string, reason: DemonstrativePauseReason) => void;
+  pauseLotExecution: (lotId: string, reason: DemonstrativePauseReason, observation?: string) => void;
   resumeLotExecution: (lotId: string) => void;
   confirmProduction: (lotId: string, increment: number) => void;
   completeLotExecution: (lotId: string) => void;
@@ -189,6 +205,7 @@ const baseline = (definition: ScenarioDefinition | null, revision: number): Scen
     productionReleases: persisted?.productionReleases ?? Object.fromEntries((definition?.id === 'fundicao-dc' ? executionSeed.filter((execution) => execution.status !== 'NOT_STARTED') : executionSeed).map((execution) => [execution.lotId, { lotId: execution.lotId, productionOrderId: execution.productionOrderId, resourceId: execution.resourceId, scheduleVersionId: execution.scheduleVersionId, readiness: 'READY', status: 'RELEASED', reason: 'Liberação demonstrativa anterior ao estado inicial da execução.', releasedAt: execution.actualStart ?? definition?.currentScenarioTime ?? '2025-05-15T17:00:00-03:00', releasedBy: 'Supervisor da Fundição · demonstrativo', demonstrative: true, ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' }])),
     productionExecutions: persisted?.productionExecutions ?? Object.fromEntries(executionSeed.map((record) => [record.lotId, record])),
     productionConfirmations: persisted?.productionConfirmations ?? groupConfirmationsByRequirement(confirmationSeedFor(definition)),
+    productionEvents: persisted?.productionEvents ?? groupEventsByLot(eventsForScenario(definition?.id)),
     organizationsByLotId: persisted?.organizationsByLotId ?? {},
     preparationConfirmedByLotId: persisted?.preparationConfirmedByLotId ?? {},
     postponedLotIds: persisted?.postponedLotIds ?? {},
@@ -218,25 +235,25 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
     const resourceId = state.organizationsByLotId[lotId]?.operationalResourceId ?? lot.scheduledResourceId;
     const effectiveReadinessStatus = state.preparationConfirmedByLotId[lotId] ? 'READY' : readiness.status;
     const current = state.productionReleases[lotId] ?? assessDemonstrativeRelease({ lotId, productionOrderId: lot.productionOrderId, resourceId, scheduleVersionId: state.activeScheduleVersionId, scheduledStart: lot.scheduledStart, scheduledFinish: lot.scheduledFinish, readiness: effectiveReadinessStatus });
-    const released = releaseDemonstratively(current, state.definition?.currentScenarioTime ?? new Date().toISOString());
+    const released = releaseDemonstratively(current, state.definition?.currentScenarioTime ?? UNINITIALIZED_SCENARIO_FALLBACK_TIME);
     return { productionReleases: { ...state.productionReleases, [lotId]: released }, scenarioModified: true };
   }),
   startLotExecution: (lotId) => set((state) => {
     const lot = state.productionScheduling?.lots.find((item) => item.id === lotId); if (!lot) return state;
     const resourceId = state.organizationsByLotId[lotId]?.operationalResourceId ?? lot.scheduledResourceId;
     const current = state.productionExecutions[lotId] ?? { lotId, productionOrderId: lot.productionOrderId, resourceId, scheduleVersionId: state.activeScheduleVersionId, plannedQuantity: lot.quantity, producedQuantity: 0, scheduledStart: lot.scheduledStart, status: 'NOT_STARTED', pauses: [], transitions: [], demonstrative: true, dataOrigin: 'DEMONSTRATIVE_EXECUTION', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' } as ProductionExecutionRecord;
-    const at = state.sessionClock ?? state.definition?.currentScenarioTime ?? new Date().toISOString();
+    const at = state.sessionClock ?? state.definition?.currentScenarioTime ?? UNINITIALIZED_SCENARIO_FALLBACK_TIME;
     const operator = demonstrativeOperatorForResource(resourceId);
     const next = startExecution(current, state.productionReleases[lotId]?.status === 'RELEASED', at, operator.displayName, operator.operatorId, lot.scheduledResourceId);
     if (next === current) return state;
     return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, scenarioModified: true };
   }),
-  adoptOrganization: (impact, organizedBy) => set((state) => ({ organizationsByLotId: { ...state.organizationsByLotId, [impact.lotId]: buildOrganization(impact, state.definition?.currentScenarioTime ?? new Date().toISOString(), organizedBy) }, scenarioModified: true })),
+  adoptOrganization: (impact, organizedBy) => set((state) => ({ organizationsByLotId: { ...state.organizationsByLotId, [impact.lotId]: buildOrganization(impact, state.definition?.currentScenarioTime ?? UNINITIALIZED_SCENARIO_FALLBACK_TIME, organizedBy) }, scenarioModified: true })),
   revokeLotRelease: (lotId, reason) => set((state) => {
     const lot = state.productionScheduling?.lots.find((item) => item.id === lotId);
     const readiness = state.definition?.productionReadiness.find((item) => item.lotId === lotId);
     if (!lot || !readiness) return state;
-    const currentTime = state.definition?.currentScenarioTime ?? new Date().toISOString();
+    const currentTime = state.definition?.currentScenarioTime ?? UNINITIALIZED_SCENARIO_FALLBACK_TIME;
     const resourceId = state.organizationsByLotId[lotId]?.operationalResourceId ?? lot.scheduledResourceId;
     const effectiveReadinessStatus = state.preparationConfirmedByLotId[lotId] ? 'READY' : readiness.status;
     const current = state.productionReleases[lotId] ?? resolveDemonstrativeRelease({ lotId, productionOrderId: lot.productionOrderId, resourceId, scheduleVersionId: state.activeScheduleVersionId, scheduledStart: lot.scheduledStart, scheduledFinish: lot.scheduledFinish, readiness: effectiveReadinessStatus }, lot.materialId, currentTime);
@@ -245,22 +262,33 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
     return { productionReleases: { ...state.productionReleases, [lotId]: revoked }, scenarioModified: true };
   }),
   confirmPreparation: (lotId) => set((state) => ({ preparationConfirmedByLotId: { ...state.preparationConfirmedByLotId, [lotId]: true }, scenarioModified: true })),
-  postponeLot: (lotId, targetLabel) => set((state) => ({ postponedLotIds: { ...state.postponedLotIds, [lotId]: { targetLabel, postponedAt: state.definition?.currentScenarioTime ?? new Date().toISOString() } }, scenarioModified: true })),
-  pauseLotExecution: (lotId, reason) => set((state) => {
+  postponeLot: (lotId, targetLabel) => set((state) => ({ postponedLotIds: { ...state.postponedLotIds, [lotId]: { targetLabel, postponedAt: state.definition?.currentScenarioTime ?? UNINITIALIZED_SCENARIO_FALLBACK_TIME } }, scenarioModified: true })),
+  /**
+   * Capability 08 — Registrar Parada (Section 5/6): Pause is now the SAME
+   * action that both stops Execution and opens the governed Production
+   * Event — a single Session Clock instant, a single Resource/Operator,
+   * never two divergent facts for the same moment.
+   */
+  pauseLotExecution: (lotId, reason, observation) => set((state) => {
     const existing = state.productionExecutions[lotId]; if (!existing) return state;
-    const at = advanceClock(state.sessionClock ?? state.definition?.currentScenarioTime ?? new Date().toISOString(), SESSION_CLOCK_STEP_MINUTES);
+    const at = advanceClock(state.sessionClock ?? state.definition?.currentScenarioTime ?? UNINITIALIZED_SCENARIO_FALLBACK_TIME, SESSION_CLOCK_STEP_MINUTES);
     const operator = demonstrativeOperatorForResource(existing.resourceId);
     const next = pauseExecution(existing, at, reason, operator.displayName);
     if (next === existing) return state;
-    return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, sessionClock: at, scenarioModified: true };
+    const event = openEvent({ eventId: `${lotId}-event-${(state.productionEvents[lotId] ?? []).length + 1}`, resourceId: existing.resourceId, lotId, executionId: lotId, eventType: pauseReasonToEventType(reason), startedAt: at, operator: operator.displayName, observation, dataOrigin: 'USER_SIMULATION' });
+    return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, productionEvents: { ...state.productionEvents, [lotId]: [...(state.productionEvents[lotId] ?? []), event] }, sessionClock: at, scenarioModified: true };
   }),
+  /** Retomar Produção (Section 7): closes the SAME open Event this Requirement's Pause created — never asks for the reason again. */
   resumeLotExecution: (lotId) => set((state) => {
     const existing = state.productionExecutions[lotId]; if (!existing) return state;
-    const at = advanceClock(state.sessionClock ?? state.definition?.currentScenarioTime ?? new Date().toISOString(), SESSION_CLOCK_STEP_MINUTES);
+    const at = advanceClock(state.sessionClock ?? state.definition?.currentScenarioTime ?? UNINITIALIZED_SCENARIO_FALLBACK_TIME, SESSION_CLOCK_STEP_MINUTES);
     const operator = demonstrativeOperatorForResource(existing.resourceId);
     const next = resumeExecution(existing, at, operator.displayName);
     if (next === existing) return state;
-    return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, sessionClock: at, scenarioModified: true };
+    const lotEvents = state.productionEvents[lotId] ?? [];
+    const activeIndex = lotEvents.findIndex((event) => event.status === 'ACTIVE');
+    const nextEvents = activeIndex === -1 ? lotEvents : lotEvents.map((event, index) => index === activeIndex ? closeEvent(event, at) : event);
+    return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, productionEvents: { ...state.productionEvents, [lotId]: nextEvents }, sessionClock: at, scenarioModified: true };
   }),
   /**
    * Capability 06 — Registrar Produção (Section 4/5/31): each confirmation
@@ -276,7 +304,7 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
     const accumulated = accumulatedProducedQuantity(existing);
     const rejection: ConfirmationRejection | null = validateConfirmationIncrement({ executionStatus: execution.status, increment, plannedQuantity: execution.plannedQuantity, accumulated });
     if (rejection) return state;
-    const at = state.sessionClock ?? state.definition?.currentScenarioTime ?? new Date().toISOString();
+    const at = state.sessionClock ?? state.definition?.currentScenarioTime ?? UNINITIALIZED_SCENARIO_FALLBACK_TIME;
     const material = state.productionScheduling?.materials.find((item) => item.id === lot.materialId);
     const traceability = sourceDerivedTraceabilityByLotId[lotId];
     const confirmation = buildProductionConfirmation({
@@ -297,7 +325,7 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
     if (!existing || !lot) return state;
     const confirmedProducedQuantity = accumulatedProducedQuantity(state.productionConfirmations[lotId] ?? []);
     if (!canCompleteExecution(existing, confirmedProducedQuantity)) return state;
-    const at = advanceClock(state.sessionClock ?? state.definition?.currentScenarioTime ?? new Date().toISOString(), SESSION_CLOCK_STEP_MINUTES);
+    const at = advanceClock(state.sessionClock ?? state.definition?.currentScenarioTime ?? UNINITIALIZED_SCENARIO_FALLBACK_TIME, SESSION_CLOCK_STEP_MINUTES);
     const operator = demonstrativeOperatorForResource(existing.resourceId);
     const next = completeExecution(existing, confirmedProducedQuantity, at, operator.displayName);
     if (next === existing) return state;
@@ -333,6 +361,22 @@ export const selectConfirmedQuantityByLotId = (state: ScenarioStore) => {
     cachedConfirmedQuantityByLotId = confirmedQuantityByLot(state.productionConfirmations);
   }
   return cachedConfirmedQuantityByLotId;
+};
+export const selectProductionEvents = (state: ScenarioStore) => state.productionEvents;
+/**
+ * Flattened Event list — the SAME source Acompanhamento, Aderência, OEE and
+ * Visão Estratégica all read (Section 24), memoized on the `productionEvents`
+ * reference itself (Zustand only ever replaces it via `set`, never mutates
+ * in place) so a fresh flattened array isn't produced on every render.
+ */
+let cachedEventsByLot: ScenarioState['productionEvents'] | null = null;
+let cachedFlatEvents: readonly ProductionEvent[] = [];
+export const selectAllProductionEvents = (state: ScenarioStore) => {
+  if (state.productionEvents !== cachedEventsByLot) {
+    cachedEventsByLot = state.productionEvents;
+    cachedFlatEvents = Object.values(state.productionEvents).flat();
+  }
+  return cachedFlatEvents;
 };
 export const selectOrganizationsByLotId = (state: ScenarioStore) => state.organizationsByLotId;
 export const selectProductionReleases = (state: ScenarioStore) => state.productionReleases;

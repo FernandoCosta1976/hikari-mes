@@ -47,8 +47,8 @@ test('MANDATORY E2E reactivity journey: WAITING_START → RUNNING → PAUSED →
 
   await openMonitoringContext(page, 'lot-sd-514');
   const dialog2 = page.getByRole('dialog', { name: '1S4-E5411-W0' });
-  await dialog2.getByRole('button', { name: 'Pausar produção' }).click();
-  await dialog2.getByRole('button', { name: 'Parada operacional' }).click();
+  await dialog2.getByRole('button', { name: 'Registrar parada' }).click();
+  await dialog2.getByRole('button', { name: 'Registrar parada' }).click();
   await expect(dialog2).toContainText('SituaçãoPausado');
 
   await dialog2.getByRole('button', { name: 'Retomar produção' }).click();
@@ -132,8 +132,8 @@ test('captures Capability 07 screenshots', async ({ page }) => {
 
   await openMonitoringContext(page, 'lot-sd-514');
   const dialog2 = page.getByRole('dialog', { name: '1S4-E5411-W0' });
-  await dialog2.getByRole('button', { name: 'Pausar produção' }).click();
-  await dialog2.getByRole('button', { name: 'Parada operacional' }).click();
+  await dialog2.getByRole('button', { name: 'Registrar parada' }).click();
+  await dialog2.getByRole('button', { name: 'Registrar parada' }).click();
   await expect(dialog2).toContainText('SituaçãoPausado');
   await expect(page).toHaveScreenshot('CAP-07-PAUSED-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 
