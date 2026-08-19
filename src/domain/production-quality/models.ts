@@ -140,9 +140,15 @@ function pauseMinutes(pauses: readonly ExecutionPause[], referenceEnd: string): 
  */
 export function knownRunTimeMinutes(execution: ProductionExecutionRecord, currentTime: string, events?: readonly ProductionEvent[]): number | null {
   if (!execution.actualStart) return null;
+  const actualStart = execution.actualStart;
   const referenceEnd = execution.actualFinish ?? currentTime;
-  const elapsed = (Date.parse(referenceEnd) - Date.parse(execution.actualStart)) / 60_000;
-  const downtimeMinutes = events ? unplannedDowntimeMinutes(events, execution.lotId, referenceEnd) : pauseMinutes(execution.pauses, referenceEnd);
+  const elapsed = (Date.parse(referenceEnd) - Date.parse(actualStart)) / 60_000;
+  // An Event that precedes the Requirement's own Actual Start already delayed the start
+  // itself, which actualStart already reflects — subtracting it again from the elapsed
+  // window (measured from actualStart onward) would double it. Same guard already governs
+  // the Operational Timeline's downtime accounting (operationalTimelineAdapter.ts).
+  const eventsAfterStart = events?.filter((event) => Date.parse(event.startedAt) >= Date.parse(actualStart));
+  const downtimeMinutes = events ? unplannedDowntimeMinutes(eventsAfterStart!, execution.lotId, referenceEnd) : pauseMinutes(execution.pauses, referenceEnd);
   return Math.max(0, Math.round(elapsed - downtimeMinutes));
 }
 

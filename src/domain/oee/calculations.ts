@@ -43,9 +43,18 @@ export function plannedProductionTimeMinutes(lot: Lot, execution: ProductionExec
   if (execution.status === 'NOT_STARTED') return null;
   const windowStart = execution.actualStart && Date.parse(execution.actualStart) < Date.parse(lot.scheduledStart) ? execution.actualStart : lot.scheduledStart;
   const windowFinishRaw = execution.actualFinish ?? currentTime;
-  const shift = shiftForTimeOfDay(shifts, windowStart);
-  const shiftFinish = shift ? `${windowStart.slice(0, 10)}T${shift.endTime}:00${windowStart.slice(19) || '+00:00'}` : windowFinishRaw;
-  const windowFinish = Date.parse(windowFinishRaw) < Date.parse(shiftFinish) ? windowFinishRaw : shiftFinish;
+  // Actual Finish is a concrete historical fact — never clamp it to the Shift that covered
+  // the window's START, or a Lot that legitimately ran across a Shift boundary (e.g. started
+  // in Turno 3, finished in Turno 1) gets an under-counted Planned Time vs. its own Run Time
+  // (CAP-08's knownRunTimeMinutes is never Shift-clamped). The Shift bound only makes sense
+  // for an still-open window (no Actual Finish yet), to stop Planned Time drifting past the
+  // Resource's current operating window while currentTime keeps advancing.
+  let windowFinish = windowFinishRaw;
+  if (!execution.actualFinish) {
+    const shift = shiftForTimeOfDay(shifts, windowStart);
+    const shiftFinish = shift ? `${windowStart.slice(0, 10)}T${shift.endTime}:00${windowStart.slice(19) || '+00:00'}` : windowFinishRaw;
+    windowFinish = Date.parse(windowFinishRaw) < Date.parse(shiftFinish) ? windowFinishRaw : shiftFinish;
+  }
   const elapsed = (Date.parse(windowFinish) - Date.parse(windowStart)) / 60_000;
   if (elapsed <= 0) return null;
   return Math.round(elapsed);

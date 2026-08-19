@@ -245,13 +245,24 @@ export function deriveResourceStatusEntries(
  * A Resource's perceived situation is always derived from its CURRENT
  * Requirement's Operational Status (Section 9) — never a registry/cadastral
  * field, never labeled DOWN/UP without real governed telemetry.
+ *
+ * SEM NECESSIDADE ATIVA is reserved for the one case where there is
+ * genuinely no pending Requirement for this Resource (`currentStatus ===
+ * null`, or the current one is already COMPLETED with nothing queued next).
+ * Any other pre-execution bucket (PLANNED, WAITING_PREPARATION,
+ * READY_FOR_RELEASE, WAITING_START) still has a real, pending Requirement —
+ * it has simply not started producing yet — and must report AGUARDANDO
+ * INÍCIO. A prior version of this function mapped every non-RUNNING/PAUSED/
+ * BLOCKED status straight to NO_ACTIVE_REQUIREMENT, which could report a
+ * late, not-yet-released Requirement as "no active need" — fixed here
+ * (Final Presentation Blocker Correction round, Blocker 1).
  */
 export function deriveResourceOperationalStatus(currentStatus: OperationalStatus | null): ResourceOperationalStatus {
+  if (currentStatus === null || currentStatus === 'COMPLETED') return 'NO_ACTIVE_REQUIREMENT';
   if (currentStatus === 'RUNNING') return 'PRODUCING';
   if (currentStatus === 'PAUSED') return 'PAUSED';
-  if (currentStatus === 'WAITING_START') return 'WAITING_START';
   if (currentStatus === 'BLOCKED') return 'ATTENTION';
-  return 'NO_ACTIVE_REQUIREMENT';
+  return 'WAITING_START'; // PLANNED, WAITING_PREPARATION, READY_FOR_RELEASE, WAITING_START
 }
 
 /**

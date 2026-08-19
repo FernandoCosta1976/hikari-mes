@@ -8,7 +8,7 @@
 | Reference Day | 10/07/2026 |
 | Initial Scenario Clock | 09:15 |
 | Shift | Turno 1 |
-| Commit | `f34952d` — "fix: unify machine operational state across executive views" |
+| Commit | `PENDING` — "fix: reconcile machine state and OEE availability for executive demo" |
 | Public URL | https://fernandocosta1976.github.io/hikari-mes/demo/fundicao-dc |
 
 This is the exact state validated end to end (unit + integration + Playwright,
@@ -18,7 +18,18 @@ consistency) and confirmed live on GitHub Pages immediately before this
 freeze was declared.
 
 Superseded prior baselines: `e1d5e79` (Capability 09), `85c2d28` (Unified
-Operational Timeline). Both stability fixes are folded into this freeze.
+Operational Timeline), `f34952d`/`3265ff2` (Unified Machine Operational
+State — superseded because DC03 and Availability both carried real defects,
+corrected below). All are folded into this freeze.
+
+**Post-freeze correction**: Product Review on the prior freeze found two
+defects — DC03 reporting "Sem necessidade ativa" for a real, late, pending
+Requirement, and Availability reporting 100% despite 33 min of known
+Unplanned Downtime. Both were genuine bugs in the governed domain formulas
+(`deriveResourceOperationalStatus`, `plannedProductionTimeMinutes`,
+`knownRunTimeMinutes`), not display issues — see
+`EXECUTIVE-DEMO-NUMBERS.md` for the full math trail. DC03 now reports
+"Aguardando início · Atrasado"; Availability now reports 96% (OEE 94%).
 
 ## Capabilities in scope at freeze
 

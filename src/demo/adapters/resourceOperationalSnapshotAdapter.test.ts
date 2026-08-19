@@ -57,11 +57,35 @@ describe('ResourceOperationalSnapshot — cross-screen machine signature (real r
     }
   });
 
-  test('Section 3/9 — DC01 (lot-sd-507, RUNNING) reports PRODUCING; a Resource with no active Requirement reports NO_ACTIVE_REQUIREMENT or WAITING_START, never a fabricated DOWN/UP', () => {
+  test('Section 3/9 — DC01 (lot-sd-507, RUNNING) reports PRODUCING; DC03 (lot-sd-514, READY_FOR_RELEASE, LATE) reports WAITING_START, never a fabricated DOWN/UP', () => {
     const snapshots = resourceOperationalSnapshotByResourceId(snapshotsFor());
     expect(snapshots.DC01.operationalState).toBe('PRODUCING');
     expect(snapshots.DC01.currentRequirementId).toBe('lot-sd-507');
-    expect(['NO_ACTIVE_REQUIREMENT', 'WAITING_START', 'PRODUCING', 'PAUSED', 'ATTENTION']).toContain(snapshots.DC03.operationalState);
+    // Blocker 1 fix: lot-sd-514 exists, is not COMPLETED, and is READY_FOR_RELEASE (not yet RELEASED) — it still has real pending work.
+    expect(snapshots.DC03.currentRequirementId).toBe('lot-sd-514');
+    expect(snapshots.DC03.operationalState).toBe('WAITING_START');
+    expect(snapshots.DC03.adherenceQualifier).toBe('LATE');
+  });
+
+  /**
+   * Final Presentation Blocker Correction round — Blocker 1's own literal
+   * regression rule, verified at the same level the executive report reads
+   * from: a Resource whose Current Requirement exists, is not COMPLETED and
+   * is LATE must never report NO_ACTIVE_REQUIREMENT.
+   */
+  test('REGRESSION (Blocker 1) — current requirement exists + not completed + LATE ⇒ resource state != NO_ACTIVE_REQUIREMENT', () => {
+    const snapshots = snapshotsFor();
+    const state = useScenarioStore.getState();
+    const executionsByLot = selectProductionExecutions(state);
+    for (const snapshot of snapshots) {
+      if (!snapshot.currentRequirementId) continue;
+      const execution = executionsByLot[snapshot.currentRequirementId];
+      const notCompleted = execution.status !== 'COMPLETED';
+      const isLate = snapshot.adherenceQualifier === 'LATE';
+      if (notCompleted && isLate) expect(snapshot.operationalState, snapshot.resourceId).not.toBe('NO_ACTIVE_REQUIREMENT');
+    }
+    // Sanity: this scenario actually exercises the guarded case (DC03) — an empty loop would make the assertion above vacuous.
+    expect(snapshots.some((s) => s.resourceId === 'DC03' && s.adherenceQualifier === 'LATE')).toBe(true);
   });
 
   test('Section 22 — Registrar Parada flips Operational State to PAUSED with the Event visible, Retomar flips it back to PRODUCING', () => {

@@ -167,14 +167,29 @@ describe('Capability 07 — Resource Operational Status (Section 9/37)', () => {
     expect(deriveResourceOperationalStatus('WAITING_START')).toBe('WAITING_START');
   });
 
-  it('no current requirement → SEM NECESSIDADE ATIVA', () => {
+  it('no current requirement at all → SEM NECESSIDADE ATIVA', () => {
     expect(deriveResourceOperationalStatus(null)).toBe('NO_ACTIVE_REQUIREMENT');
     expect(deriveResourceOperationalStatus('COMPLETED')).toBe('NO_ACTIVE_REQUIREMENT');
-    expect(deriveResourceOperationalStatus('PLANNED')).toBe('NO_ACTIVE_REQUIREMENT');
   });
 
   it('blocked requirement → ATENÇÃO', () => {
     expect(deriveResourceOperationalStatus('BLOCKED')).toBe('ATTENTION');
+  });
+
+  /**
+   * Final Presentation Blocker Correction round — Blocker 1. A Requirement
+   * that exists, is not yet COMPLETED, and has not started producing (any
+   * pre-execution bucket) still has real pending work — SEM NECESSIDADE
+   * ATIVA is prohibited for it, even when it is already LATE. Only a
+   * genuinely empty Resource (currentStatus === null) or one whose current
+   * Requirement is already COMPLETED with nothing queued may report it.
+   */
+  it('REGRESSION (Blocker 1): a pending, not-yet-started Requirement never reports SEM NECESSIDADE ATIVA, even when LATE — PLANNED/WAITING_PREPARATION/READY_FOR_RELEASE/WAITING_START all report AGUARDANDO INÍCIO', () => {
+    for (const status of ['PLANNED', 'WAITING_PREPARATION', 'READY_FOR_RELEASE', 'WAITING_START'] as const) {
+      const resourceStatus = deriveResourceOperationalStatus(status);
+      expect(resourceStatus, status).toBe('WAITING_START');
+      expect(resourceStatus, status).not.toBe('NO_ACTIVE_REQUIREMENT');
+    }
   });
 });
 
