@@ -8,7 +8,7 @@
 | Reference Day | 10/07/2026 |
 | Initial Scenario Clock | 09:15 |
 | Shift | Turno 1 |
-| Commit | `PENDING` — "fix: reconcile machine state and OEE availability for executive demo" |
+| Commit | `4fcb3fe` — "fix: reconcile machine state and OEE availability for executive demo" |
 | Public URL | https://fernandocosta1976.github.io/hikari-mes/demo/fundicao-dc |
 
 This is the exact state validated end to end (unit + integration + Playwright,
