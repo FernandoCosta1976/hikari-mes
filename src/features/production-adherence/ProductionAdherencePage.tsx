@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
-import { computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSummaries, rankedExceptions, type FundicaoDcAdherenceRow } from '../../demo/adapters/adherenceSummaryAdapter';
+import { buildRow, computeFundicaoDcAdherenceSummary, computeFundicaoDcShiftAdherenceSummaries, rankedExceptions, type FundicaoDcAdherenceRow } from '../../demo/adapters/adherenceSummaryAdapter';
 import { buildOperationalStatusByLotId } from '../../demo/adapters/operationalStatusResolution';
+import { computeOperationalTimeline } from '../../demo/adapters/operationalTimelineAdapter';
 import { idealCycleTimeSecondsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
 import { selectAllProductionEvents, selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { DeviationClassification } from '../../domain/production-adherence/models';
@@ -11,6 +12,7 @@ import { assessLotExecutionHealth } from '../../domain/production-execution/lotH
 import { eventDurationMinutes, eventTypeLabel, type ProductionEvent } from '../../domain/production-monitoring/models';
 import { adherenceQualifierLabel, operationalStatusLabel, type ProductionOperationalStatus } from '../../domain/production-status/models';
 import { timelinePosition, timelineWidth } from '../../domain/production-scheduling/temporalMath';
+import { FOUNDRY_RESOURCE_IDS } from '../../domain/resource/models';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Bar } from '../../shared/ui/Bar/Bar';
 import { Button } from '../../shared/ui/Button/Button';
@@ -85,6 +87,20 @@ export function ProductionAdherencePage() {
   const mainException = shiftExceptions[0];
   const dayException = rankedExceptions(day.rows)[0];
 
+  /**
+   * Unified Operational Timeline (Section 18/26/52 of the round brief) — the
+   * SAME Original/Current/Actual/Projected projection Acompanhamento reads,
+   * never a screen-local reconstruction. Every due Lot per Resource, not
+   * only the current one, so a Resource with several Requirements across
+   * the day shows its whole sequence here too.
+   */
+  const timeline = computeOperationalTimeline(definition, executionsByLot, currentTime, events);
+  const timelineByRequirementId = new Map(timeline.map((entry) => [entry.requirementId, entry]));
+  const dueLotsByResource = new Map(FOUNDRY_RESOURCE_IDS.map((resourceId) => [resourceId, definition.lots
+    .filter((lot) => lot.scheduledResourceId === resourceId && Date.parse(lot.scheduledStart) <= Date.parse(currentTime) && executionsByLot[lot.id])
+    .sort((a, b) => Date.parse(a.scheduledStart) - Date.parse(b.scheduledStart))
+    .map((lot) => buildRow(lot, executionsByLot[lot.id], resourceId, definition, currentTime))]));
+
   return <OperationalWorkspace perspective="ADHERENCE" sidebarContent={<div className={monitoringStyles.sidebar}><strong>Aderência</strong><IconTip icon="◷" label="Data de referência" value={`${businessDate.slice(8, 10)}/${businessDate.slice(5, 7)}`} tip={`Data de referência · ${businessDate}`} /><IconTip icon="⏱" label="Horário atual" value={formatTime(currentTime)} /><ScenarioResetControl /><IconTip icon="ⓘ" label="Classificação demonstrativa" tip="Classificação demonstrativa · requer validação de negócio" /></div>}>
     <div className={styles.page}>
       <header className={styles.hero}>
@@ -131,11 +147,11 @@ export function ProductionAdherencePage() {
           <div className={monitoringStyles.axisCorner}>Máquina</div>
           <div className={monitoringStyles.axis}>{[0, 3, 6, 9, 12, 15, 18, 21].map((hour) => <span key={hour} style={{ left: `${(hour / 24) * 100}%` }}>{String(hour).padStart(2, '0')}:00</span>)}</div>
           <div className={monitoringStyles.timeLine} style={{ left: `calc(8rem + (100% - 8rem) * ${currentPosition / 100})` }}><span>{formatTime(currentTime)}</span></div>
-          <div className={monitoringStyles.lanes}>{day.rows.map((row) => { const { resourceId, lot, execution, classification, deviationMinutes } = row; const producedQuantity = confirmedQuantityByLotId[lot.id] ?? 0; const actualFinish = execution.actualFinish ?? (execution.status === 'NOT_STARTED' ? execution.scheduledStart : currentTime); return <section className={monitoringStyles.lane} key={resourceId} data-state={execution.status}>
-            <button className={monitoringStyles.resource} onClick={() => setOpenRow(row)}><strong>{resourceId}</strong><span className={styles.badge} data-classification={classification}>{classificationLabel[classification]}</span><small>{producedQuantity}/{execution.plannedQuantity} · {Math.round(producedQuantity/execution.plannedQuantity*100)}%</small></button>
+          <div className={monitoringStyles.lanes}>{FOUNDRY_RESOURCE_IDS.map((resourceId) => { const resourceRows = dueLotsByResource.get(resourceId) ?? []; const dominant = resourceRows.find((row) => row.execution.status === 'IN_PROGRESS' || row.execution.status === 'PAUSED') ?? [...resourceRows].reverse()[0]; return <section className={monitoringStyles.lane} key={resourceId} data-state={dominant?.execution.status}>
+            <button className={monitoringStyles.resource} onClick={() => dominant && setOpenRow(dominant)}><strong>{resourceId}</strong>{dominant ? <span className={styles.badge} data-classification={dominant.classification}>{classificationLabel[dominant.classification]}</span> : null}<small>{resourceRows.length} requirement(s) hoje</small></button>
             <div className={monitoringStyles.tracks}>
-              <div><span>PLANEJADO</span><button className={monitoringStyles.scheduled} style={{ left: `${timelinePosition(lot.scheduledStart, rangeStart, rangeFinish)}%`, width: `${timelineWidth(lot.scheduledStart, lot.scheduledFinish, rangeStart, rangeFinish)}%` }} onClick={() => setOpenRow(row)}>Lote {lot.lotNumber}</button></div>
-              <div><span>REAL</span>{execution.status !== 'NOT_STARTED' ? <button className={monitoringStyles.actual} style={{ left: `${timelinePosition(execution.actualStart!, rangeStart, rangeFinish)}%`, width: `${timelineWidth(execution.actualStart!, actualFinish, rangeStart, rangeFinish)}%` }} onClick={() => setOpenRow(row)}>Lote {lot.lotNumber} · {deviationMinutes !== null ? `${deviationMinutes > 0 ? '+' : ''}${deviationMinutes} min` : classificationLabel[classification]}</button> : <span className={monitoringStyles.notStarted} style={{ left: `${timelinePosition(lot.scheduledStart, rangeStart, rangeFinish)}%` }}>Ainda não iniciado</span>}</div>
+              <div><span>PLANEJADO</span>{resourceRows.map((row) => { const entry = timelineByRequirementId.get(row.lot.id); const replanned = entry?.replanned ?? false; const title = replanned ? `Original ${formatTime(row.lot.scheduledStart)}–${formatTime(row.lot.scheduledFinish)} · Atualizado ${formatTime(entry!.currentStart)}–${formatTime(entry!.currentFinish)} · Impacto ${entry!.varianceMinutes > 0 ? '+' : ''}${entry!.varianceMinutes} min` : undefined; return <button key={row.lot.id} className={monitoringStyles.scheduled} data-replanned={replanned || undefined} title={title} style={{ left: `${timelinePosition(row.lot.scheduledStart, rangeStart, rangeFinish)}%`, width: `${timelineWidth(row.lot.scheduledStart, row.lot.scheduledFinish, rangeStart, rangeFinish)}%` }} onClick={() => setOpenRow(row)}>Lote {row.lot.lotNumber}{replanned ? <em>Atualizado</em> : null}</button>; })}</div>
+              <div><span>REAL</span>{resourceRows.map((row) => { const { lot, execution, classification, deviationMinutes } = row; const entry = timelineByRequirementId.get(lot.id); if (execution.status === 'NOT_STARTED') return <span key={lot.id} className={monitoringStyles.notStarted} style={{ left: `${timelinePosition(entry?.currentStart ?? lot.scheduledStart, rangeStart, rangeFinish)}%` }}>Ainda não iniciado</span>; const actualFinish = execution.actualFinish ?? (entry?.projectedFinish ?? currentTime); return <button key={lot.id} className={monitoringStyles.actual} style={{ left: `${timelinePosition(execution.actualStart!, rangeStart, rangeFinish)}%`, width: `${timelineWidth(execution.actualStart!, actualFinish, rangeStart, rangeFinish)}%` }} onClick={() => setOpenRow(row)}>Lote {lot.lotNumber} · {deviationMinutes !== null ? `${deviationMinutes > 0 ? '+' : ''}${deviationMinutes} min` : classificationLabel[classification]}</button>; })}</div>
             </div>
           </section>; })}</div>
         </div>

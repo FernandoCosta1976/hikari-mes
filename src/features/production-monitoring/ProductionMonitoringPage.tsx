@@ -253,7 +253,7 @@ export function ProductionMonitoringPage() {
   const rangeStart = `${businessDate}T00:00:00-03:00`;
   const rangeFinish = `${businessDate}T23:59:59-03:00`;
 
-  const snapshots = useMemo(() => definition ? buildRequirementSnapshots(lots, executionsByLot, confirmedQuantityByLotId, currentTime, downtimeMinutesByLotId) : [], [definition, lots, executionsByLot, confirmedQuantityByLotId, currentTime, downtimeMinutesByLotId]);
+  const snapshots = useMemo(() => definition ? buildRequirementSnapshots(lots, executionsByLot, confirmedQuantityByLotId, currentTime, downtimeMinutesByLotId, definition.shifts) : [], [definition, lots, executionsByLot, confirmedQuantityByLotId, currentTime, downtimeMinutesByLotId]);
   const totals = useMemo(() => summarizeDay(snapshots), [snapshots]);
   const plannedUntilNow = snapshots.filter((snapshot) => snapshot.status !== 'SCHEDULED').reduce((sum, snapshot) => sum + snapshot.lot.quantity, 0);
   const runningCount = snapshots.filter((snapshot) => snapshot.status === 'RUNNING' || snapshot.status === 'DELAYED').length;

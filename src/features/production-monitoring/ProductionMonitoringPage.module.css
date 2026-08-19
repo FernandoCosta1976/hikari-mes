@@ -69,3 +69,5 @@
 .operationalStatusBlock>small{display:block;margin-top:.5rem;color:#647089;font-size:.65rem}
 .operationalStatusBlock[data-operational-status=PAUSED]{border-left-color:#b56800}
 .operationalStatusBlock[data-operational-status=BLOCKED]{border-left-color:#8a4a00}
+.scheduled[data-replanned]{border-width:2px;border-style:dashed}
+.scheduled em{display:block;font-style:normal;font-size:.55rem;font-weight:800;color:#8a4a00;text-transform:uppercase}

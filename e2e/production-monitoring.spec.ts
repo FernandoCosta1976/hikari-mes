@@ -85,7 +85,7 @@ test('Unknown != 0 — DC03 has no appointment and the closing-of-day projection
   const endOfDay = page.getByRole('region', { name: 'Projeção de fechamento do dia' });
   await expect(endOfDay).toContainText('Planejado2.100');
   await expect(endOfDay).toContainText('Restante941');
-  await expect(endOfDay).toContainText('Requirements em risco4');
+  await expect(endOfDay).toContainText('Requirements em risco8'); // Timeline Unification round: Current Start no longer snaps back to Original inside tolerance when doing so would overlap a still-running predecessor — more Requirements now honestly carry the cascading risk instead of it being hidden
   await expect(endOfDay).toHaveAttribute('data-status', 'RISCO DE NÃO CUMPRIMENTO');
   await endOfDay.scrollIntoViewIfNeeded();
   await expect(page).toHaveScreenshot('ACOMPANHAMENTO-0915-END-OF-DAY-PROJECTION-CANDIDATE.png', { fullPage: true, animations: 'disabled' });

@@ -1,5 +1,6 @@
 import type { ProductionExecutionRecord } from '../production-execution/models';
-import type { Lot } from '../production-scheduling/models';
+import type { Lot, Shift } from '../production-scheduling/models';
+import { buildOperationalTimeline } from '../operational-timeline/models';
 
 /**
  * Acompanhamento-specific display status, derived from the existing
@@ -14,13 +15,8 @@ import type { Lot } from '../production-scheduling/models';
 export type RequirementStatus = 'COMPLETED' | 'RUNNING' | 'DELAYED' | 'NOT_STARTED' | 'SCHEDULED';
 export type ProjectionSignal = 'ON_TIME' | 'AT_RISK';
 
-export function requirementStatus(execution: ProductionExecutionRecord, lot: Lot, currentTime: string): RequirementStatus {
-  if (execution.status === 'COMPLETED') return 'COMPLETED';
-  if (execution.status === 'IN_PROGRESS' || execution.status === 'PAUSED') {
-    return Date.parse(currentTime) > Date.parse(lot.scheduledFinish) ? 'DELAYED' : 'RUNNING';
-  }
-  return Date.parse(currentTime) > Date.parse(lot.scheduledStart) ? 'NOT_STARTED' : 'SCHEDULED';
-}
+/** Re-exported from the Unified Operational Timeline (domain/operational-timeline) — this used to be a local duplicate. */
+export { timelineRequirementStatus as requirementStatus } from '../operational-timeline/models';
 
 /**
  * Projection is a dimension on top of the status, never a fourth state that
@@ -49,16 +45,13 @@ export interface RequirementSnapshot {
 }
 
 /**
- * Projection Engine v1 (Section 12) — deterministic, per Resource:
- * 1. the current (RUNNING/DELAYED) requirement's Projected Finish is its
- *    known actual pace (actualStart + nominal duration) plus any known
- *    downtime on that Resource during its run;
- * 2. the delta versus its own Scheduled Finish propagates forward to the
- *    remaining SCHEDULED requirements on the *same* Resource only, in
- *    Scheduled order — Setup and breaks already baked into the schedule are
- *    preserved as-is, nothing is reordered or reassigned to another DC.
- * NOT_STARTED requirements do not get a computed Projected Finish (no known
- * pace to project from) — they are simply flagged AT_RISK.
+ * A thin adapter over the Unified Operational Timeline
+ * (domain/operational-timeline/buildOperationalTimeline) — Acompanhamento's
+ * own historical shape (RequirementSnapshot), never a second cascade
+ * computation. `projectedFinish` keeps its original contract: set for
+ * RUNNING/DELAYED (known pace) and for a SCHEDULED Requirement only once it
+ * has genuinely been replanned — never a No-op restatement of its own
+ * Original Finish.
  */
 export function buildRequirementSnapshots(
   lots: readonly Lot[],
@@ -66,41 +59,23 @@ export function buildRequirementSnapshots(
   confirmedQuantityByLotId: Readonly<Record<string, number>>,
   currentTime: string,
   downtimeMinutesByLotId: Readonly<Record<string, number>> = {},
+  shifts: readonly Shift[] = [],
 ): readonly RequirementSnapshot[] {
-  const byResource = new Map<string, Lot[]>();
-  for (const lot of lots) {
-    const list = byResource.get(lot.scheduledResourceId) ?? [];
-    list.push(lot);
-    byResource.set(lot.scheduledResourceId, list);
-  }
-  const snapshots = new Map<string, RequirementSnapshot>();
-  for (const resourceLots of byResource.values()) {
-    const ordered = [...resourceLots].sort((a, b) => Date.parse(a.scheduledStart) - Date.parse(b.scheduledStart));
-    let carryDeltaMinutes = 0;
-    for (const lot of ordered) {
-      const execution = executionsByLotId[lot.id];
-      if (!execution) continue;
-      const status = requirementStatus(execution, lot, currentTime);
-      let projectedFinish: string | undefined;
-      if (status === 'RUNNING' || status === 'DELAYED') {
-        const nominalDurationMs = Date.parse(lot.scheduledFinish) - Date.parse(lot.scheduledStart);
-        const downtimeMs = (downtimeMinutesByLotId[lot.id] ?? 0) * 60_000;
-        const actualStartMs = Date.parse(execution.actualStart ?? lot.scheduledStart);
-        const projectedFinishMs = actualStartMs + nominalDurationMs + downtimeMs;
-        projectedFinish = new Date(projectedFinishMs).toISOString();
-        carryDeltaMinutes = Math.round((projectedFinishMs - Date.parse(lot.scheduledFinish)) / 60_000);
-      } else if (status === 'SCHEDULED' && carryDeltaMinutes > 0) {
-        projectedFinish = new Date(Date.parse(lot.scheduledFinish) + carryDeltaMinutes * 60_000).toISOString();
-      }
-      const projection = projectionSignal(status, projectedFinish, lot);
-      const varianceMinutes = execution.actualFinish
-        ? Math.round((Date.parse(execution.actualFinish) - Date.parse(lot.scheduledFinish)) / 60_000)
-        : projectedFinish ? Math.round((Date.parse(projectedFinish) - Date.parse(lot.scheduledFinish)) / 60_000) : undefined;
-      const producedQuantity = confirmedQuantityByLotId[lot.id] ?? 0;
-      snapshots.set(lot.id, { lot, execution, producedQuantity, status, projectedFinish, projection, varianceMinutes });
-    }
-  }
-  return lots.map((lot) => snapshots.get(lot.id)).filter((snapshot): snapshot is RequirementSnapshot => snapshot !== undefined);
+  const timeline = buildOperationalTimeline(lots, executionsByLotId, currentTime, shifts, downtimeMinutesByLotId);
+  const lotsById = new Map(lots.map((lot) => [lot.id, lot]));
+  return timeline.map((entry) => {
+    const lot = lotsById.get(entry.requirementId)!;
+    const execution = executionsByLotId[entry.requirementId];
+    const producedQuantity = confirmedQuantityByLotId[entry.requirementId] ?? 0;
+    const projectedFinish = entry.status === 'RUNNING' || entry.status === 'DELAYED' ? entry.projectedFinish
+      : entry.status === 'SCHEDULED' && entry.replanned ? entry.currentFinish
+      : undefined;
+    const projection = projectionSignal(entry.status, projectedFinish, lot);
+    const varianceMinutes = execution.actualFinish
+      ? Math.round((Date.parse(execution.actualFinish) - Date.parse(lot.scheduledFinish)) / 60_000)
+      : projectedFinish ? Math.round((Date.parse(projectedFinish) - Date.parse(lot.scheduledFinish)) / 60_000) : undefined;
+    return { lot, execution, producedQuantity, status: entry.status, projectedFinish, projection, varianceMinutes };
+  });
 }
 
 export interface DaySnapshotTotals {

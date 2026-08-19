@@ -30,7 +30,7 @@ export interface FundicaoDcShiftAdherenceSummary extends FundicaoDcAdherenceAggr
   rows: readonly FundicaoDcAdherenceRow[];
 }
 
-function buildRow(lot: Lot, execution: ProductionExecutionRecord, resourceId: FoundryResourceId, definition: ProductionSchedulingDefinition, currentTime: string): FundicaoDcAdherenceRow {
+export function buildRow(lot: Lot, execution: ProductionExecutionRecord, resourceId: FoundryResourceId, definition: ProductionSchedulingDefinition, currentTime: string): FundicaoDcAdherenceRow {
   const assessment = assessDeviation(execution, lot, currentTime);
   const impact = assessSequenceImpact(definition.lots, lot, assessment.classification);
   return { resourceId, lot, execution, classification: assessment.classification, deviationMinutes: assessment.startDeviationMinutes, impact };

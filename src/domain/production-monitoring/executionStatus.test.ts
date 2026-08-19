@@ -91,11 +91,11 @@ describe('property dataset at Scenario Clock 12:00 — full state space in one d
     expect(notStarted.projection).toBe('AT_RISK');
   });
 
-  it('DC01 propagates its delayed lot forward to the next SCHEDULED lot on the same Resource only', () => {
+  it('DC01 advances its next SCHEDULED lot using the Unified Operational Timeline\'s slack-aware cascade (Section 7 of the Timeline Unification round) — a huge gap (10:30 to 13:00) absorbs the +20min delay and lets the Requirement start early instead of inheriting a flat delta', () => {
     const next = snapshots.find((snapshot) => snapshot.lot.id === 'lot-t-propagated')!;
     expect(next.status).toBe('SCHEDULED');
-    expect(next.projectedFinish).toBe(new Date(Date.parse(at('14:20'))).toISOString());
-    expect(next.projection).toBe('AT_RISK'); // +20min inherited exceeds tolerance
+    expect(next.projectedFinish).toBe(new Date(Date.parse(at('11:50'))).toISOString()); // Current Plan starts as soon as DC01 frees up (10:50), not naively re-anchored to its own Original Start
+    expect(next.projection).toBe('ON_TIME'); // advanced, not delayed — never AT_RISK for finishing early
   });
 
   it('a Resource with no known delay keeps its next SCHEDULED lot ON_TIME', () => {
@@ -112,11 +112,10 @@ describe('property dataset at Scenario Clock 12:00 — full state space in one d
     expect(totals.remainingQuantity).toBe(420);
     expect(totals.atRiskLotIds).toContain('lot-t-delayed');
     expect(totals.atRiskLotIds).toContain('lot-t-not-started');
-    expect(totals.atRiskLotIds).toContain('lot-t-propagated');
   });
 
-  it('a healthy +2min variance does not register as at-risk — only meaningful delays do', () => {
+  it('a healthy +2min variance does not register as at-risk — only meaningful delays do, and an advanced (early) Requirement never does either', () => {
     const totals = summarizeDay(snapshots);
-    expect(totals.atRiskLotIds).toEqual(['lot-t-delayed', 'lot-t-propagated', 'lot-t-not-started']);
+    expect(totals.atRiskLotIds).toEqual(['lot-t-delayed', 'lot-t-not-started']);
   });
 });

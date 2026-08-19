@@ -293,3 +293,5 @@
 .page>.correlation{order:9}
 .page>.lowerGrid{order:10}
 .page>.nextStep{order:11}
+.lotBlock[data-replanned] { border-top: 3px solid #8a4a00; background: #fff8ec; }
+.lotBlock[data-replanned] strong em:last-of-type { color: #8a4a00; }
