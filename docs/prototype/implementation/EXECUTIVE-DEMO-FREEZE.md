@@ -8,13 +8,17 @@
 | Reference Day | 10/07/2026 |
 | Initial Scenario Clock | 09:15 |
 | Shift | Turno 1 |
-| Commit | `e1d5e79` — "feat: materialize production quality and loss confirmation" |
+| Commit | `f34952d` — "fix: unify machine operational state across executive views" |
 | Public URL | https://fernandocosta1976.github.io/hikari-mes/demo/fundicao-dc |
 
 This is the exact state validated end to end (unit + integration + Playwright,
 axe, keyboard, responsive 1440/1280/1024, terminology, clock consistency,
-cross-screen metric consistency) and confirmed live on GitHub Pages
-immediately before this freeze was declared.
+timeline consistency, machine-state consistency, cross-screen metric
+consistency) and confirmed live on GitHub Pages immediately before this
+freeze was declared.
+
+Superseded prior baselines: `e1d5e79` (Capability 09), `85c2d28` (Unified
+Operational Timeline). Both stability fixes are folded into this freeze.
 
 ## Capabilities in scope at freeze
 
@@ -25,6 +29,19 @@ consuming screens. Every screen reads governed, single-source facts
 (Production Confirmations, Production Events, Quality Confirmations,
 Operational Status) — no screen recomputes its own version of a shared
 number.
+
+**Operational Timeline: FROZEN** — Original Plan/Current Plan/Actual/Projected
+per Requirement per Resource, computed once (`domain/operational-timeline`)
+and consumed identically by Plano, Preparação, Acompanhamento and Aderência.
+
+**Machine Operational State: FROZEN** — one `ResourceOperationalSnapshot` per
+Resource (`demo/adapters/resourceOperationalSnapshotAdapter.ts`), consumed
+identically by Acompanhamento, Aderência, Qualidade & Desempenho, OEE and
+Visão Estratégica. OEE and Quality never determine it — they only annotate it.
+
+**Metrics: FROZEN** — Availability/Performance/Quality/OEE, Adherence, and
+Quality Rate all derive from the same governed fact chain documented in
+`EXECUTIVE-DEMO-NUMBERS.md`.
 
 ## Allowed changes after this freeze
 
@@ -69,6 +86,14 @@ the public URL as part of this freeze.
 - The bundled JS chunk exceeds Vite's 500kB warning threshold. Cosmetic
   build-tooling note, not a runtime defect — explicitly out of scope for
   this freeze (would require code-splitting, a non-essential refactor).
+- Visão Estratégica's machine grid additionally shows each Resource's **Lot
+  Health** (`assessLotExecutionHealth`, Capability 05) alongside the
+  Operational State/Adherence Qualifier pair every screen now shares. Lot
+  Health is an intentionally richer, quantity-aware risk assessment that
+  predates this freeze and was left untouched — it is not expected to
+  numerically agree with the Adherence Qualifier (e.g. a machine can be
+  "No prazo" by Adherence Qualifier while Lot Health flags it "Risco de
+  atraso" on projected quantity). Documented, not a defect.
 
 ---
 
