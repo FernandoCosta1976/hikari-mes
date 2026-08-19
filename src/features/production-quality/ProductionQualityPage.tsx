@@ -4,9 +4,11 @@ import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcShiftOeeSummaries } from '../../demo/adapters/oeeSummaryAdapter';
 import { computeFundicaoDcQualitySummary, computeFundicaoDcShiftQualitySummaries, type FundicaoDcQualityRow } from '../../demo/adapters/qualitySummaryAdapter';
+import { computeResourceOperationalSnapshots, resourceOperationalSnapshotByResourceId, type ResourceOperationalSnapshot } from '../../demo/adapters/resourceOperationalSnapshotAdapter';
 import { idealCycleTimeSecondsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectAllQualityConfirmations, selectProductionConfirmations, selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
-import { qualityRate, qualityReasonLabel, validateQualityIncrement, type QualityReasonCode } from '../../domain/production-quality/models';
+import { selectAllProductionEvents, selectAllQualityConfirmations, selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { groupQualityConfirmationsByRequirement, qualityRate, qualityReasonLabel, validateQualityIncrement, type QualityReasonCode } from '../../domain/production-quality/models';
+import { adherenceQualifierLabel } from '../../domain/production-status/models';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Bar, StackedBar } from '../../shared/ui/Bar/Bar';
 import { Button } from '../../shared/ui/Button/Button';
@@ -21,10 +23,20 @@ const reasonChoices = Object.entries(qualityReasonLabel) as [QualityReasonCode, 
 
 type Row = FundicaoDcQualityRow;
 
-function machineAttention(row: Row): { icon: string; tone: 'attention' | 'positive' | 'neutral'; note: string | null } {
-  if (row.producedQuantity === 0) return { icon: '○', tone: 'neutral', note: 'Aguardando produção' };
-  if (row.quality.reject > 0) return { icon: '⚠', tone: 'attention', note: `${row.quality.reject} rejeitadas` };
-  if (row.pending > 0) return { icon: '○', tone: 'neutral', note: `${row.pending} pendentes de classificação` };
+/**
+ * Section 8 of the round brief — Quality never determines the machine's
+ * Operational State (a Reject > 0 does not mean "parada", a Pending balance
+ * does not mean "sem produção"). Icon/tone come from the SAME
+ * ResourceOperationalSnapshot Acompanhamento/Aderência/Estratégica read;
+ * Quality facts only annotate it as a secondary note.
+ */
+function machineAttention(snapshot: ResourceOperationalSnapshot | undefined): { icon: string; tone: 'attention' | 'positive' | 'neutral'; note: string | null } {
+  if (!snapshot) return { icon: '○', tone: 'neutral', note: null };
+  if (snapshot.activeEventLabel) return { icon: '⚠', tone: 'attention', note: `${snapshot.activeEventLabel} ativo` };
+  if (snapshot.operationalState === 'PAUSED' || snapshot.operationalState === 'ATTENTION') return { icon: '⚠', tone: 'attention', note: snapshot.operationalStateLabel };
+  if (snapshot.operationalState === 'WAITING_START' || snapshot.operationalState === 'NO_ACTIVE_REQUIREMENT') return { icon: '○', tone: 'neutral', note: snapshot.operationalStateLabel };
+  if (snapshot.quality.reject > 0) return { icon: '⚠', tone: 'attention', note: `${snapshot.quality.reject} rejeitadas` };
+  if (snapshot.pending > 0) return { icon: '○', tone: 'neutral', note: `${snapshot.pending} pendentes de classificação` };
   return { icon: '✓', tone: 'positive', note: null };
 }
 
@@ -97,10 +109,24 @@ export function ProductionQualityPage() {
   const [openLotId, setOpenLotId] = useState<string | null>(null);
   const sessionClock = useScenarioStore(selectSessionClock);
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
+  const events = useScenarioStore(selectAllProductionEvents);
+  const releasesByLot = useScenarioStore(selectProductionReleases);
+  const readinessAssessments = useScenarioStore(selectProductionReadiness);
+  const preparationConfirmedByLotId = useScenarioStore(selectPreparationConfirmedByLotId);
+  const organizationsByLotId = useScenarioStore(selectOrganizationsByLotId);
+  const confirmedQuantityByLotId = useScenarioStore(selectConfirmedQuantityByLotId);
+  const activeScheduleVersionId = useScenarioStore((state) => state.activeScheduleVersionId);
   const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   if (!definition || !scenario) return <p>Preparando qualidade demonstrativa…</p>;
   const businessDate = currentTime.slice(0, 10);
   const productionConfirmations = Object.values(productionConfirmationsByLot).flat();
+
+  /** Section 1/15 — the SAME Resource Operational Snapshot Acompanhamento/Aderência/Estratégica read; Quality never invents its own machine status (Section 8). */
+  const operationalSnapshots = computeResourceOperationalSnapshots({
+    definition, executionsByLot, releasesByLot, readinessAssessments, preparationConfirmedByLotId, organizationsByLotId,
+    confirmedQuantityByLotId, activeScheduleVersionId, currentTime, events, qualityConfirmationsByLot: groupQualityConfirmationsByRequirement(qualityConfirmations),
+  });
+  const snapshotByResourceId = resourceOperationalSnapshotByResourceId(operationalSnapshots);
 
   const day = computeFundicaoDcQualitySummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations);
   const shifts = computeFundicaoDcShiftQualitySummaries(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations);
@@ -145,11 +171,12 @@ export function ProductionQualityPage() {
       <section className={styles.resources} aria-labelledby="resources-title">
         <header><h2 id="resources-title">Situação das Máquinas</h2><p>DC01–DC05 · Produzido/Boas/Rejeitadas/Pendente · acumulado do dia</p></header>
         <div className={styles.machines}>
-          {day.rows.map((row) => { const attention = machineAttention(row); const rate = row.classified > 0 ? qualityRate(row.quality.good, row.classified) : null; return <button key={row.resourceId} className={styles.machineRow} data-tone={attention.tone} onClick={() => setOpenLotId(row.lot.id)}>
+          {day.rows.map((row) => { const snapshot = snapshotByResourceId[row.resourceId]; const attention = machineAttention(snapshot); const rate = row.classified > 0 ? qualityRate(row.quality.good, row.classified) : null; return <button key={row.resourceId} className={styles.machineRow} data-tone={attention.tone} data-operational-state={snapshot?.operationalState} onClick={() => setOpenLotId(row.lot.id)}>
             <span className={styles.machineIcon} aria-hidden="true">{attention.icon}</span>
             <span className={styles.machineId}>{row.resourceId}</span>
             <span className={styles.machineStatus}><small>Lote {row.lot.lotNumber}</small><strong>{row.classified > 0 ? pct(rate) : 'Aguardando'}</strong></span>
             <span className={styles.machineApq}>{row.producedQuantity > 0 ? `${row.producedQuantity} produzidas · ${row.quality.good} boas` : 'Sem confirmação'}</span>
+            {snapshot ? <small className={styles.machineState}>{snapshot.operationalStateLabel}{snapshot.adherenceQualifier ? ` · ${adherenceQualifierLabel[snapshot.adherenceQualifier]}` : ''}</small> : null}
             {attention.note ? <em className={styles.machineNote}>{attention.note}</em> : null}
           </button>; })}
         </div>

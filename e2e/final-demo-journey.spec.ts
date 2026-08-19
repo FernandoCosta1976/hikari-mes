@@ -31,6 +31,7 @@ test('Final Demo Journey: Reset → Home → Plano → Avaliar Cenário → Prep
   await page.getByRole('link', { name: /Iniciar demonstração/ }).first().click();
   await expect(page.getByRole('heading', { name: 'O que precisamos produzir?' })).toBeVisible();
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
+  await expect(page).toHaveScreenshot('FINAL-DEMO-PLAN.png', { fullPage: true, animations: 'disabled' });
 
   // Avaliar Cenário — a discardable what-if, never applied to the real Plano
   await page.getByRole('button', { name: /Avaliar cenário/ }).click();
@@ -81,28 +82,42 @@ test('Final Demo Journey: Reset → Home → Plano → Avaliar Cenário → Prep
   await qualitySection.getByLabel(/Motivo da rejeição na/).selectOption('PROCESS_DEFECT');
   await qualitySection.getByRole('button', { name: 'Confirmar' }).click();
   await expect(qualitySection).toContainText('Classificado40');
+  // Section 32/33 — same machine, same instant: DC03 must read RUNNING right here in Acompanhamento before we leave this screen.
+  await expect(dialog).toContainText('SituaçãoEm execução');
   await dialog.getByRole('button', { name: 'Fechar contexto de acompanhamento' }).click();
+  await expect(page).toHaveScreenshot('FINAL-DEMO-MONITORING.png', { fullPage: true, animations: 'disabled' });
 
   await page.goto('/demo/fundicao-dc/production-execution');
   await expect(page.getByRole('heading', { name: 'O que está sendo executado agora?' })).toBeVisible();
 
-  // Aderência
+  // Aderência — Section 32/33: the SAME DC03, now RUNNING/Produzindo (never still "Atrasado para iniciar")
   await page.goto('/demo/fundicao-dc/production-adherence');
   await expect(page.getByRole('heading', { name: 'Estamos executando conforme o planejado?' })).toBeVisible();
+  const adherenceMachines = page.getByRole('region', { name: 'Situação das Máquinas' });
+  const dc03Adherence = adherenceMachines.getByRole('button', { name: /DC03/ });
+  await expect(dc03Adherence).toContainText('Em execução');
+  await expect(page).toHaveScreenshot('FINAL-DEMO-ADHERENCE.png', { fullPage: true, animations: 'disabled' });
 
-  // Qualidade & Desempenho
+  // Qualidade & Desempenho — the SAME machine operational state, sourced from the SAME ResourceOperationalSnapshot (Section 1/5)
   await page.goto('/demo/fundicao-dc/production-quality');
   await expect(page.getByRole('heading', { name: 'Do que produzimos, quanto está conforme e quanto perdemos por qualidade?' })).toBeVisible();
+  const qualityMachines = page.getByRole('region', { name: 'Situação das Máquinas' });
+  const dc03Quality = qualityMachines.getByRole('button', { name: /DC03/ });
+  await expect(dc03Quality).toContainText('Produzindo');
+  await expect(page).toHaveScreenshot('FINAL-DEMO-QUALITY.png', { fullPage: true, animations: 'disabled' });
 
-  // OEE
+  // OEE — Section 6/7: OEE never invents its own machine status; DC03 must read Produzindo here too.
   await page.goto('/demo/fundicao-dc/oee');
   await expect(page.getByRole('heading', { name: 'Como estamos performando e por quê?' })).toBeVisible();
-  await expect(page).toHaveScreenshot('FINAL-DEMO-OEE-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
+  const oeeMachines = page.getByRole('region', { name: 'Situação das Máquinas' });
+  const dc03Oee = oeeMachines.getByRole('button', { name: /DC03/ });
+  await expect(dc03Oee).toContainText('Produzindo');
+  await expect(page).toHaveScreenshot('FINAL-DEMO-OEE.png', { fullPage: true, animations: 'disabled' });
 
   // Visão Estratégica
   await page.goto('/demo/fundicao-dc/strategic');
   await expect(page.getByRole('heading', { name: 'Como está a saúde da Fundição DC?' })).toBeVisible();
-  await expect(page).toHaveScreenshot('FINAL-DEMO-STRATEGIC-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
+  await expect(page).toHaveScreenshot('FINAL-DEMO-STRATEGIC.png', { fullPage: true, animations: 'disabled' });
 
   // Reset restores the exact 09:15 baseline everywhere
   await resetScenario(page);

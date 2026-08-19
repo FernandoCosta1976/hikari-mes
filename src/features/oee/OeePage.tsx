@@ -4,11 +4,13 @@ import { useLiveScenarioTime } from '../../app/clock/applicationClock';
 import { withBase } from '../../app/routing/basePath';
 import { OperationalWorkspace } from '../../app/workspace/OperationalWorkspace';
 import { computeFundicaoDcOeeSummary, computeFundicaoDcShiftOeeSummaries, type FundicaoDcOeeRow } from '../../demo/adapters/oeeSummaryAdapter';
+import { computeResourceOperationalSnapshots, resourceOperationalSnapshotByResourceId, type ResourceOperationalSnapshot } from '../../demo/adapters/resourceOperationalSnapshotAdapter';
 import { idealCycleTimeSecondsForScenario } from '../../demo/scenario-engine/scenarioFixtures';
-import { selectAllProductionEvents, selectAllQualityConfirmations, selectProductionConfirmations, selectProductionExecutions, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
+import { selectAllProductionEvents, selectAllQualityConfirmations, selectConfirmedQuantityByLotId, selectOrganizationsByLotId, selectPreparationConfirmedByLotId, selectProductionConfirmations, selectProductionExecutions, selectProductionReadiness, selectProductionReleases, selectProductionScheduling, selectScenarioDefinition, selectSessionClock, useScenarioStore } from '../../demo/scenario-engine/scenarioStore';
 import type { OeeDimension } from '../../domain/oee/calculations';
-import { eventTypeLabel, type ProductionEvent } from '../../domain/production-monitoring/models';
-import { qualityReasonLabel, type ProductionQualityConfirmation } from '../../domain/production-quality/models';
+import type { ProductionEvent } from '../../domain/production-monitoring/models';
+import { groupQualityConfirmationsByRequirement, qualityReasonLabel, type ProductionQualityConfirmation } from '../../domain/production-quality/models';
+import { adherenceQualifierLabel } from '../../domain/production-status/models';
 import type { FoundryResourceId } from '../../domain/resource/models';
 import { ScenarioResetControl } from '../../shared/operational/ScenarioResetControl';
 import { Button } from '../../shared/ui/Button/Button';
@@ -25,11 +27,20 @@ const pct = (value: number | null) => value === null ? 'N/A' : `${Math.round(val
 type Row = FundicaoDcOeeRow;
 type Focus = { kind: 'DIMENSION'; dimension: OeeDimension; rows: readonly Row[]; scopeLabel: string } | { kind: 'RESOURCE'; resourceId: FoundryResourceId };
 
-function rowAttention(row: Row, impacts: readonly { dimension: OeeDimension; resourceId: FoundryResourceId }[], events: readonly ProductionEvent[]): { icon: string; tone: 'attention' | 'positive' | 'neutral'; note: string | null } {
-  if (row.oee === null) return { icon: '○', tone: 'neutral', note: 'Aguardando produção' };
-  const activeEvent = events.find((event) => event.resourceId === row.resourceId && event.status === 'ACTIVE');
-  if (activeEvent) return { icon: '⚠', tone: 'attention', note: `${eventTypeLabel[activeEvent.eventType]} ativo` };
-  const impact = impacts.find((item) => item.resourceId === row.resourceId);
+/**
+ * Section 7 of the round brief — OEE never determines the machine's
+ * Operational State; it only annotates it. Icon/tone come from the SAME
+ * ResourceOperationalSnapshot Acompanhamento/Aderência/Estratégica read
+ * (Produzindo/Em pausa/Aguardando início/Sem necessidade ativa), never from
+ * `row.oee` — a COMPLETED Requirement with a fine OEE score must never
+ * render identically to a currently RUNNING one.
+ */
+function rowAttention(snapshot: ResourceOperationalSnapshot | undefined, impacts: readonly { dimension: OeeDimension; resourceId: FoundryResourceId }[], resourceId: FoundryResourceId): { icon: string; tone: 'attention' | 'positive' | 'neutral'; note: string | null } {
+  if (!snapshot) return { icon: '○', tone: 'neutral', note: null };
+  if (snapshot.activeEventLabel) return { icon: '⚠', tone: 'attention', note: `${snapshot.activeEventLabel} ativo` };
+  if (snapshot.operationalState === 'PAUSED' || snapshot.operationalState === 'ATTENTION') return { icon: '⚠', tone: 'attention', note: snapshot.operationalStateLabel };
+  if (snapshot.operationalState === 'WAITING_START' || snapshot.operationalState === 'NO_ACTIVE_REQUIREMENT') return { icon: '○', tone: 'neutral', note: snapshot.operationalStateLabel };
+  const impact = impacts.find((item) => item.resourceId === resourceId);
   if (impact) return { icon: dimensionIcon[impact.dimension], tone: 'attention', note: `Principal atenção: ${dimensionLabel[impact.dimension]}` };
   return { icon: '✓', tone: 'positive', note: null };
 }
@@ -96,10 +107,23 @@ export function OeePage() {
   const currentTime = useLiveScenarioTime(sessionClock ?? scenario?.currentScenarioTime);
   const events = useScenarioStore(selectAllProductionEvents);
   const qualityConfirmations = useScenarioStore(selectAllQualityConfirmations);
+  const releasesByLot = useScenarioStore(selectProductionReleases);
+  const readinessAssessments = useScenarioStore(selectProductionReadiness);
+  const preparationConfirmedByLotId = useScenarioStore(selectPreparationConfirmedByLotId);
+  const organizationsByLotId = useScenarioStore(selectOrganizationsByLotId);
+  const confirmedQuantityByLotId = useScenarioStore(selectConfirmedQuantityByLotId);
+  const activeScheduleVersionId = useScenarioStore((state) => state.activeScheduleVersionId);
   const idealCycleTimeSecondsByMaterialId = idealCycleTimeSecondsForScenario(scenario?.id);
   if (!definition || !scenario) return <p>Preparando OEE demonstrativo…</p>;
   const businessDate = currentTime.slice(0, 10);
   const productionConfirmations = Object.values(productionConfirmationsByLot).flat();
+
+  /** Section 1/15 — the SAME Resource Operational Snapshot Acompanhamento/Aderência/Estratégica read; OEE never invents its own machine status (Section 7). */
+  const operationalSnapshots = computeResourceOperationalSnapshots({
+    definition, executionsByLot, releasesByLot, readinessAssessments, preparationConfirmedByLotId, organizationsByLotId,
+    confirmedQuantityByLotId, activeScheduleVersionId, currentTime, events, qualityConfirmationsByLot: groupQualityConfirmationsByRequirement(qualityConfirmations),
+  });
+  const snapshotByResourceId = resourceOperationalSnapshotByResourceId(operationalSnapshots);
 
   const day = computeFundicaoDcOeeSummary(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations, events);
   const shifts = computeFundicaoDcShiftOeeSummaries(definition, executionsByLot, currentTime, qualityConfirmations, idealCycleTimeSecondsByMaterialId, productionConfirmations, events);
@@ -144,11 +168,12 @@ export function OeePage() {
       <section className={styles.resources} aria-labelledby="resources-title">
         <header><h2 id="resources-title">Situação das Máquinas</h2><p>DC01–DC05 · Disponibilidade · Desempenho · Qualidade · OEE · acumulado do dia</p></header>
         <div className={styles.machines}>
-          {rows.map((row) => { const attention = rowAttention(row, day.impacts, events); return <button key={row.resourceId} className={styles.machineRow} data-tone={attention.tone} onClick={() => setFocus({ kind: 'RESOURCE', resourceId: row.resourceId })}>
+          {rows.map((row) => { const snapshot = snapshotByResourceId[row.resourceId]; const attention = rowAttention(snapshot, day.impacts, row.resourceId); return <button key={row.resourceId} className={styles.machineRow} data-tone={attention.tone} data-operational-state={snapshot?.operationalState} onClick={() => setFocus({ kind: 'RESOURCE', resourceId: row.resourceId })}>
             <span className={styles.machineIcon} aria-hidden="true">{attention.icon}</span>
             <span className={styles.machineId}>{row.resourceId}</span>
             <span className={styles.machineOee}><small>OEE</small><strong>{pct(row.oee)}</strong></span>
             <span className={styles.machineApq}>A {pct(row.availability)} · P {pct(row.performance)} · Q {pct(row.quality)}</span>
+            {snapshot ? <small className={styles.machineState}>{snapshot.operationalStateLabel}{snapshot.adherenceQualifier ? ` · ${adherenceQualifierLabel[snapshot.adherenceQualifier]}` : ''}</small> : null}
             {attention.note ? <em className={styles.machineNote}>{attention.note}</em> : null}
           </button>; })}
         </div>

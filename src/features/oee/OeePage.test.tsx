@@ -32,7 +32,7 @@ test('shows Turno 2 beside the day accumulated, a simplified Turno 1/3 history a
   const machines = screen.getByRole('region', { name: 'Situação das Máquinas' });
   const dc05 = within(machines).getByRole('button', { name: /DC05/ });
   expect(dc05).toHaveTextContent('N/A');
-  expect(dc05).toHaveTextContent('Aguardando produção');
+  expect(dc05).toHaveTextContent('Aguardando início'); // Section 7 — the Resource Operational Snapshot, never a generic "no OEE data yet" fallback
   const dc03 = within(machines).getByRole('button', { name: /DC03/ });
   expect(dc03).toHaveAttribute('data-tone', 'attention');
   expect(dc03).toHaveTextContent('Ferramental ativo');
