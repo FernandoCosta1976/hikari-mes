@@ -49,8 +49,15 @@ export interface ProductionExecutionRecord {
 
 const transition = (kind: ExecutionTransitionKind, at: string, actor: string): ExecutionTransition => ({ kind, at, actor, dataOrigin: 'DEMONSTRATIVE_EXECUTION' });
 
-export function startExecution(record: ProductionExecutionRecord, released: boolean, at: string, actor: string, operatorId?: string, plannedResourceId?: string) {
-  if (!released || record.status !== 'NOT_STARTED') return record;
+/**
+ * A physical Resource can only run one Requirement at a time — starting a
+ * second one while another is still IN_PROGRESS/PAUSED on the same Resource
+ * would make "the Current Requirement" ambiguous (Quality/OEE/Adherence pick
+ * by most-recent Actual Start, Monitoring picks by schedule order — they'd
+ * disagree, showing a different machine job on different screens).
+ */
+export function startExecution(record: ProductionExecutionRecord, released: boolean, at: string, actor: string, operatorId?: string, plannedResourceId?: string, resourceHasActiveExecution?: boolean) {
+  if (!released || record.status !== 'NOT_STARTED' || resourceHasActiveExecution) return record;
   return { ...record, status: 'IN_PROGRESS' as const, actualStart: at, executedBy: actor, operatorId: operatorId ?? record.operatorId, plannedResourceId: plannedResourceId ?? record.plannedResourceId ?? record.resourceId, transitions: [...record.transitions, transition('STARTED', at, actor)] };
 }
 export function pauseExecution(record: ProductionExecutionRecord, at: string, reason: DemonstrativePauseReason, actor: string) {

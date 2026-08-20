@@ -13,6 +13,18 @@ describe('Capability 05 — Start (Section 7/8/12)', () => {
     expect(startExecution(notStarted, false, '2026-07-10T08:15:00-03:00', 'Operador 01 · demonstrativo')).toBe(notStarted);
   });
 
+  /**
+   * A Resource already running another Requirement → Start forbidden. Without this guard,
+   * two Requirements on the same Resource can end up simultaneously IN_PROGRESS, and the two
+   * independent "Current Requirement" selectors (currentExecutionForResource, used by
+   * Quality/OEE/Adherence, picks the most recently started; deriveResourceStatusEntries, used
+   * by Monitoring/the Resource Snapshot, picks the first RUNNING in schedule order) disagree —
+   * a different machine job would show on different screens for the same Resource.
+   */
+  it('Resource already has another active Requirement → Start forbidden', () => {
+    expect(startExecution(notStarted, true, '2026-07-10T08:15:00-03:00', 'Operador 01 · demonstrativo', undefined, undefined, true)).toBe(notStarted);
+  });
+
   it('Start → RUNNING', () => {
     expect(startExecution(notStarted, true, '2026-07-10T08:15:00-03:00', 'Operador 01 · demonstrativo').status).toBe('IN_PROGRESS');
   });

@@ -6,8 +6,11 @@ import { expect, test } from './fixtures';
  * own Context Modal (Section 2/20) — Start/Pause/Resume/Complete all read
  * and write the SAME Scenario store as Plano/Preparação/Liberação/OEE, never
  * a dataset of its own. Two real requirements carry the demonstration:
- *  - lot-sd-509 (DC01, NOT_STARTED, READY, released for real via Plano/
- *    Liberação before Start) — START, PAUSE and RESUME example.
+ *  - lot-sd-514 (DC03, NOT_STARTED, READY, released for real via Plano/
+ *    Liberação before Start) — START, PAUSE and RESUME example. DC03 has no
+ *    other active Requirement at 09:15 — a Resource can only run one
+ *    Requirement at a time (Section 33 factory-state invariant), so this
+ *    deliberately avoids DC01, which already has lot-sd-507 RUNNING.
  *  - lot-sd-507 (DC01, already RUNNING at 09:15, closest to its own Scheduled
  *    Finish) — COMPLETE example.
  */
@@ -17,12 +20,12 @@ function openContext(page: import('@playwright/test').Page, lotId: string) {
 }
 
 test('completes the governed cross-screen journey: Start → Pause → Resume → Reset (Section 35)', async ({ page }) => {
-  // Release is Capability 04's own decision — lot-sd-509 is genuinely NOT_STARTED and unreleased in the
+  // Release is Capability 04's own decision — lot-sd-514 is genuinely NOT_STARTED and unreleased in the
   // reference baseline, so the journey exercises the real precondition chain via Plano before Acompanhamento.
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
-  await page.locator('[data-lot-id="lot-sd-509"]').click();
-  const planoModal = page.getByRole('dialog', { name: 'Lote 509' });
+  await page.locator('[data-lot-id="lot-sd-514"]').click();
+  const planoModal = page.getByRole('dialog', { name: 'Lote 514' });
   await planoModal.getByRole('button', { name: 'Liberação' }).click();
   await planoModal.getByRole('button', { name: 'Liberar para produção' }).click();
   await expect(planoModal).toContainText('LIBERADO');
@@ -31,18 +34,18 @@ test('completes the governed cross-screen journey: Start → Pause → Resume �
   await page.goto('/demo/fundicao-dc/production-monitoring');
   await expect(page.getByRole('heading', { name: 'O que está acontecendo em relação ao plano?' })).toBeVisible();
 
-  await openContext(page, 'lot-sd-509');
-  const dialog = page.getByRole('dialog', { name: '1ST-E5421-W0' });
+  await openContext(page, 'lot-sd-514');
+  const dialog = page.getByRole('dialog', { name: '1S4-E5411-W0' });
   await expect(dialog).toContainText('Aguardando início');
   await dialog.getByRole('button', { name: 'Iniciar produção' }).click();
   await expect(dialog).toContainText('SituaçãoEm execução');
-  await expect(dialog).toContainText('OperadorOperador 01');
+  await expect(dialog).toContainText('OperadorOperador 03');
   await dialog.getByRole('button', { name: 'Fechar contexto de acompanhamento' }).click();
 
   // Acompanhamento reflects the change immediately, no refresh.
-  await expect(page.locator('[data-lot-id="lot-sd-509"]').first()).toHaveAttribute('data-status', 'RUNNING');
+  await expect(page.locator('[data-lot-id="lot-sd-514"]').first()).toHaveAttribute('data-status', 'RUNNING');
 
-  await openContext(page, 'lot-sd-509');
+  await openContext(page, 'lot-sd-514');
   await expect(dialog).toContainText('Registrar parada');
   await dialog.getByRole('button', { name: 'Registrar parada' }).click();
   await dialog.getByRole('button', { name: 'Registrar parada' }).click();
@@ -53,7 +56,7 @@ test('completes the governed cross-screen journey: Start → Pause → Resume �
 
   await page.getByRole('button', { name: 'Reiniciar cenário' }).click();
   await page.getByRole('alertdialog', { name: 'Reiniciar cenário demonstrativo?' }).getByRole('button', { name: 'Reiniciar cenário' }).click();
-  await expect(page.locator('[data-lot-id="lot-sd-509"]').first()).toHaveAttribute('data-status', 'SCHEDULED');
+  await expect(page.locator('[data-lot-id="lot-sd-514"]').first()).toHaveAttribute('data-status', 'NOT_STARTED');
   await expect(page.getByText('09:15').first()).toBeVisible();
 });
 
@@ -123,13 +126,13 @@ test('What-if isolation — Avaliar Cenário never applies to the Execution base
 test('captures Capability 05 screenshots', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
 
-  // lot-sd-509 is genuinely NOT_STARTED and unreleased in the reference baseline — release it for real via
+  // lot-sd-514 is genuinely NOT_STARTED and unreleased in the reference baseline — release it for real via
   // Plano (Capability 04) so the WAITING-START scene shows a Requirement that has actually satisfied the
   // Start precondition, without altering the reference Liberação KPI count.
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
-  await page.locator('[data-lot-id="lot-sd-509"]').click();
-  const planoModal = page.getByRole('dialog', { name: 'Lote 509' });
+  await page.locator('[data-lot-id="lot-sd-514"]').click();
+  const planoModal = page.getByRole('dialog', { name: 'Lote 514' });
   await planoModal.getByRole('button', { name: 'Liberação' }).click();
   await planoModal.getByRole('button', { name: 'Liberar para produção' }).click();
   await expect(planoModal).toContainText('LIBERADO');
@@ -137,8 +140,8 @@ test('captures Capability 05 screenshots', async ({ page }) => {
 
   await page.goto('/demo/fundicao-dc/production-monitoring');
 
-  await openContext(page, 'lot-sd-509');
-  const startDialog = page.getByRole('dialog', { name: '1ST-E5421-W0' });
+  await openContext(page, 'lot-sd-514');
+  const startDialog = page.getByRole('dialog', { name: '1S4-E5411-W0' });
   await expect(startDialog).toContainText('Aguardando início');
   await expect(page).toHaveScreenshot('CAP-05-0915-WAITING-START-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 
@@ -156,7 +159,9 @@ test('captures Capability 05 screenshots', async ({ page }) => {
   await expect(page).toHaveScreenshot('CAP-05-0915-RESUMED-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 
   await startDialog.getByRole('button', { name: 'Fechar contexto de acompanhamento' }).click();
-  await expect(page.locator('[data-lot-id="lot-sd-509"]').first()).toHaveAttribute('data-status', 'RUNNING');
+  // lot-sd-514's own Scheduled Start (08:00) already passed when it was started at 09:15 — DELAYED, not
+  // RUNNING (lot-sd-509's original slot started early relative to its own 11:09 schedule, hence RUNNING there).
+  await expect(page.locator('[data-lot-id="lot-sd-514"]').first()).toHaveAttribute('data-status', 'DELAYED');
   await expect(page).toHaveScreenshot('CAP-05-0915-MONITORING-UPDATED-CANDIDATE.png', { fullPage: true, animations: 'disabled' });
 });
 
@@ -164,15 +169,15 @@ test('has no automatically detectable accessibility violations and no forbidden 
   const AxeBuilder = (await import('@axe-core/playwright')).default;
   await page.goto('/demo/fundicao-dc/production-scheduling');
   await page.locator('[data-testid="timeline-scroller"]').evaluate((element) => { element.scrollLeft = 0; });
-  await page.locator('[data-lot-id="lot-sd-509"]').click();
-  const planoModal = page.getByRole('dialog', { name: 'Lote 509' });
+  await page.locator('[data-lot-id="lot-sd-514"]').click();
+  const planoModal = page.getByRole('dialog', { name: 'Lote 514' });
   await planoModal.getByRole('button', { name: 'Liberação' }).click();
   await planoModal.getByRole('button', { name: 'Liberar para produção' }).click();
   await planoModal.getByRole('button', { name: 'Fechar contexto do Lote' }).click();
 
   await page.goto('/demo/fundicao-dc/production-monitoring');
-  await openContext(page, 'lot-sd-509');
-  const dialog = page.getByRole('dialog', { name: '1ST-E5421-W0' });
+  await openContext(page, 'lot-sd-514');
+  const dialog = page.getByRole('dialog', { name: '1S4-E5411-W0' });
   await dialog.getByRole('button', { name: 'Iniciar produção' }).click();
   await dialog.getByRole('button', { name: 'Registrar parada' }).click();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);

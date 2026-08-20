@@ -42,7 +42,17 @@ test('a decision on Lote 270 survives reload and reaches every downstream perspe
   await expect(heroFacts).toContainText('Programado originalmente: DC01');
   await expect(heroFacts).toContainText('Liberada manualmente');
 
+  // 8b. A Resource can only run one Requirement at a time — DC04's own current job (Lote 268) must
+  // finish before the reprogrammed Lote 270 is allowed to start there.
+  await page.goto('/demo/fundicao-dc-legacy/production-execution');
+  const dc04PriorCard = page.locator('article').filter({ has: page.getByText('DC04', { exact: true }) });
+  await dc04PriorCard.getByLabel('Quantidade produzida na DC04').fill('35');
+  await dc04PriorCard.getByRole('button', { name: 'Registrar produção' }).click();
+  await dc04PriorCard.getByRole('button', { name: 'Concluir' }).click();
+  await expect(dc04PriorCard).toHaveAttribute('data-status', 'COMPLETED');
+
   // 9. Iniciar produção — must start on DC04.
+  await page.goto('/demo/fundicao-dc-legacy/orders/lot-270');
   await page.getByRole('button', { name: 'Iniciar produção' }).click();
   await expect(page.getByRole('region', { name: 'Próxima decisão' })).toContainText('Em produção');
 

@@ -254,7 +254,8 @@ export const useScenarioStore = create<ScenarioStore>()((set, get) => ({
     const current = state.productionExecutions[lotId] ?? { lotId, productionOrderId: lot.productionOrderId, resourceId, scheduleVersionId: state.activeScheduleVersionId, plannedQuantity: lot.quantity, producedQuantity: 0, scheduledStart: lot.scheduledStart, status: 'NOT_STARTED', pauses: [], transitions: [], demonstrative: true, dataOrigin: 'DEMONSTRATIVE_EXECUTION', ruleStatus: 'BUSINESS_VALIDATION_REQUIRED' } as ProductionExecutionRecord;
     const at = state.sessionClock ?? state.definition?.currentScenarioTime ?? UNINITIALIZED_SCENARIO_FALLBACK_TIME;
     const operator = demonstrativeOperatorForResource(resourceId);
-    const next = startExecution(current, state.productionReleases[lotId]?.status === 'RELEASED', at, operator.displayName, operator.operatorId, lot.scheduledResourceId);
+    const resourceHasActiveExecution = Object.values(state.productionExecutions).some((item) => item.lotId !== lotId && item.resourceId === resourceId && (item.status === 'IN_PROGRESS' || item.status === 'PAUSED'));
+    const next = startExecution(current, state.productionReleases[lotId]?.status === 'RELEASED', at, operator.displayName, operator.operatorId, lot.scheduledResourceId, resourceHasActiveExecution);
     if (next === current) return state;
     return { productionExecutions: { ...state.productionExecutions, [lotId]: next }, scenarioModified: true };
   }),

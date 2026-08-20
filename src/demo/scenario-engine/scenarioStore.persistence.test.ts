@@ -37,8 +37,10 @@ describe('scenario persistence — serialize / hydrate', () => {
     useScenarioStore.getState().releaseLot('lot-sd-501');
     useScenarioStore.getState().adoptOrganization({ lotId: 'lot-sd-502', originalResourceId: 'DC01', simulatedResourceId: 'DC03' }, 'Planejador da Fundição · demonstrativo');
     useScenarioStore.getState().postponeLot('lot-sd-503', 'Turno 3');
-    useScenarioStore.getState().releaseLot('lot-sd-508');
-    useScenarioStore.getState().startLotExecution('lot-sd-508');
+    // lot-sd-514 (DC03) has no active predecessor on its Resource at baseline — lot-sd-508
+    // (DC01) would conflict with lot-sd-507, still IN_PROGRESS, and correctly be refused.
+    useScenarioStore.getState().releaseLot('lot-sd-514');
+    useScenarioStore.getState().startLotExecution('lot-sd-514');
 
     reboot();
 
@@ -48,7 +50,7 @@ describe('scenario persistence — serialize / hydrate', () => {
     expect(state.organizationsByLotId['lot-sd-502']?.operationalResourceId).toBe('DC03');
     expect(state.organizationsByLotId['lot-sd-502']?.programmedResourceId).toBe('DC01');
     expect(state.postponedLotIds['lot-sd-503']?.targetLabel).toBe('Turno 3');
-    expect(state.productionExecutions['lot-sd-508']?.status).toBe('IN_PROGRESS');
+    expect(state.productionExecutions['lot-sd-514']?.status).toBe('IN_PROGRESS');
     expect(selectScenarioModified(state)).toBe(true);
   });
 

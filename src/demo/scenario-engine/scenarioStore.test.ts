@@ -89,6 +89,24 @@ test('Capability 06 — a historical (COMPLETED) Requirement rejects new confirm
   expect(useScenarioStore.getState().productionConfirmations['lot-sd-501']).toEqual(seedConfirmations);
 });
 
+/**
+ * A Resource can only run one Requirement at a time. Without this guard, starting a Lot's
+ * successor (e.g. from Plano's Lot Detail or Preparação) while its predecessor is still
+ * IN_PROGRESS on the same Resource left the two independent "Current Requirement" selectors
+ * disagreeing: currentExecutionForResource (Quality/OEE/Adherence) picks the most recently
+ * started Lot, deriveResourceStatusEntries (Monitoring/the Resource Snapshot) picks the first
+ * RUNNING Lot in schedule order — a different machine job would show on different screens.
+ */
+test('Capability 05 — starting a Lot on a Resource that already has an active Requirement is a no-op, never a second simultaneous IN_PROGRESS', () => {
+  const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc')!;
+  useScenarioStore.getState().initializeScenario(fundicaoDcScenario); useScenarioStore.getState().resetScenario();
+  expect(useScenarioStore.getState().productionExecutions['lot-sd-507'].status).toBe('IN_PROGRESS'); // DC01's real current Requirement at 09:15
+  useScenarioStore.getState().releaseLot('lot-sd-508'); // DC01's next Requirement — released but not yet its turn
+  useScenarioStore.getState().startLotExecution('lot-sd-508');
+  expect(useScenarioStore.getState().productionExecutions['lot-sd-508'].status).toBe('NOT_STARTED'); // refused — DC01 is already running lot-sd-507
+  expect(useScenarioStore.getState().productionExecutions['lot-sd-507'].status).toBe('IN_PROGRESS'); // unaffected
+});
+
 describe('Capability 08 — Registrar Parada / Retomar Produção materializes a governed Production Event (Section 5/6/7/26/27)', () => {
   const fundicaoDcScenario = scenarioDefinitionAdapter.findById('fundicao-dc-legacy')!;
 

@@ -8,7 +8,7 @@
 | Reference Day | 10/07/2026 |
 | Initial Scenario Clock | 09:15 |
 | Shift | Turno 1 |
-| Commit | `4fcb3fe` — "fix: reconcile machine state and OEE availability for executive demo" |
+| Commit | `PENDING` — "fix: synchronize factory state across all operational perspectives" |
 | Public URL | https://fernandocosta1976.github.io/hikari-mes/demo/fundicao-dc |
 
 This is the exact state validated end to end (unit + integration + Playwright,
@@ -19,8 +19,26 @@ freeze was declared.
 
 Superseded prior baselines: `e1d5e79` (Capability 09), `85c2d28` (Unified
 Operational Timeline), `f34952d`/`3265ff2` (Unified Machine Operational
-State — superseded because DC03 and Availability both carried real defects,
-corrected below). All are folded into this freeze.
+State), `4fcb3fe`/`95f3903` (DC03/Availability reconciliation — superseded
+by the single-active-Requirement-per-Resource fix below). All are folded
+into this freeze.
+
+**Single Resource, single active Requirement (this round)**: an audit for
+cross-screen "Current Requirement" identity found that a Resource could be
+started on a second Requirement while its predecessor was still
+IN_PROGRESS/PAUSED — physically impossible, and it made Monitoring's
+Current-Requirement selector (`deriveResourceStatusEntries`, schedule-order
+tie-break) disagree with Quality/OEE/Adherence's
+(`currentExecutionForResource`, most-recent-Actual-Start tie-break) about
+which Requirement a Resource was actually running. Fixed at the mutation
+boundary (`startExecution`/`startLotExecution`): starting a Requirement on a
+Resource that already has an active one is now a no-op. No screen ever
+derives its own Current Requirement independently — Quality, OEE, Adherence
+and Visão Estratégica all read `currentExecutionForResource`; Monitoring and
+the Resource Snapshot both read `deriveResourceStatusEntries`; the Session
+Clock is the single `sessionClock` store field every screen reads through
+the same `selectSessionClock` selector; Produced/Confirmed Quantity is the
+single `confirmedQuantityByLotId` record every screen reads by `lotId`.
 
 **Post-freeze correction**: Product Review on the prior freeze found two
 defects — DC03 reporting "Sem necessidade ativa" for a real, late, pending
