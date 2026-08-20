@@ -8,7 +8,7 @@
 | Reference Day | 10/07/2026 |
 | Initial Scenario Clock | 09:15 |
 | Shift | Turno 1 |
-| Commit | `PENDING` — "fix: synchronize factory state across all operational perspectives" |
+| Commit | `1a15168` — "fix: synchronize factory state across all operational perspectives" |
 | Public URL | https://fernandocosta1976.github.io/hikari-mes/demo/fundicao-dc |
 
 This is the exact state validated end to end (unit + integration + Playwright,
